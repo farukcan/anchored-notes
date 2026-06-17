@@ -10,6 +10,7 @@ import { clipboard } from "@milkdown/plugin-clipboard";
 import { $view } from "@milkdown/utils";
 import type { Node as ProseNode } from "@milkdown/prose/model";
 import { createSlashMenu } from "./slash-menu.js";
+import { tableToolbarPlugin } from "./table-toolbar.js";
 
 export interface MarkdownEditorHandle {
   destroy: () => void;
@@ -17,7 +18,7 @@ export interface MarkdownEditorHandle {
 
 // Render GFM task list items (list_item with a non-null `checked` attribute) as
 // an interactive checkbox; plain list items keep their default rendering.
-const taskListItemView = $view(listItemSchema, () => (node, view, getPos) => {
+const taskListItemView = $view(listItemSchema.node, () => (node, view, getPos) => {
   let current = node;
   const li = document.createElement("li");
   const contentDOM = document.createElement("div");
@@ -86,6 +87,7 @@ export function createMarkdownEditor(
     .use(listener)
     .use(clipboard)
     .use(slash.plugin)
+    .use(tableToolbarPlugin(menuRoot))
     .create()
     .then((created) => {
       editor = created;

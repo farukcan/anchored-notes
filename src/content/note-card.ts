@@ -144,6 +144,14 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
     el.style.zIndex = String(deps.bringToFront());
   });
 
+  // --- keep keyboard input inside the note ---
+  // Key events are `composed`, so they cross the shadow boundary and reach the
+  // host page, triggering its shortcuts (e.g. GitHub single-key shortcuts) while
+  // the user types. Stopping propagation here keeps them contained to the note.
+  for (const type of ["keydown", "keyup", "keypress"] as const) {
+    el.addEventListener(type, (e) => e.stopPropagation());
+  }
+
   // --- drag via header ---
   let dragStart: { px: number; py: number; x: number; y: number } | null = null;
   header.addEventListener("pointerdown", (e) => {
