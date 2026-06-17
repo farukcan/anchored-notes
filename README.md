@@ -17,7 +17,9 @@ is **anchored** to one of four scopes and reappears wherever that scope matches.
 | `tab`    | that tab, even after navigation; lost on restart    |
 
 Notes are draggable, resizable, recolorable (7 colors), and the scope can be
-changed at any time from the dropdown on the note header. The note body is a
+changed at any time from the dropdown on the note header. When the page exposes a
+PWA `manifest.json` with `short_name` or `name`, the **Site** scope option shows
+that app name instead of the generic label.
 [Milkdown](https://github.com/Milkdown/milkdown) markdown WYSIWYG editor
 (commonmark + GFM presets, themeless), so `note.content` is stored as markdown
 text — backward compatible with earlier plaintext notes. It supports a

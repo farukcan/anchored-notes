@@ -12,6 +12,18 @@ const SCOPE_META: Record<AnchorScope, { label: string; hint: string }> = {
   page: { label: "📄 Page", hint: "Anchored to this page — shows only on this exact URL" },
   tab: { label: "🗂️ Tab", hint: "Anchored to this tab — follows it across navigation, gone on restart" }
 };
+
+function scopeLabel(scope: AnchorScope, siteName?: string): string {
+  if (scope === "site" && siteName) return `🌍 ${siteName}`;
+  return SCOPE_META[scope].label;
+}
+
+function scopeHint(scope: AnchorScope, siteName?: string): string {
+  if (scope === "site" && siteName) {
+    return `Anchored to ${siteName} — shows on every page of this domain`;
+  }
+  return SCOPE_META[scope].hint;
+}
 const SAVE_DEBOUNCE_MS = 400;
 
 export interface NoteCardDeps {
@@ -19,6 +31,7 @@ export interface NoteCardDeps {
   remove: (id: string) => void;
   bringToFront: () => number;
   anchorKeyForScope: (scope: AnchorScope) => string;
+  siteName?: string;
 }
 
 export interface NoteCardHandle {
@@ -26,6 +39,7 @@ export interface NoteCardHandle {
   noteId: string;
   mount: () => void;
   update: (note: Note) => void;
+  setSiteName: (siteName?: string) => void;
   clamp: () => void;
   destroy: () => void;
 }
@@ -38,6 +52,7 @@ function formatTimestamp(ms: number): string {
 
 export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandle {
   let note: Note = { ...initial };
+  let siteName = deps.siteName;
   let contentTimer: number | undefined;
 
   const el = document.createElement("div");
@@ -68,11 +83,21 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
   for (const s of SCOPES) {
     const opt = document.createElement("option");
     opt.value = s;
-    opt.textContent = SCOPE_META[s].label;
-    opt.title = SCOPE_META[s].hint;
+    opt.textContent = scopeLabel(s, siteName);
+    opt.title = scopeHint(s, siteName);
     scope.appendChild(opt);
   }
   scope.value = note.scope;
+
+  function applySiteName(next?: string): void {
+    siteName = next;
+    for (const s of SCOPES) {
+      const opt = scope.querySelector<HTMLOptionElement>(`option[value="${s}"]`);
+      if (!opt) continue;
+      opt.textContent = scopeLabel(s, siteName);
+      opt.title = scopeHint(s, siteName);
+    }
+  }
 
   const colorBtn = document.createElement("button");
   colorBtn.className = "note-btn note-color-btn";
@@ -225,11 +250,15 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
     clampTimer = window.setTimeout(() => deps.save(note), 300);
   }
 
+  function setSiteName(next?: string): void {
+    applySiteName(next);
+  }
+
   function destroy(): void {
     window.clearTimeout(contentTimer);
     window.clearTimeout(clampTimer);
     editor?.destroy();
   }
 
-  return { el, noteId: note.id, mount, update, clamp, destroy };
+  return { el, noteId: note.id, mount, update, setSiteName, clamp, destroy };
 }

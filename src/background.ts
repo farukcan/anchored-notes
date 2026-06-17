@@ -9,8 +9,8 @@ function createContextMenu(): void {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: "⚓ Add Note Here",
-      contexts: ["page", "selection", "link", "image"]
+      title: "Add Note Here",
+      contexts: ["page", "selection", "link", "image"],
     });
   });
 }
@@ -37,11 +37,13 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   void deleteTabNotes(tabId);
 });
 
-chrome.runtime.onMessage.addListener((message: Message, sender, sendResponse) => {
-  if (message.type === "GET_TAB_ID") {
-    const response: GetTabIdResponse = { tabId: sender.tab?.id ?? -1 };
-    sendResponse(response);
-    return true;
-  }
-  return undefined;
-});
+chrome.runtime.onMessage.addListener(
+  (message: Message, sender, sendResponse) => {
+    if (message.type === "GET_TAB_ID") {
+      const response: GetTabIdResponse = { tabId: sender.tab?.id ?? -1 };
+      sendResponse(response);
+      return true;
+    }
+    return undefined;
+  },
+);

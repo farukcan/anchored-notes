@@ -4,6 +4,7 @@
 import styles from "./styles.css";
 import type { AnchorScope, GetTabIdResponse, Message, Note, PageContext } from "../types.js";
 import { anchorKeyFor, isNoteVisible, pageContextFromLocation } from "../matching.js";
+import { fetchSiteNameFromManifest } from "../site-manifest.js";
 import { deleteNote, getNotesMap, onNotesChanged, saveNote } from "../storage.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
 
@@ -11,6 +12,7 @@ const HOST_ID = "anchored-notes-host";
 
 let tabId = -1;
 let zCounter = 2147483000;
+let cachedSiteName: string | undefined;
 const cards = new Map<string, NoteCardHandle>();
 
 function currentContext(): PageContext {
@@ -48,6 +50,17 @@ const deps = {
   anchorKeyForScope
 };
 
+async function resolveSiteName(): Promise<void> {
+  let name = await fetchSiteNameFromManifest();
+  if (!name && document.readyState === "loading") {
+    await new Promise<void>((resolve) => document.addEventListener("DOMContentLoaded", () => resolve(), { once: true }));
+    name = await fetchSiteNameFromManifest();
+  }
+  if (name === cachedSiteName) return;
+  cachedSiteName = name;
+  for (const handle of cards.values()) handle.setSiteName(name);
+}
+
 function reconcile(shadow: ShadowRoot, notes: Note[]): void {
   const ctx = currentContext();
   const visible = notes.filter((n) => isNoteVisible(n, ctx));
@@ -66,7 +79,8 @@ function reconcile(shadow: ShadowRoot, notes: Note[]): void {
     if (existing) {
       existing.update(note);
     } else {
-      const handle = createNoteCard(note, deps);
+      const cardDeps = cachedSiteName ? { ...deps, siteName: cachedSiteName } : deps;
+      const handle = createNoteCard(note, cardDeps);
       cards.set(note.id, handle);
       shadow.appendChild(handle.el);
       handle.mount();
@@ -112,6 +126,7 @@ function init(): void {
     tabId = id;
     redraw(shadow);
   });
+  void resolveSiteName();
 
   onNotesChanged((next) => reconcile(shadow, Object.values(next)));
 
