@@ -4,25 +4,59 @@
 import type { AnchorScope, Note, NoteColor } from "../types.js";
 import { createMarkdownEditor, type MarkdownEditorHandle } from "./editor.js";
 
-export const COLORS: NoteColor[] = ["yellow", "green", "pink", "purple", "blue", "gray", "dark"];
+export const COLORS: NoteColor[] = [
+  "yellow",
+  "green",
+  "pink",
+  "purple",
+  "blue",
+  "gray",
+  "dark",
+];
 const SCOPES: AnchorScope[] = ["global", "site", "page", "tab"];
 const SCOPE_META: Record<AnchorScope, { label: string; hint: string }> = {
-  global: { label: "🌐 Everywhere", hint: "Anchored everywhere — shows on every page you open" },
-  site: { label: "🌍 Site", hint: "Anchored to this site — shows on every page of this domain" },
-  page: { label: "📄 Page", hint: "Anchored to this page — shows only on this exact URL" },
-  tab: { label: "🗂️ Tab", hint: "Anchored to this tab — follows it across navigation, gone on restart" }
+  global: {
+    label: "🌐 Everywhere",
+    hint: "Anchored everywhere — shows on every page you open",
+  },
+  site: {
+    label: "🌍 Site",
+    hint: "Anchored to this site — shows on every page of this domain",
+  },
+  page: {
+    label: "📄 Page",
+    hint: "Anchored to this page — shows only on this exact URL",
+  },
+  tab: {
+    label: "🗂️ Tab",
+    hint: "Anchored to this tab — follows it across navigation, gone on restart",
+  },
 };
 
-function scopeLabel(scope: AnchorScope, siteName?: string): string {
-  if (scope === "site" && siteName) return `🌍 ${siteName}`;
+function scopeLabel(scope: AnchorScope, labels: ScopeLabels = {}): string {
+  if (scope === "site" && labels.siteName) return `🌍 ${labels.siteName}`;
+  if (scope === "page" && labels.pageTitle)
+    return `📄 ${shortLabel(labels.pageTitle)}`;
   return SCOPE_META[scope].label;
 }
 
-function scopeHint(scope: AnchorScope, siteName?: string): string {
-  if (scope === "site" && siteName) {
-    return `Anchored to ${siteName} — shows on every page of this domain`;
+function scopeHint(scope: AnchorScope, labels: ScopeLabels = {}): string {
+  if (scope === "site" && labels.siteName) {
+    return `Anchored to ${labels.siteName} — shows on every page of this domain`;
+  }
+  if (scope === "page" && labels.pageTitle) {
+    return `Anchored to this page (${labels.pageTitle}) — shows only on this exact URL`;
   }
   return SCOPE_META[scope].hint;
+}
+
+interface ScopeLabels {
+  siteName?: string;
+  pageTitle?: string;
+}
+
+function shortLabel(text: string, max = 10): string {
+  return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 const SAVE_DEBOUNCE_MS = 400;
 
@@ -32,6 +66,7 @@ export interface NoteCardDeps {
   bringToFront: () => number;
   anchorKeyForScope: (scope: AnchorScope) => string;
   siteName?: string;
+  pageTitle?: string;
 }
 
 export interface NoteCardHandle {
@@ -39,7 +74,7 @@ export interface NoteCardHandle {
   noteId: string;
   mount: () => void;
   update: (note: Note) => void;
-  setSiteName: (siteName?: string) => void;
+  setScopeLabels: (labels: Partial<ScopeLabels>) => void;
   clamp: () => void;
   destroy: () => void;
 }
@@ -50,9 +85,15 @@ function formatTimestamp(ms: number): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandle {
+export function createNoteCard(
+  initial: Note,
+  deps: NoteCardDeps,
+): NoteCardHandle {
   let note: Note = { ...initial };
-  let siteName = deps.siteName;
+  let scopeLabels: ScopeLabels = {
+    ...(deps.siteName ? { siteName: deps.siteName } : {}),
+    ...(deps.pageTitle ? { pageTitle: deps.pageTitle } : {}),
+  };
   let contentTimer: number | undefined;
 
   const el = document.createElement("div");
@@ -83,19 +124,21 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
   for (const s of SCOPES) {
     const opt = document.createElement("option");
     opt.value = s;
-    opt.textContent = scopeLabel(s, siteName);
-    opt.title = scopeHint(s, siteName);
+    opt.textContent = scopeLabel(s, scopeLabels);
+    opt.title = scopeHint(s, scopeLabels);
     scope.appendChild(opt);
   }
   scope.value = note.scope;
 
-  function applySiteName(next?: string): void {
-    siteName = next;
+  function applyScopeLabels(next: ScopeLabels): void {
+    scopeLabels = next;
     for (const s of SCOPES) {
-      const opt = scope.querySelector<HTMLOptionElement>(`option[value="${s}"]`);
+      const opt = scope.querySelector<HTMLOptionElement>(
+        `option[value="${s}"]`,
+      );
       if (!opt) continue;
-      opt.textContent = scopeLabel(s, siteName);
-      opt.title = scopeHint(s, siteName);
+      opt.textContent = scopeLabel(s, scopeLabels);
+      opt.title = scopeHint(s, scopeLabels);
     }
   }
 
@@ -148,7 +191,10 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
     editor = createMarkdownEditor(body, el, note.content, (markdown) => {
       if (markdown === note.content) return; // ignore the initial value echo
       window.clearTimeout(contentTimer);
-      contentTimer = window.setTimeout(() => patch({ content: markdown }), SAVE_DEBOUNCE_MS);
+      contentTimer = window.setTimeout(
+        () => patch({ content: markdown }),
+        SAVE_DEBOUNCE_MS,
+      );
     });
   }
 
@@ -200,7 +246,8 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
   });
 
   // --- resize via corner handle ---
-  let resizeStart: { px: number; py: number; w: number; h: number } | null = null;
+  let resizeStart: { px: number; py: number; w: number; h: number } | null =
+    null;
   resize.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
     resizeStart = { px: e.clientX, py: e.clientY, w: note.w, h: note.h };
@@ -250,8 +297,8 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
     clampTimer = window.setTimeout(() => deps.save(note), 300);
   }
 
-  function setSiteName(next?: string): void {
-    applySiteName(next);
+  function setScopeLabels(partial: Partial<ScopeLabels>): void {
+    applyScopeLabels({ ...scopeLabels, ...partial });
   }
 
   function destroy(): void {
@@ -260,5 +307,5 @@ export function createNoteCard(initial: Note, deps: NoteCardDeps): NoteCardHandl
     editor?.destroy();
   }
 
-  return { el, noteId: note.id, mount, update, setSiteName, clamp, destroy };
+  return { el, noteId: note.id, mount, update, setScopeLabels, clamp, destroy };
 }

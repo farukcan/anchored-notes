@@ -13,7 +13,29 @@ const HOST_ID = "anchored-notes-host";
 let tabId = -1;
 let zCounter = 2147483000;
 let cachedSiteName: string | undefined;
+let cachedPageTitle: string | undefined;
 const cards = new Map<string, NoteCardHandle>();
+
+function pageTitleFromDocument(): string | undefined {
+  const title = document.title.trim();
+  return title || undefined;
+}
+
+function cardDeps(): typeof deps & { siteName?: string; pageTitle?: string } {
+  return {
+    ...deps,
+    ...(cachedSiteName ? { siteName: cachedSiteName } : {}),
+    ...(cachedPageTitle ? { pageTitle: cachedPageTitle } : {})
+  };
+}
+
+function syncScopeLabelsToCards(): void {
+  const labels = {
+    ...(cachedSiteName ? { siteName: cachedSiteName } : {}),
+    ...(cachedPageTitle ? { pageTitle: cachedPageTitle } : {})
+  };
+  for (const handle of cards.values()) handle.setScopeLabels(labels);
+}
 
 function currentContext(): PageContext {
   return pageContextFromLocation(location.href, tabId);
@@ -58,7 +80,28 @@ async function resolveSiteName(): Promise<void> {
   }
   if (name === cachedSiteName) return;
   cachedSiteName = name;
-  for (const handle of cards.values()) handle.setSiteName(name);
+  syncScopeLabelsToCards();
+}
+
+function resolvePageTitle(): void {
+  const title = pageTitleFromDocument();
+  if (title === cachedPageTitle) return;
+  cachedPageTitle = title;
+  syncScopeLabelsToCards();
+}
+
+function watchPageTitle(): void {
+  resolvePageTitle();
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", () => resolvePageTitle(), { once: true });
+  }
+  const titleEl = document.querySelector("title");
+  if (!titleEl) return;
+  new MutationObserver(() => resolvePageTitle()).observe(titleEl, {
+    childList: true,
+    characterData: true,
+    subtree: true
+  });
 }
 
 function reconcile(shadow: ShadowRoot, notes: Note[]): void {
@@ -79,8 +122,7 @@ function reconcile(shadow: ShadowRoot, notes: Note[]): void {
     if (existing) {
       existing.update(note);
     } else {
-      const cardDeps = cachedSiteName ? { ...deps, siteName: cachedSiteName } : deps;
-      const handle = createNoteCard(note, cardDeps);
+      const handle = createNoteCard(note, cardDeps());
       cards.set(note.id, handle);
       shadow.appendChild(handle.el);
       handle.mount();
@@ -127,12 +169,19 @@ function init(): void {
     redraw(shadow);
   });
   void resolveSiteName();
+  watchPageTitle();
 
   onNotesChanged((next) => reconcile(shadow, Object.values(next)));
 
   // Re-evaluate visibility on SPA navigation (URL changes without reload).
-  window.addEventListener("popstate", () => redraw(shadow));
-  window.addEventListener("hashchange", () => redraw(shadow));
+  window.addEventListener("popstate", () => {
+    resolvePageTitle();
+    redraw(shadow);
+  });
+  window.addEventListener("hashchange", () => {
+    resolvePageTitle();
+    redraw(shadow);
+  });
   // Keep notes inside the viewport when the window is resized smaller.
   window.addEventListener("resize", () => {
     for (const handle of cards.values()) handle.clamp();
