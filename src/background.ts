@@ -20,6 +20,7 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.runtime.onStartup.addListener(() => {
+  createContextMenu();
   // Tab ids from the previous session are meaningless now: drop tab notes.
   void deleteAllTabNotes();
 });
@@ -27,7 +28,9 @@ chrome.runtime.onStartup.addListener(() => {
 chrome.contextMenus.onClicked.addListener((_info, tab) => {
   if (tab?.id === undefined) return;
   const message: Message = { type: "CREATE_NOTE" };
-  void chrome.tabs.sendMessage(tab.id, message);
+  chrome.tabs.sendMessage(tab.id, message).catch((err: unknown) => {
+    console.warn("[anchored-notes] Could not send CREATE_NOTE:", err);
+  });
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {

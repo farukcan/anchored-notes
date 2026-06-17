@@ -43,8 +43,28 @@ function wrapInTaskList(ctx: Ctx): void {
   }
 }
 
+// Turn the current block into plain text. Inside a task item, also clear the
+// `checked` attribute so the checkbox is removed (turnIntoText only resets the
+// inner block type, not the enclosing list_item's task flag).
+function turnIntoText(ctx: Ctx): void {
+  ctx.get(commandsCtx).call(turnIntoTextCommand.key);
+  const view = ctx.get(editorViewCtx);
+  const { state } = view;
+  const { $from } = state.selection;
+  for (let depth = $from.depth; depth > 0; depth--) {
+    const node = $from.node(depth);
+    if (node.type.name === "list_item") {
+      if (node.attrs.checked != null) {
+        const pos = $from.before(depth);
+        view.dispatch(state.tr.setNodeMarkup(pos, undefined, { ...node.attrs, checked: null }));
+      }
+      break;
+    }
+  }
+}
+
 const ITEMS: SlashItem[] = [
-  { label: "Text", icon: "¶", run: (ctx) => ctx.get(commandsCtx).call(turnIntoTextCommand.key) },
+  { label: "Text", icon: "¶", run: turnIntoText },
   { label: "Heading 1", icon: "H1", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 1) },
   { label: "Heading 2", icon: "H2", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 2) },
   { label: "Heading 3", icon: "H3", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 3) },

@@ -2,12 +2,13 @@
 // host element. Reports markdown on every change and can be torn down.
 // Includes a Notion-style "/" slash menu and markdown-aware paste (clipboard).
 
-import { Editor, defaultValueCtx, rootCtx } from "@milkdown/core";
-import { commonmark, listItemSchema } from "@milkdown/preset-commonmark";
+import { Editor, commandsCtx, defaultValueCtx, editorViewCtx, rootCtx } from "@milkdown/core";
+import { commonmark, listItemSchema, liftListItemCommand } from "@milkdown/preset-commonmark";
 import { gfm } from "@milkdown/preset-gfm";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { clipboard } from "@milkdown/plugin-clipboard";
-import { $view } from "@milkdown/utils";
+import { $useKeymap, $view } from "@milkdown/utils";
+import { TextSelection } from "@milkdown/prose/state";
 import type { Node as ProseNode } from "@milkdown/prose/model";
 import { createSlashMenu } from "./slash-menu.js";
 import { tableToolbarPlugin } from "./table-toolbar.js";
@@ -66,6 +67,29 @@ const taskListItemView = $view(listItemSchema.node, () => (node, view, getPos) =
   };
 });
 
+// Pressing Enter in an empty list item lifts it out of the list instead of
+// creating yet another (attribute-inheriting) item. Without this, splitListItem
+// keeps copying the `checked` attribute, so a task list can never be exited and
+// every following block stays a task item. Runs before commonmark's Enter
+// (priority > the default 50) and falls through when not in an empty list item.
+const exitListItemKeymap = $useKeymap("anchoredExitListItem", {
+  ExitEmptyListItem: {
+    shortcuts: "Enter",
+    priority: 100,
+    command: (ctx) => () => {
+      const view = ctx.get(editorViewCtx);
+      const { state } = view;
+      const sel = state.selection;
+      if (!(sel instanceof TextSelection) || !sel.empty) return false;
+      const { $from } = sel;
+      if ($from.parent.content.size !== 0) return false;
+      const listItem = $from.node(-1);
+      if (listItem?.type.name !== "list_item") return false;
+      return ctx.get(commandsCtx).call(liftListItemCommand.key);
+    }
+  }
+});
+
 export function createMarkdownEditor(
   host: HTMLElement,
   menuRoot: HTMLElement,
@@ -84,6 +108,7 @@ export function createMarkdownEditor(
     .use(commonmark)
     .use(gfm)
     .use(taskListItemView)
+    .use(exitListItemKeymap)
     .use(listener)
     .use(clipboard)
     .use(slash.plugin)
