@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Anchored Notes — Options</title>
+    <style>
+      body {
+        max-width: 880px;
+        margin: 24px auto;
+        padding: 0 16px;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        color: #222;
+      }
+      h1 { font-size: 18px; }
+      .toolbar { display: flex; gap: 8px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
+      input[type="search"] { flex: 1; min-width: 180px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+      button { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; cursor: pointer; }
+      button:hover { background: #f0f0f0; }
+      table { width: 100%; border-collapse: collapse; font-size: 13px; }
+      th, td { text-align: left; padding: 8px; border-bottom: 1px solid #eee; vertical-align: top; }
+      th { color: #666; font-weight: 600; }
+      .anchor { color: #888; font-size: 12px; word-break: break-all; }
+      .empty { color: #888; padding: 24px 0; }
+      .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 50%; border: 1px solid #0002; margin-right: 6px; vertical-align: middle; }
+    </style>
+  </head>
+  <body>
+    <h1>⚓ Anchored Notes</h1>
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Search notes…" />
+      <button id="export">Export JSON</button>
+      <button id="import">Import JSON</button>
+      <input type="file" id="file" accept="application/json" hidden />
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Note</th>
+          <th>Scope</th>
+          <th>Anchor</th>
+          <th>Created</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden>No notes yet.</div>
+    <script src="options.js"></script>
+  </body>
+</html>
