@@ -47,7 +47,17 @@ async function render(): Promise<void> {
 
     const tdAnchor = document.createElement("td");
     tdAnchor.className = "anchor";
-    tdAnchor.textContent = note.anchorKey || "—";
+    if (note.anchorKey.startsWith("http")) {
+      const link = document.createElement("a");
+      link.href = note.anchorKey;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      link.textContent = note.anchorKey;
+      link.addEventListener("click", (e) => e.stopPropagation());
+      tdAnchor.appendChild(link);
+    } else {
+      tdAnchor.textContent = note.anchorKey || "—";
+    }
 
     const tdDate = document.createElement("td");
     tdDate.textContent = formatRelativeTime(note.createdAt);
