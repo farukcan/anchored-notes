@@ -147,12 +147,25 @@ export function createNoteCard(
   colorBtn.title = "Color";
   colorBtn.textContent = "🎨";
 
-  const closeBtn = document.createElement("button");
-  closeBtn.className = "note-btn";
-  closeBtn.title = "Delete";
-  closeBtn.textContent = "×";
+  const menuBtn = document.createElement("button");
+  menuBtn.className = "note-btn note-menu-btn";
+  menuBtn.title = "Options";
+  menuBtn.textContent = "⋮";
 
-  tools.append(anchor, scope, colorBtn, closeBtn);
+  const menu = document.createElement("div");
+  menu.className = "note-menu";
+
+  const hideItem = document.createElement("button");
+  hideItem.className = "note-menu-item";
+  hideItem.textContent = "Hide";
+
+  const deleteItem = document.createElement("button");
+  deleteItem.className = "note-menu-item";
+  deleteItem.textContent = "Delete";
+
+  menu.append(hideItem, deleteItem);
+
+  tools.append(anchor, scope, colorBtn, menuBtn);
   header.append(date, tools);
 
   const palette = document.createElement("div");
@@ -175,7 +188,7 @@ export function createNoteCard(
   const resize = document.createElement("div");
   resize.className = "note-resize";
 
-  el.append(header, palette, body, resize);
+  el.append(header, palette, menu, body, resize);
 
   function patch(changes: Partial<Note>): void {
     note = { ...note, ...changes, updatedAt: Date.now() };
@@ -199,7 +212,16 @@ export function createNoteCard(
   }
 
   // --- color palette toggle ---
-  colorBtn.addEventListener("click", () => palette.classList.toggle("open"));
+  colorBtn.addEventListener("click", () => {
+    menu.classList.remove("open");
+    palette.classList.toggle("open");
+  });
+
+  // --- options menu toggle ---
+  menuBtn.addEventListener("click", () => {
+    palette.classList.remove("open");
+    menu.classList.toggle("open");
+  });
 
   // --- scope change recomputes anchorKey for the current page ---
   scope.addEventListener("change", () => {
@@ -207,8 +229,18 @@ export function createNoteCard(
     patch({ scope: next, anchorKey: deps.anchorKeyForScope(next) });
   });
 
+  // --- hide (collapse into the bottom-right badge) ---
+  hideItem.addEventListener("click", () => {
+    menu.classList.remove("open");
+    patch({ hidden: true });
+  });
+
   // --- delete ---
-  closeBtn.addEventListener("click", () => deps.remove(note.id));
+  deleteItem.addEventListener("click", () => {
+    menu.classList.remove("open");
+    if (!window.confirm("Delete this note?")) return;
+    deps.remove(note.id);
+  });
 
   // --- bring to front on interaction ---
   el.addEventListener("pointerdown", () => {

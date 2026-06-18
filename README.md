@@ -68,5 +68,11 @@ Then load `dist/` via `chrome://extensions` → Developer mode → **Load unpack
 - Right-click a page → **Add Note Here**, or click the toolbar icon → **Add note
   to this page**.
 - Drag by the header, resize from the bottom-right corner, pick a color with the
-  ● button, change the anchor scope with the dropdown, delete with ×.
-- Manage, search, export and import all notes from the options page.
+  🎨 button, change the anchor scope with the dropdown. The ⋮ button opens an
+  options menu to **Hide** or **Delete** the note.
+- Hiding collapses a note into a badge in the bottom-right corner of the page
+  showing the count of hidden notes; click the badge to pick one and restore it.
+  The badge stays out of sight while no note on the page is hidden.
+- Manage, search, export and import all notes from the options page. Each row
+  shows the note's auto-derived title (its first markdown block); click a row to
+  expand its full content inline.

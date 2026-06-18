@@ -95,6 +95,40 @@
   filter: brightness(0.93);
 }
 
+.note-menu {
+  display: none;
+  position: absolute;
+  top: 26px;
+  right: 6px;
+  z-index: 10;
+  flex-direction: column;
+  min-width: 96px;
+  padding: 4px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 6px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.note-menu.open {
+  display: flex;
+}
+
+.note-menu-item {
+  border: none;
+  background: none;
+  color: #222222;
+  text-align: left;
+  padding: 5px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.note-menu-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
+
 .note-palette {
   display: none;
   gap: 4px;
@@ -326,6 +360,82 @@
 .note.color-blue { --paper: #bcdcfb; --header: #8fc1f3; --text: #15324f; }
 .note.color-gray { --paper: #ececec; --header: #cfcfcf; --text: #2a2a2a; }
 .note.color-dark { --paper: #4a4a4a; --header: #333333; --text: #f2f2f2; }
+
+/* Bottom-right badge collecting hidden notes. */
+.an-badge-wrap {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  z-index: 2147483600;
+}
+
+.an-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 4px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 999px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  user-select: none;
+}
+
+.an-badge-logo {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+}
+
+.an-badge-count {
+  font-size: 13px;
+  font-weight: 600;
+  color: #222222;
+  min-width: 12px;
+  text-align: center;
+}
+
+.an-badge-list {
+  display: none;
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  margin-bottom: 8px;
+  max-width: 260px;
+  max-height: 280px;
+  overflow: auto;
+  padding: 4px;
+  background: #ffffff;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+}
+
+.an-badge-list.open {
+  display: block;
+}
+
+.an-badge-item {
+  display: block;
+  width: 100%;
+  border: none;
+  background: none;
+  color: #222222;
+  text-align: left;
+  padding: 6px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.an-badge-item:hover {
+  background: rgba(0, 0, 0, 0.08);
+}
 
 .swatch-yellow { background: #fcee5f; }
 .swatch-green { background: #c9f0c0; }

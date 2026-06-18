@@ -2,6 +2,7 @@
 
 import type { Note } from "../types.js";
 import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes } from "../storage.js";
+import { deriveTitle } from "../note-title.js";
 
 const SWATCH: Record<string, string> = {
   yellow: "#fcee5f",
@@ -14,6 +15,7 @@ const SWATCH: Record<string, string> = {
 };
 
 let query = "";
+const expanded = new Set<string>();
 
 function formatDate(ms: number): string {
   const d = new Date(ms);
@@ -39,10 +41,11 @@ async function render(): Promise<void> {
     const tr = document.createElement("tr");
 
     const tdNote = document.createElement("td");
+    tdNote.className = "title";
     const swatch = document.createElement("span");
     swatch.className = "swatch";
     swatch.style.background = SWATCH[note.color] ?? "#ccc";
-    tdNote.append(swatch, document.createTextNode(note.content || "(empty)"));
+    tdNote.append(swatch, document.createTextNode(deriveTitle(note.content)));
 
     const tdScope = document.createElement("td");
     tdScope.textContent = note.scope;
@@ -57,11 +60,32 @@ async function render(): Promise<void> {
     const tdActions = document.createElement("td");
     const del = document.createElement("button");
     del.textContent = "Delete";
-    del.addEventListener("click", () => void deleteNote(note.id));
+    del.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (!window.confirm("Delete this note?")) return;
+      void deleteNote(note.id);
+    });
     tdActions.appendChild(del);
 
+    const detail = document.createElement("tr");
+    detail.className = "detail";
+    detail.hidden = !expanded.has(note.id);
+    const tdDetail = document.createElement("td");
+    tdDetail.colSpan = 5;
+    const content = document.createElement("div");
+    content.className = "content";
+    content.textContent = note.content || "(empty)";
+    tdDetail.appendChild(content);
+    detail.appendChild(tdDetail);
+
+    tr.addEventListener("click", () => {
+      if (expanded.has(note.id)) expanded.delete(note.id);
+      else expanded.add(note.id);
+      detail.hidden = !expanded.has(note.id);
+    });
+
     tr.append(tdNote, tdScope, tdAnchor, tdDate, tdActions);
-    rows.appendChild(tr);
+    rows.append(tr, detail);
   }
 }
 

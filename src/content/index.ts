@@ -6,6 +6,7 @@ import type { AnchorScope, GetTabIdResponse, Message, Note, PageContext } from "
 import { anchorKeyFor, isNoteVisible, pageContextFromLocation, shortDomainFromHostname } from "../matching.js";
 import { fetchSiteNameFromManifest } from "../site-manifest.js";
 import { deleteNote, getNotesMap, onNotesChanged, saveNote } from "../storage.js";
+import { deriveTitle } from "../note-title.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
 
 const HOST_ID = "anchored-notes-host";
@@ -111,7 +112,9 @@ function watchPageTitle(): void {
 
 function reconcile(shadow: ShadowRoot, notes: Note[]): void {
   const ctx = currentContext();
-  const visible = notes.filter((n) => isNoteVisible(n, ctx));
+  const matching = notes.filter((n) => isNoteVisible(n, ctx));
+  const visible = matching.filter((n) => !n.hidden);
+  const hidden = matching.filter((n) => n.hidden);
   const visibleIds = new Set(visible.map((n) => n.id));
 
   for (const [id, handle] of cards) {
@@ -135,6 +138,70 @@ function reconcile(shadow: ShadowRoot, notes: Note[]): void {
   }
 
   for (const handle of cards.values()) handle.clamp();
+
+  updateBadge(shadow, hidden);
+}
+
+// --- bottom-right badge collecting hidden notes ---
+interface BadgeParts {
+  root: HTMLElement;
+  count: HTMLElement;
+  list: HTMLElement;
+}
+
+let badge: BadgeParts | undefined;
+
+function ensureBadge(shadow: ShadowRoot): BadgeParts {
+  if (badge) return badge;
+
+  const root = document.createElement("div");
+  root.className = "an-badge";
+  root.title = "Hidden notes";
+
+  const logo = document.createElement("img");
+  logo.className = "an-badge-logo";
+  logo.src = chrome.runtime.getURL("icons/icon-128.png");
+  logo.alt = "Anchored Notes";
+
+  const count = document.createElement("span");
+  count.className = "an-badge-count";
+
+  const list = document.createElement("div");
+  list.className = "an-badge-list";
+
+  root.append(logo, count);
+  root.addEventListener("click", () => list.classList.toggle("open"));
+
+  const container = document.createElement("div");
+  container.className = "an-badge-wrap";
+  container.append(list, root);
+  shadow.appendChild(container);
+
+  badge = { root, count, list };
+  return badge;
+}
+
+function updateBadge(shadow: ShadowRoot, hidden: Note[]): void {
+  const parts = ensureBadge(shadow);
+  if (hidden.length === 0) {
+    parts.root.parentElement!.style.display = "none";
+    parts.list.classList.remove("open");
+    return;
+  }
+  parts.root.parentElement!.style.display = "block";
+  parts.count.textContent = String(hidden.length);
+
+  parts.list.replaceChildren();
+  for (const note of hidden) {
+    const item = document.createElement("button");
+    item.className = "an-badge-item";
+    item.textContent = deriveTitle(note.content);
+    item.addEventListener("click", () => {
+      parts.list.classList.remove("open");
+      void saveNote({ ...note, hidden: false, updatedAt: Date.now() });
+    });
+    parts.list.appendChild(item);
+  }
 }
 
 function newNote(): Note {

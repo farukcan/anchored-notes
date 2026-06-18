@@ -14,6 +14,7 @@ export interface Note {
   y: number;
   w: number;
   h: number;
+  hidden?: boolean; // collapsed into the bottom-right badge instead of rendered
   createdAt: number;
   updatedAt: number;
 }
