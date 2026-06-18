@@ -5,7 +5,16 @@ import styles from "./styles.css";
 import type { AnchorScope, GetTabIdResponse, Message, Note, PageContext } from "../types.js";
 import { anchorKeyFor, isNoteVisible, pageContextFromLocation, shortDomainFromHostname } from "../matching.js";
 import { fetchSiteNameFromManifest } from "../site-manifest.js";
-import { deleteNote, getNotesMap, onNotesChanged, saveNote } from "../storage.js";
+import {
+  deleteNote,
+  getBadgeOffset,
+  getNotesMap,
+  onBadgeOffsetChanged,
+  onNotesChanged,
+  saveBadgeOffset,
+  saveNote,
+  type BadgeOffset
+} from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
 
@@ -151,12 +160,65 @@ interface BadgeParts {
 
 let badge: BadgeParts | undefined;
 
+const DRAG_THRESHOLD = 4; // px before a press becomes a drag rather than a click
+
+// Live badge offset, kept in sync with storage so a drag can read it
+// synchronously on pointerdown without an async race.
+let badgeOffset: BadgeOffset = { dx: 0, dy: 0 };
+
+// Keep the badge anchored to the bottom-right corner but shifted by the saved
+// offset, clamped so it always stays within the viewport.
+function applyBadgeOffset(container: HTMLElement, offset: BadgeOffset): void {
+  const dx = Math.min(Math.max(offset.dx, 0), window.innerWidth - 48);
+  const dy = Math.min(Math.max(offset.dy, 0), window.innerHeight - 48);
+  container.style.transform = `translate(${-dx}px, ${-dy}px)`;
+}
+
+function makeBadgeDraggable(container: HTMLElement, root: HTMLElement): void {
+  let startX = 0;
+  let startY = 0;
+  let base: BadgeOffset = { dx: 0, dy: 0 };
+  let dragging = false;
+
+  const onMove = (e: PointerEvent): void => {
+    const moveX = startX - e.clientX; // pointer left -> dx grows
+    const moveY = startY - e.clientY; // pointer up -> dy grows
+    if (!dragging && Math.hypot(moveX, moveY) < DRAG_THRESHOLD) return;
+    dragging = true;
+    applyBadgeOffset(container, { dx: base.dx + moveX, dy: base.dy + moveY });
+  };
+
+  const onUp = (e: PointerEvent): void => {
+    root.removeEventListener("pointermove", onMove);
+    root.removeEventListener("pointerup", onUp);
+    if (!dragging) return;
+    e.stopPropagation();
+    root.setAttribute("data-an-dragged", "1"); // suppress the trailing click
+    badgeOffset = {
+      dx: Math.max(base.dx + (startX - e.clientX), 0),
+      dy: Math.max(base.dy + (startY - e.clientY), 0)
+    };
+    void saveBadgeOffset(badgeOffset);
+  };
+
+  root.addEventListener("pointerdown", (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    startX = e.clientX;
+    startY = e.clientY;
+    base = badgeOffset;
+    dragging = false;
+    root.setPointerCapture(e.pointerId);
+    root.addEventListener("pointermove", onMove);
+    root.addEventListener("pointerup", onUp);
+  });
+}
+
 function ensureBadge(shadow: ShadowRoot): BadgeParts {
   if (badge) return badge;
 
   const root = document.createElement("div");
   root.className = "an-badge";
-  root.title = "Hidden notes";
+  root.title = "Hidden notes (drag to move)";
 
   const logo = document.createElement("img");
   logo.className = "an-badge-logo";
@@ -170,12 +232,28 @@ function ensureBadge(shadow: ShadowRoot): BadgeParts {
   list.className = "an-badge-list";
 
   root.append(logo, count);
-  root.addEventListener("click", () => list.classList.toggle("open"));
+  root.addEventListener("click", () => {
+    if (root.getAttribute("data-an-dragged")) {
+      root.removeAttribute("data-an-dragged");
+      return;
+    }
+    list.classList.toggle("open");
+  });
 
   const container = document.createElement("div");
   container.className = "an-badge-wrap";
   container.append(list, root);
   shadow.appendChild(container);
+
+  makeBadgeDraggable(container, root);
+  void getBadgeOffset().then((o) => {
+    badgeOffset = o;
+    applyBadgeOffset(container, o);
+  });
+  onBadgeOffsetChanged((o) => {
+    badgeOffset = o;
+    applyBadgeOffset(container, o);
+  });
 
   badge = { root, count, list };
   return badge;
@@ -257,6 +335,7 @@ function init(): void {
   // Keep notes inside the viewport when the window is resized smaller.
   window.addEventListener("resize", () => {
     for (const handle of cards.values()) handle.clamp();
+    if (badge) applyBadgeOffset(badge.root.parentElement as HTMLElement, badgeOffset);
   });
 }
 

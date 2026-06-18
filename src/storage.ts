@@ -5,8 +5,17 @@
 import type { Note } from "./types.js";
 
 const NOTES_KEY = "notes";
+const BADGE_OFFSET_KEY = "badgeOffset";
 
 type NotesMap = Record<string, Note>;
+
+// Persistent drag offset of the hidden-notes badge from its bottom-right
+// anchor. Shared across all pages so the user can move it once to avoid
+// overlapping other extensions' badges.
+export interface BadgeOffset {
+  dx: number; // pixels left of the anchor (>= 0)
+  dy: number; // pixels up from the anchor (>= 0)
+}
 
 // Serialize read-modify-write cycles within this context so concurrent writes
 // (e.g. dragging one card while another's debounced save fires) don't clobber
@@ -79,6 +88,35 @@ export function replaceAllNotes(notes: Note[]): Promise<void> {
     for (const note of notes) map[note.id] = note;
     return true;
   });
+}
+
+export async function getBadgeOffset(): Promise<BadgeOffset> {
+  const result = await chrome.storage.local.get(BADGE_OFFSET_KEY);
+  const offset = result[BADGE_OFFSET_KEY] as BadgeOffset | undefined;
+  return offset ?? { dx: 0, dy: 0 };
+}
+
+export async function saveBadgeOffset(offset: BadgeOffset): Promise<void> {
+  await chrome.storage.local.set({ [BADGE_OFFSET_KEY]: offset });
+}
+
+export function onBadgeOffsetChanged(
+  listener: (offset: BadgeOffset) => void
+): () => void {
+  const handler = (
+    changes: Record<string, chrome.storage.StorageChange>,
+    area: string
+  ): void => {
+    if (area !== "local" || !(BADGE_OFFSET_KEY in changes)) return;
+    listener(
+      (changes[BADGE_OFFSET_KEY].newValue as BadgeOffset | undefined) ?? {
+        dx: 0,
+        dy: 0
+      }
+    );
+  };
+  chrome.storage.onChanged.addListener(handler);
+  return () => chrome.storage.onChanged.removeListener(handler);
 }
 
 export function onNotesChanged(listener: (notes: NotesMap) => void): () => void {
