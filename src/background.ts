@@ -36,9 +36,9 @@ chrome.runtime.onStartup.addListener(() => {
 // also creates it if this service-worker wake never ran createContextMenu).
 onLangChanged(() => buildContextMenu());
 
-chrome.contextMenus.onClicked.addListener((_info, tab) => {
+chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (tab?.id === undefined) return;
-  const message: Message = { type: "CREATE_NOTE" };
+  const message: Message = { type: "CREATE_NOTE", content: info.selectionText ?? "" };
   chrome.tabs.sendMessage(tab.id, message).catch((err: unknown) => {
     console.warn("[anchored-notes] Could not send CREATE_NOTE:", err);
   });

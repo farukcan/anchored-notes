@@ -82,7 +82,7 @@ async function render(): Promise<void> {
 document.getElementById("add")?.addEventListener("click", async () => {
   const tab = await activeTab();
   if (tab?.id === undefined) return;
-  const message: Message = { type: "CREATE_NOTE" };
+  const message: Message = { type: "CREATE_NOTE", content: "" };
   try {
     await chrome.tabs.sendMessage(tab.id, message);
     window.close();

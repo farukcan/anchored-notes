@@ -284,7 +284,7 @@ function updateBadge(shadow: ShadowRoot, hidden: Note[]): void {
   }
 }
 
-function newNote(): Note {
+function newNote(content: string): Note {
   const ctx = currentContext();
   const scope: AnchorScope = "page";
   const now = Date.now();
@@ -292,7 +292,7 @@ function newNote(): Note {
   const h = 200;
   return {
     id: crypto.randomUUID(),
-    content: "",
+    content,
     color: COLORS[Math.floor(Math.random() * COLORS.length)],
     scope,
     anchorKey: anchorKeyFor(scope, ctx),
@@ -360,18 +360,18 @@ function showToast(shadow: ShadowRoot, text: string): void {
 
 // Enforce the note quota at the single creation point. Both the popup and the
 // context menu reach note creation through this CREATE_NOTE message.
-async function createNoteWithinLimit(): Promise<void> {
+async function createNoteWithinLimit(content: string): Promise<void> {
   const map = await getNotesMap();
   if (Object.keys(map).length >= NOTE_LIMIT) {
     showToast(mountHost(), t("noteLimitReached", { limit: NOTE_LIMIT }));
     return;
   }
-  await saveNote(newNote());
+  await saveNote(newNote(content));
 }
 
 // Registered synchronously so a context-menu click during init isn't dropped.
 chrome.runtime.onMessage.addListener((message: Message) => {
-  if (message.type === "CREATE_NOTE") void createNoteWithinLimit();
+  if (message.type === "CREATE_NOTE") void createNoteWithinLimit(message.content);
 });
 
 // Resolve the active language before first paint, then start. At document_start

@@ -28,6 +28,6 @@ export interface PageContext {
 // Message protocol between contexts.
 export type Message =
   | { type: "GET_TAB_ID" }
-  | { type: "CREATE_NOTE" };
+  | { type: "CREATE_NOTE"; content: string };
 
 export type GetTabIdResponse = { tabId: number };
