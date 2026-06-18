@@ -39,6 +39,7 @@ export const it: Record<MessageKey, string> = {
   optionsMenuTitle: "Opzioni",
   hide: "Nascondi",
   badgeTitle: "Note nascoste (trascina per spostare)",
+  showHiddenNote: "Nascosta — clicca per mostrare",
   slashText: "Testo",
   slashHeading1: "Titolo 1",
   slashHeading2: "Titolo 2",

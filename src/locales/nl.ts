@@ -39,6 +39,7 @@ export const nl: Record<MessageKey, string> = {
   optionsMenuTitle: "Opties",
   hide: "Verbergen",
   badgeTitle: "Verborgen notities (sleep om te verplaatsen)",
+  showHiddenNote: "Verborgen — klik om te tonen",
   slashText: "Tekst",
   slashHeading1: "Kop 1",
   slashHeading2: "Kop 2",

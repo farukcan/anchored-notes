@@ -39,6 +39,7 @@ export const de: Record<MessageKey, string> = {
   optionsMenuTitle: "Optionen",
   hide: "Ausblenden",
   badgeTitle: "Ausgeblendete Notizen (ziehen zum Verschieben)",
+  showHiddenNote: "Ausgeblendet — zum Anzeigen klicken",
   slashText: "Text",
   slashHeading1: "Überschrift 1",
   slashHeading2: "Überschrift 2",

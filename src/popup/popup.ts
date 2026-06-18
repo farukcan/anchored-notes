@@ -2,7 +2,7 @@
 
 import type { Message } from "../types.js";
 import { isNoteVisible, pageContextFromLocation } from "../matching.js";
-import { getAllNotes } from "../storage.js";
+import { getAllNotes, saveNote } from "../storage.js";
 import { NOTE_LIMIT } from "../limits.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
 
@@ -75,6 +75,18 @@ async function render(): Promise<void> {
     scope.className = "scope";
     scope.textContent = note.scope;
     li.append(text, scope);
+    if (note.hidden) {
+      const icon = document.createElement("span");
+      icon.className = "hidden-icon";
+      icon.textContent = "👁";
+      li.prepend(icon);
+      li.classList.add("hidden-note");
+      li.title = t("showHiddenNote", null);
+      li.addEventListener("click", async () => {
+        await saveNote({ ...note, hidden: false, updatedAt: Date.now() });
+        await render();
+      });
+    }
     list.appendChild(li);
   }
 }

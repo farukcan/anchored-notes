@@ -39,6 +39,7 @@ export const ar: Record<MessageKey, string> = {
   optionsMenuTitle: "الخيارات",
   hide: "إخفاء",
   badgeTitle: "ملاحظات مخفية (اسحب للتحريك)",
+  showHiddenNote: "مخفية — انقر للعرض",
   slashText: "نص",
   slashHeading1: "عنوان 1",
   slashHeading2: "عنوان 2",

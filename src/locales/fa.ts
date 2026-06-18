@@ -39,6 +39,7 @@ export const fa: Record<MessageKey, string> = {
   optionsMenuTitle: "گزینه‌ها",
   hide: "پنهان",
   badgeTitle: "یادداشت‌های پنهان (برای جابه‌جایی بکشید)",
+  showHiddenNote: "پنهان — برای نمایش کلیک کنید",
   slashText: "متن",
   slashHeading1: "سرتیتر ۱",
   slashHeading2: "سرتیتر ۲",

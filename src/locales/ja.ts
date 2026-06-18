@@ -39,6 +39,7 @@ export const ja: Record<MessageKey, string> = {
   optionsMenuTitle: "オプション",
   hide: "非表示",
   badgeTitle: "非表示のメモ（ドラッグで移動）",
+  showHiddenNote: "非表示 — クリックして表示",
   slashText: "テキスト",
   slashHeading1: "見出し 1",
   slashHeading2: "見出し 2",

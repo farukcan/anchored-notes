@@ -39,6 +39,7 @@ export const zh: Record<MessageKey, string> = {
   optionsMenuTitle: "选项",
   hide: "隐藏",
   badgeTitle: "隐藏的笔记（拖动以移动）",
+  showHiddenNote: "已隐藏 — 点击显示",
   slashText: "文本",
   slashHeading1: "标题 1",
   slashHeading2: "标题 2",

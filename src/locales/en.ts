@@ -46,6 +46,7 @@ export const en = {
   hide: "Hide",
   // hidden-notes badge
   badgeTitle: "Hidden notes (drag to move)",
+  showHiddenNote: "Hidden — click to show",
   // slash menu
   slashText: "Text",
   slashHeading1: "Heading 1",

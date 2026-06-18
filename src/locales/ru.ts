@@ -39,6 +39,7 @@ export const ru: Record<MessageKey, string> = {
   optionsMenuTitle: "Параметры",
   hide: "Скрыть",
   badgeTitle: "Скрытые заметки (перетащите для перемещения)",
+  showHiddenNote: "Скрыта — нажмите, чтобы показать",
   slashText: "Текст",
   slashHeading1: "Заголовок 1",
   slashHeading2: "Заголовок 2",

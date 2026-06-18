@@ -39,6 +39,7 @@ export const ko: Record<MessageKey, string> = {
   optionsMenuTitle: "옵션",
   hide: "숨기기",
   badgeTitle: "숨긴 메모 (드래그하여 이동)",
+  showHiddenNote: "숨김 — 클릭하여 표시",
   slashText: "텍스트",
   slashHeading1: "제목 1",
   slashHeading2: "제목 2",

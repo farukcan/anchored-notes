@@ -39,6 +39,7 @@ export const vi: Record<MessageKey, string> = {
   optionsMenuTitle: "Tùy chọn",
   hide: "Ẩn",
   badgeTitle: "Ghi chú đã ẩn (kéo để di chuyển)",
+  showHiddenNote: "Đã ẩn — nhấp để hiển thị",
   slashText: "Văn bản",
   slashHeading1: "Tiêu đề 1",
   slashHeading2: "Tiêu đề 2",

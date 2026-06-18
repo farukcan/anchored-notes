@@ -48,6 +48,7 @@ export const tr: Record<MessageKey, string> = {
   hide: "Gizle",
   // hidden-notes badge
   badgeTitle: "Gizli notlar (taşımak için sürükle)",
+  showHiddenNote: "Gizli — göstermek için tıkla",
   // slash menu
   slashText: "Metin",
   slashHeading1: "Başlık 1",

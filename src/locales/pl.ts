@@ -39,6 +39,7 @@ export const pl: Record<MessageKey, string> = {
   optionsMenuTitle: "Opcje",
   hide: "Ukryj",
   badgeTitle: "Ukryte notatki (przeciągnij, aby przenieść)",
+  showHiddenNote: "Ukryta — kliknij, aby pokazać",
   slashText: "Tekst",
   slashHeading1: "Nagłówek 1",
   slashHeading2: "Nagłówek 2",
