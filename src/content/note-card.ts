@@ -2,6 +2,7 @@
 // note and reports edits through the provided callbacks.
 
 import type { AnchorScope, Note, NoteColor } from "../types.js";
+import { formatRelativeTime } from "../relative-time.js";
 import { createMarkdownEditor, type MarkdownEditorHandle } from "./editor.js";
 
 export const COLORS: NoteColor[] = [
@@ -79,12 +80,6 @@ export interface NoteCardHandle {
   destroy: () => void;
 }
 
-function formatTimestamp(ms: number): string {
-  const d = new Date(ms);
-  const pad = (n: number): string => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
 export function createNoteCard(
   initial: Note,
   deps: NoteCardDeps,
@@ -109,7 +104,7 @@ export function createNoteCard(
 
   const date = document.createElement("span");
   date.className = "note-date";
-  date.textContent = formatTimestamp(note.createdAt);
+  date.textContent = formatRelativeTime(note.createdAt);
 
   const tools = document.createElement("div");
   tools.className = "note-tools";
@@ -311,7 +306,7 @@ export function createNoteCard(
     el.style.width = `${next.w}px`;
     el.style.height = `${next.h}px`;
     scope.value = next.scope;
-    date.textContent = formatTimestamp(next.createdAt);
+    date.textContent = formatRelativeTime(next.createdAt);
     // Note content lives in the Milkdown editor; external content edits are not
     // re-synced into an open editor to avoid clobbering in-progress typing.
   }

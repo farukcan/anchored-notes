@@ -3,6 +3,7 @@
 import type { Note } from "../types.js";
 import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
+import { formatRelativeTime } from "../relative-time.js";
 
 const SWATCH: Record<string, string> = {
   yellow: "#fcee5f",
@@ -16,12 +17,6 @@ const SWATCH: Record<string, string> = {
 
 let query = "";
 const expanded = new Set<string>();
-
-function formatDate(ms: number): string {
-  const d = new Date(ms);
-  const pad = (n: number): string => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
 
 function matchesQuery(note: Note): boolean {
   if (!query) return true;
@@ -55,7 +50,7 @@ async function render(): Promise<void> {
     tdAnchor.textContent = note.anchorKey || "—";
 
     const tdDate = document.createElement("td");
-    tdDate.textContent = formatDate(note.createdAt);
+    tdDate.textContent = formatRelativeTime(note.createdAt);
 
     const tdActions = document.createElement("td");
     const del = document.createElement("button");
