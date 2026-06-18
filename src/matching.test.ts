@@ -1,6 +1,6 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { anchorKeyFor, isNoteVisible, pageContextFromLocation } from "./matching.ts";
+import { anchorKeyFor, isNoteVisible, pageContextFromLocation, shortDomainFromHostname } from "./matching.ts";
 import type { Note } from "./types.ts";
 
 const ctx = pageContextFromLocation("https://www.google.com/search?q=hi#frag", 42);
@@ -52,4 +52,10 @@ test("page notes match the exact url without hash", () => {
 test("tab notes match the tab id", () => {
   assert.ok(isNoteVisible(note({ scope: "tab", anchorKey: "42" }), ctx));
   assert.ok(!isNoteVisible(note({ scope: "tab", anchorKey: "7" }), ctx));
+});
+
+test("shortDomainFromHostname strips a leading www.", () => {
+  assert.equal(shortDomainFromHostname("www.bbc.com"), "bbc.com");
+  assert.equal(shortDomainFromHostname("bbc.com"), "bbc.com");
+  assert.equal(shortDomainFromHostname("news.bbc.co.uk"), "news.bbc.co.uk");
 });

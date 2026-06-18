@@ -19,8 +19,8 @@ is **anchored** to one of four scopes and reappears wherever that scope matches.
 Notes are draggable, resizable, recolorable (7 colors), and the scope can be
 changed at any time from the dropdown on the note header. When the page exposes a
 PWA `manifest.json` with `short_name` or `name`, the **Site** scope option shows
-that app name instead of the generic label. The **Page** scope shows the
-current `document.title` when available.
+that app name; otherwise it falls back to the short domain (e.g. `bbc.com` from
+`www.bbc.com`). The **Page** scope shows the current `document.title` when available.
 [Milkdown](https://github.com/Milkdown/milkdown) markdown WYSIWYG editor
 (commonmark + GFM presets, themeless), so `note.content` is stored as markdown
 text — backward compatible with earlier plaintext notes. It supports a

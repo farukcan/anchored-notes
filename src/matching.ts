@@ -37,3 +37,7 @@ export function pageContextFromLocation(href: string, tabId: number): PageContex
     tabId
   };
 }
+
+export function shortDomainFromHostname(hostname: string): string {
+  return hostname.replace(/^www\./i, "");
+}

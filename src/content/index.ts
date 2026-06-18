@@ -3,7 +3,7 @@
 
 import styles from "./styles.css";
 import type { AnchorScope, GetTabIdResponse, Message, Note, PageContext } from "../types.js";
-import { anchorKeyFor, isNoteVisible, pageContextFromLocation } from "../matching.js";
+import { anchorKeyFor, isNoteVisible, pageContextFromLocation, shortDomainFromHostname } from "../matching.js";
 import { fetchSiteNameFromManifest } from "../site-manifest.js";
 import { deleteNote, getNotesMap, onNotesChanged, saveNote } from "../storage.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
@@ -12,26 +12,30 @@ const HOST_ID = "anchored-notes-host";
 
 let tabId = -1;
 let zCounter = 2147483000;
-let cachedSiteName: string | undefined;
+let cachedSiteName = shortDomainFromHostname(location.hostname);
 let cachedPageTitle: string | undefined;
 const cards = new Map<string, NoteCardHandle>();
+
+function siteLabelFromPage(): string {
+  return shortDomainFromHostname(location.hostname);
+}
 
 function pageTitleFromDocument(): string | undefined {
   const title = document.title.trim();
   return title || undefined;
 }
 
-function cardDeps(): typeof deps & { siteName?: string; pageTitle?: string } {
+function cardDeps(): typeof deps & { siteName: string; pageTitle?: string } {
   return {
     ...deps,
-    ...(cachedSiteName ? { siteName: cachedSiteName } : {}),
+    siteName: cachedSiteName,
     ...(cachedPageTitle ? { pageTitle: cachedPageTitle } : {})
   };
 }
 
 function syncScopeLabelsToCards(): void {
   const labels = {
-    ...(cachedSiteName ? { siteName: cachedSiteName } : {}),
+    siteName: cachedSiteName,
     ...(cachedPageTitle ? { pageTitle: cachedPageTitle } : {})
   };
   for (const handle of cards.values()) handle.setScopeLabels(labels);
@@ -78,8 +82,9 @@ async function resolveSiteName(): Promise<void> {
     await new Promise<void>((resolve) => document.addEventListener("DOMContentLoaded", () => resolve(), { once: true }));
     name = await fetchSiteNameFromManifest();
   }
-  if (name === cachedSiteName) return;
-  cachedSiteName = name;
+  const next = name ?? siteLabelFromPage();
+  if (next === cachedSiteName) return;
+  cachedSiteName = next;
   syncScopeLabelsToCards();
 }
 
