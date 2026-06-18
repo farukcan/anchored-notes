@@ -90,6 +90,7 @@ export function createNoteCard(
   deps: NoteCardDeps,
 ): NoteCardHandle {
   let note: Note = { ...initial };
+  let latestContent = note.content;
   let scopeLabels: ScopeLabels = {
     ...(deps.siteName ? { siteName: deps.siteName } : {}),
     ...(deps.pageTitle ? { pageTitle: deps.pageTitle } : {}),
@@ -202,6 +203,7 @@ export function createNoteCard(
   function mount(): void {
     if (editor) return;
     editor = createMarkdownEditor(body, el, note.content, (markdown) => {
+      latestContent = markdown;
       if (markdown === note.content) return; // ignore the initial value echo
       window.clearTimeout(contentTimer);
       contentTimer = window.setTimeout(
@@ -238,7 +240,7 @@ export function createNoteCard(
   // --- delete ---
   deleteItem.addEventListener("click", () => {
     menu.classList.remove("open");
-    if (!window.confirm("Delete this note?")) return;
+    if (latestContent.trim() && !window.confirm("Delete this note?")) return;
     deps.remove(note.id);
   });
 

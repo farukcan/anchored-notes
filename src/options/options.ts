@@ -62,7 +62,7 @@ async function render(): Promise<void> {
     del.textContent = "Delete";
     del.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (!window.confirm("Delete this note?")) return;
+      if (note.content.trim() && !window.confirm("Delete this note?")) return;
       void deleteNote(note.id);
     });
     tdActions.appendChild(del);
