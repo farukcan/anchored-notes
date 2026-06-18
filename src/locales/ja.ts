@@ -6,6 +6,8 @@ export const ja: Record<MessageKey, string> = {
   notesOnPage: "このページに {count} 件のメモ",
   manageAllNotes: "すべてのメモを管理 →",
   cantAddNote: "このページにはメモを追加できません。",
+  notesUsage: "{count} / {limit} 件のメモを使用中",
+  noteLimitReached: "メモの上限に達しました（{limit}）。新しいメモを追加するには、メモを削除してください。",
   language: "言語",
   optionsTitle: "Anchored Notes — オプション",
   searchPlaceholder: "メモを検索…",

@@ -4,6 +4,7 @@ import type { Note } from "../types.js";
 import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { formatRelativeTime } from "../relative-time.js";
+import { NOTE_LIMIT } from "../limits.js";
 import { initI18n, onLangChanged, t } from "../i18n.js";
 
 const SWATCH: Record<string, string> = {
@@ -25,10 +26,18 @@ function matchesQuery(note: Note): boolean {
   return note.content.toLowerCase().includes(q) || note.anchorKey.toLowerCase().includes(q) || note.scope.includes(q);
 }
 
+function renderUsage(total: number): void {
+  const usage = document.getElementById("usage") as HTMLDivElement;
+  usage.textContent = t("notesUsage", { count: total, limit: NOTE_LIMIT });
+  usage.classList.toggle("limit", total >= NOTE_LIMIT);
+}
+
 async function render(): Promise<void> {
   const rows = document.getElementById("rows") as HTMLTableSectionElement;
   const empty = document.getElementById("empty") as HTMLDivElement;
-  const notes = (await getAllNotes()).filter(matchesQuery).sort((a, b) => b.createdAt - a.createdAt);
+  const all = await getAllNotes();
+  renderUsage(all.length);
+  const notes = all.filter(matchesQuery).sort((a, b) => b.createdAt - a.createdAt);
 
   rows.replaceChildren();
   empty.hidden = notes.length > 0;

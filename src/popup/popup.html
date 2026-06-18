@@ -24,7 +24,9 @@
         font-weight: 600;
       }
       button.primary:hover { background: #d8c22f; }
+      button.primary:disabled { background: #e7e7e7; color: #999; cursor: not-allowed; }
       .count { margin: 10px 0 4px; color: #666; }
+      .count.limit { color: #c0392b; }
       .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
       .head h1 { margin: 0; }
       .lang { position: relative; }
@@ -91,6 +93,7 @@
       </div>
     </div>
     <button id="add" class="primary"></button>
+    <div class="count" id="usage"></div>
     <div class="count" id="count"></div>
     <ul id="list"></ul>
     <a id="options" href="#"></a>

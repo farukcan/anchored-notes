@@ -17,6 +17,7 @@ import {
 } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { initI18n, onLangChanged, t } from "../i18n.js";
+import { NOTE_LIMIT } from "../limits.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
 
 const HOST_ID = "anchored-notes-host";
@@ -348,9 +349,29 @@ function init(): void {
   });
 }
 
+function showToast(shadow: ShadowRoot, text: string): void {
+  shadow.querySelector(".an-toast")?.remove();
+  const toast = document.createElement("div");
+  toast.className = "an-toast";
+  toast.textContent = text;
+  shadow.appendChild(toast);
+  setTimeout(() => toast.remove(), 4000);
+}
+
+// Enforce the note quota at the single creation point. Both the popup and the
+// context menu reach note creation through this CREATE_NOTE message.
+async function createNoteWithinLimit(): Promise<void> {
+  const map = await getNotesMap();
+  if (Object.keys(map).length >= NOTE_LIMIT) {
+    showToast(mountHost(), t("noteLimitReached", { limit: NOTE_LIMIT }));
+    return;
+  }
+  await saveNote(newNote());
+}
+
 // Registered synchronously so a context-menu click during init isn't dropped.
 chrome.runtime.onMessage.addListener((message: Message) => {
-  if (message.type === "CREATE_NOTE") void saveNote(newNote());
+  if (message.type === "CREATE_NOTE") void createNoteWithinLimit();
 });
 
 // Resolve the active language before first paint, then start. At document_start

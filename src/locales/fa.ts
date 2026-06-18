@@ -6,6 +6,8 @@ export const fa: Record<MessageKey, string> = {
   notesOnPage: "{count} یادداشت در این صفحه",
   manageAllNotes: "مدیریت همهٔ یادداشت‌ها →",
   cantAddNote: "امکان افزودن یادداشت در این صفحه وجود ندارد.",
+  notesUsage: "{count} / {limit} یادداشت استفاده‌شده",
+  noteLimitReached: "به سقف یادداشت‌ها رسیدید ({limit}). برای افزودن یادداشت جدید، یکی را حذف کنید.",
   language: "زبان",
   optionsTitle: "Anchored Notes — تنظیمات",
   searchPlaceholder: "جستجوی یادداشت‌ها…",

@@ -6,6 +6,8 @@ export const de: Record<MessageKey, string> = {
   notesOnPage: "{count} Notiz(en) auf dieser Seite",
   manageAllNotes: "Alle Notizen verwalten →",
   cantAddNote: "Auf dieser Seite kann keine Notiz hinzugefügt werden.",
+  notesUsage: "{count} / {limit} Notizen verwendet",
+  noteLimitReached: "Notizlimit erreicht ({limit}). Lösche eine Notiz, um eine neue hinzuzufügen.",
   language: "Sprache",
   optionsTitle: "Anchored Notes — Optionen",
   searchPlaceholder: "Notizen suchen…",

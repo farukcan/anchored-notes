@@ -10,6 +10,8 @@ export const tr: Record<MessageKey, string> = {
   notesOnPage: "Bu sayfada {count} not",
   manageAllNotes: "Tüm notları yönet →",
   cantAddNote: "Bu sayfaya not eklenemez.",
+  notesUsage: "{count} / {limit} not kullanıldı",
+  noteLimitReached: "Not limitine ulaşıldı ({limit}). Yeni not eklemek için bir notu silin.",
   language: "Dil",
   // options
   optionsTitle: "Anchored Notes — Seçenekler",

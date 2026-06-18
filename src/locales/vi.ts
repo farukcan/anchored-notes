@@ -6,6 +6,8 @@ export const vi: Record<MessageKey, string> = {
   notesOnPage: "{count} ghi chú trên trang này",
   manageAllNotes: "Quản lý tất cả ghi chú →",
   cantAddNote: "Không thể thêm ghi chú trên trang này.",
+  notesUsage: "Đã dùng {count} / {limit} ghi chú",
+  noteLimitReached: "Đã đạt giới hạn ghi chú ({limit}). Xóa một ghi chú để thêm ghi chú mới.",
   language: "Ngôn ngữ",
   optionsTitle: "Anchored Notes — Tùy chọn",
   searchPlaceholder: "Tìm ghi chú…",

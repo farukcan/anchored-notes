@@ -6,6 +6,8 @@ export const ko: Record<MessageKey, string> = {
   notesOnPage: "이 페이지에 메모 {count}개",
   manageAllNotes: "모든 메모 관리 →",
   cantAddNote: "이 페이지에는 메모를 추가할 수 없습니다.",
+  notesUsage: "{count} / {limit}개 메모 사용 중",
+  noteLimitReached: "메모 한도에 도달했습니다 ({limit}). 새 메모를 추가하려면 메모를 삭제하세요.",
   language: "언어",
   optionsTitle: "Anchored Notes — 옵션",
   searchPlaceholder: "메모 검색…",

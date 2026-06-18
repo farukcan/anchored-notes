@@ -6,6 +6,8 @@ export const ar: Record<MessageKey, string> = {
   notesOnPage: "{count} ملاحظة على هذه الصفحة",
   manageAllNotes: "إدارة جميع الملاحظات →",
   cantAddNote: "لا يمكن إضافة ملاحظة في هذه الصفحة.",
+  notesUsage: "{count} / {limit} ملاحظة مستخدمة",
+  noteLimitReached: "تم بلوغ حد الملاحظات ({limit}). احذف ملاحظة لإضافة ملاحظة جديدة.",
   language: "اللغة",
   optionsTitle: "Anchored Notes — الخيارات",
   searchPlaceholder: "البحث في الملاحظات…",

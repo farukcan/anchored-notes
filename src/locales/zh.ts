@@ -6,6 +6,8 @@ export const zh: Record<MessageKey, string> = {
   notesOnPage: "此页面有 {count} 条笔记",
   manageAllNotes: "管理所有笔记 →",
   cantAddNote: "无法在此页面添加笔记。",
+  notesUsage: "已使用 {count} / {limit} 条笔记",
+  noteLimitReached: "已达到笔记上限（{limit}）。请删除一条笔记后再添加新笔记。",
   language: "语言",
   optionsTitle: "Anchored Notes — 选项",
   searchPlaceholder: "搜索笔记…",

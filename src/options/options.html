@@ -12,7 +12,9 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
         color: #222;
       }
-      h1 { font-size: 18px; }
+      h1 { font-size: 18px; margin-bottom: 4px; }
+      .usage { color: #666; font-size: 13px; margin-bottom: 8px; }
+      .usage.limit { color: #c0392b; font-weight: 600; }
       .toolbar { display: flex; gap: 8px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
       input[type="search"] { flex: 1; min-width: 180px; padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
       button { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; cursor: pointer; }
@@ -31,6 +33,7 @@
   </head>
   <body>
     <h1>⚓ Anchored Notes</h1>
+    <div class="usage" id="usage"></div>
     <div class="toolbar">
       <input type="search" id="search" />
       <button id="export"></button>

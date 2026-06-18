@@ -6,6 +6,8 @@ export const ru: Record<MessageKey, string> = {
   notesOnPage: "{count} заметок на этой странице",
   manageAllNotes: "Управление всеми заметками →",
   cantAddNote: "На этой странице нельзя добавить заметку.",
+  notesUsage: "Использовано {count} / {limit} заметок",
+  noteLimitReached: "Достигнут лимит заметок ({limit}). Удалите заметку, чтобы добавить новую.",
   language: "Язык",
   optionsTitle: "Anchored Notes — Настройки",
   searchPlaceholder: "Поиск заметок…",

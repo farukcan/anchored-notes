@@ -6,6 +6,8 @@ export const pl: Record<MessageKey, string> = {
   notesOnPage: "{count} notatek na tej stronie",
   manageAllNotes: "Zarządzaj wszystkimi notatkami →",
   cantAddNote: "Nie można dodać notatki na tej stronie.",
+  notesUsage: "{count} / {limit} notatek użytych",
+  noteLimitReached: "Osiągnięto limit notatek ({limit}). Usuń notatkę, aby dodać nową.",
   language: "Język",
   optionsTitle: "Anchored Notes — Opcje",
   searchPlaceholder: "Szukaj notatek…",

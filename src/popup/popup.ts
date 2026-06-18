@@ -3,6 +3,7 @@
 import type { Message } from "../types.js";
 import { isNoteVisible, pageContextFromLocation } from "../matching.js";
 import { getAllNotes } from "../storage.js";
+import { NOTE_LIMIT } from "../limits.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
 
 async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
@@ -42,16 +43,27 @@ async function chooseLang(lang: Lang): Promise<void> {
   await render();
 }
 
+function renderUsage(total: number): void {
+  const usage = document.getElementById("usage") as HTMLDivElement;
+  const add = document.getElementById("add") as HTMLButtonElement;
+  const atLimit = total >= NOTE_LIMIT;
+  usage.textContent = t("notesUsage", { count: total, limit: NOTE_LIMIT });
+  usage.classList.toggle("limit", atLimit);
+  add.disabled = atLimit;
+}
+
 async function render(): Promise<void> {
   const list = document.getElementById("list") as HTMLUListElement;
   const count = document.getElementById("count") as HTMLDivElement;
+  const all = await getAllNotes();
+  renderUsage(all.length);
   const tab = await activeTab();
   if (!tab?.url || tab.id === undefined) {
     count.textContent = t("noActivePage", null);
     return;
   }
   const ctx = pageContextFromLocation(tab.url, tab.id);
-  const visible = (await getAllNotes()).filter((n) => isNoteVisible(n, ctx));
+  const visible = all.filter((n) => isNoteVisible(n, ctx));
   count.textContent = t("notesOnPage", { count: visible.length });
   list.replaceChildren();
   for (const note of visible) {
