@@ -3,6 +3,7 @@
 import type { Message } from "../types.js";
 import { isNoteVisible, pageContextFromLocation } from "../matching.js";
 import { getAllNotes, saveNote } from "../storage.js";
+import { deriveTitle } from "../note-title.js";
 import { NOTE_LIMIT } from "../limits.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
 
@@ -70,7 +71,7 @@ async function render(): Promise<void> {
     const li = document.createElement("li");
     const text = document.createElement("span");
     text.className = "text";
-    text.textContent = note.content || t("empty", null);
+    text.textContent = note.content ? deriveTitle(note.content) : t("empty", null);
     const scope = document.createElement("span");
     scope.className = "scope";
     scope.textContent = note.scope;

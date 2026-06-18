@@ -25,7 +25,7 @@
       }
       button.primary:hover { background: #d8c22f; }
       button.primary:disabled { background: #e7e7e7; color: #999; cursor: not-allowed; }
-      .count { margin: 10px 0 4px; color: #666; }
+      .count { margin: 10px 0 4px; color: #666; text-align: center; }
       .count.limit { color: #c0392b; }
       .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
       .head h1 { margin: 0; }
@@ -84,7 +84,7 @@
       li.hidden-note .text { opacity: 0.55; }
       li.hidden-note:hover { background: #ececec; }
       li .hidden-icon { font-size: 11px; opacity: 0.6; }
-      .text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       a { display: inline-block; margin-top: 8px; color: #1a73e8; text-decoration: none; font-size: 12px; }
     </style>
   </head>
