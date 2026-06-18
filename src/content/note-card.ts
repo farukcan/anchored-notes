@@ -3,6 +3,7 @@
 
 import type { AnchorScope, Note, NoteColor } from "../types.js";
 import { formatRelativeTime } from "../relative-time.js";
+import { t, type MessageKey } from "../i18n.js";
 import { createMarkdownEditor, type MarkdownEditorHandle } from "./editor.js";
 
 export const COLORS: NoteColor[] = [
@@ -15,40 +16,34 @@ export const COLORS: NoteColor[] = [
   "dark",
 ];
 const SCOPES: AnchorScope[] = ["global", "site", "page", "tab"];
-const SCOPE_META: Record<AnchorScope, { label: string; hint: string }> = {
-  global: {
-    label: "🌐 Everywhere",
-    hint: "Anchored everywhere — shows on every page you open",
-  },
-  site: {
-    label: "🌍 Site",
-    hint: "Anchored to this site — shows on every page of this domain",
-  },
-  page: {
-    label: "📄 Page",
-    hint: "Anchored to this page — shows only on this exact URL",
-  },
-  tab: {
-    label: "🗂️ Tab",
-    hint: "Anchored to this tab — follows it across navigation, gone on restart",
-  },
+const SCOPE_LABEL_KEY: Record<AnchorScope, MessageKey> = {
+  global: "scopeEverywhereLabel",
+  site: "scopeSiteLabel",
+  page: "scopePageLabel",
+  tab: "scopeTabLabel",
+};
+const SCOPE_HINT_KEY: Record<AnchorScope, MessageKey> = {
+  global: "scopeEverywhereHint",
+  site: "scopeSiteHint",
+  page: "scopePageHint",
+  tab: "scopeTabHint",
 };
 
-function scopeLabel(scope: AnchorScope, labels: ScopeLabels = {}): string {
+function scopeLabel(scope: AnchorScope, labels: ScopeLabels): string {
   if (scope === "site" && labels.siteName) return `🌍 ${labels.siteName}`;
   if (scope === "page" && labels.pageTitle)
-    return `📄 ${shortLabel(labels.pageTitle)}`;
-  return SCOPE_META[scope].label;
+    return `📄 ${shortLabel(labels.pageTitle, 10)}`;
+  return t(SCOPE_LABEL_KEY[scope], null);
 }
 
-function scopeHint(scope: AnchorScope, labels: ScopeLabels = {}): string {
+function scopeHint(scope: AnchorScope, labels: ScopeLabels): string {
   if (scope === "site" && labels.siteName) {
-    return `Anchored to ${labels.siteName} — shows on every page of this domain`;
+    return t("scopeSiteHintNamed", { name: labels.siteName });
   }
   if (scope === "page" && labels.pageTitle) {
-    return `Anchored to this page (${labels.pageTitle}) — shows only on this exact URL`;
+    return t("scopePageHintNamed", { title: labels.pageTitle });
   }
-  return SCOPE_META[scope].hint;
+  return t(SCOPE_HINT_KEY[scope], null);
 }
 
 interface ScopeLabels {
@@ -56,7 +51,7 @@ interface ScopeLabels {
   pageTitle?: string;
 }
 
-function shortLabel(text: string, max = 10): string {
+function shortLabel(text: string, max: number): string {
   return text.length <= max ? text : `${text.slice(0, max - 1)}…`;
 }
 const SAVE_DEBOUNCE_MS = 400;
@@ -76,6 +71,7 @@ export interface NoteCardHandle {
   mount: () => void;
   update: (note: Note) => void;
   setScopeLabels: (labels: Partial<ScopeLabels>) => void;
+  relocalize: () => void;
   clamp: () => void;
   destroy: () => void;
 }
@@ -112,11 +108,11 @@ export function createNoteCard(
   const anchor = document.createElement("span");
   anchor.className = "note-anchor";
   anchor.textContent = "⚓";
-  anchor.title = "Anchored to";
+  anchor.title = t("anchorTitle", null);
 
   const scope = document.createElement("select");
   scope.className = "note-scope";
-  scope.title = "⚓ Where this note is anchored";
+  scope.title = t("scopeSelectTitle", null);
   for (const s of SCOPES) {
     const opt = document.createElement("option");
     opt.value = s;
@@ -140,12 +136,12 @@ export function createNoteCard(
 
   const colorBtn = document.createElement("button");
   colorBtn.className = "note-btn note-color-btn";
-  colorBtn.title = "Color";
+  colorBtn.title = t("colorTitle", null);
   colorBtn.textContent = "🎨";
 
   const menuBtn = document.createElement("button");
   menuBtn.className = "note-btn note-menu-btn";
-  menuBtn.title = "Options";
+  menuBtn.title = t("optionsMenuTitle", null);
   menuBtn.textContent = "⋮";
 
   const menu = document.createElement("div");
@@ -153,11 +149,11 @@ export function createNoteCard(
 
   const hideItem = document.createElement("button");
   hideItem.className = "note-menu-item";
-  hideItem.textContent = "Hide";
+  hideItem.textContent = t("hide", null);
 
   const deleteItem = document.createElement("button");
   deleteItem.className = "note-menu-item";
-  deleteItem.textContent = "Delete";
+  deleteItem.textContent = t("delete", null);
 
   menu.append(hideItem, deleteItem);
 
@@ -235,7 +231,7 @@ export function createNoteCard(
   // --- delete ---
   deleteItem.addEventListener("click", () => {
     menu.classList.remove("open");
-    if (latestContent.trim() && !window.confirm("Delete this note?")) return;
+    if (latestContent.trim() && !window.confirm(t("deleteConfirm", null))) return;
     deps.remove(note.id);
   });
 
@@ -330,11 +326,25 @@ export function createNoteCard(
     applyScopeLabels({ ...scopeLabels, ...partial });
   }
 
+  // Re-apply all t()-backed static strings in place after a language switch,
+  // without tearing down the card (which would clear the unsaved-content
+  // debounce timer and destroy the Milkdown editor mid-edit).
+  function relocalize(): void {
+    anchor.title = t("anchorTitle", null);
+    scope.title = t("scopeSelectTitle", null);
+    applyScopeLabels(scopeLabels);
+    colorBtn.title = t("colorTitle", null);
+    menuBtn.title = t("optionsMenuTitle", null);
+    hideItem.textContent = t("hide", null);
+    deleteItem.textContent = t("delete", null);
+    date.textContent = formatRelativeTime(note.createdAt);
+  }
+
   function destroy(): void {
     window.clearTimeout(contentTimer);
     window.clearTimeout(clampTimer);
     editor?.destroy();
   }
 
-  return { el, noteId: note.id, mount, update, setScopeLabels, clamp, destroy };
+  return { el, noteId: note.id, mount, update, setScopeLabels, relocalize, clamp, destroy };
 }

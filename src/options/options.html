@@ -32,24 +32,24 @@
   <body>
     <h1>⚓ Anchored Notes</h1>
     <div class="toolbar">
-      <input type="search" id="search" placeholder="Search notes…" />
-      <button id="export">Export JSON</button>
-      <button id="import">Import JSON</button>
+      <input type="search" id="search" />
+      <button id="export"></button>
+      <button id="import"></button>
       <input type="file" id="file" accept="application/json" hidden />
     </div>
     <table>
       <thead>
         <tr>
-          <th>Note</th>
-          <th>Scope</th>
-          <th>Anchor</th>
-          <th>Created</th>
+          <th id="col-note"></th>
+          <th id="col-scope"></th>
+          <th id="col-anchor"></th>
+          <th id="col-created"></th>
           <th></th>
         </tr>
       </thead>
       <tbody id="rows"></tbody>
     </table>
-    <div class="empty" id="empty" hidden>No notes yet.</div>
+    <div class="empty" id="empty" hidden></div>
     <script src="options.js"></script>
   </body>
 </html>

@@ -16,6 +16,7 @@ import {
   type BadgeOffset
 } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
+import { initI18n, onLangChanged, t } from "../i18n.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
 
 const HOST_ID = "anchored-notes-host";
@@ -218,7 +219,7 @@ function ensureBadge(shadow: ShadowRoot): BadgeParts {
 
   const root = document.createElement("div");
   root.className = "an-badge";
-  root.title = "Hidden notes (drag to move)";
+  root.title = t("badgeTitle", null);
 
   const logo = document.createElement("img");
   logo.className = "an-badge-logo";
@@ -323,6 +324,14 @@ function init(): void {
 
   onNotesChanged((next) => reconcile(shadow, Object.values(next)));
 
+  // Language switched (from the popup): relocalize existing cards in place so
+  // their labels, hints and tooltips pick up the new language without tearing
+  // down their editors (and losing unsaved edits), and refresh the badge tooltip.
+  onLangChanged(() => {
+    for (const handle of cards.values()) handle.relocalize();
+    if (badge) badge.root.title = t("badgeTitle", null);
+  });
+
   // Re-evaluate visibility on SPA navigation (URL changes without reload).
   window.addEventListener("popstate", () => {
     resolvePageTitle();
@@ -344,10 +353,14 @@ chrome.runtime.onMessage.addListener((message: Message) => {
   if (message.type === "CREATE_NOTE") void saveNote(newNote());
 });
 
-// At document_start the <html> element may not exist yet; wait for it.
-if (document.documentElement) {
-  init();
-} else {
+// Resolve the active language before first paint, then start. At document_start
+// the <html> element may not exist yet; wait for it.
+async function bootstrap(): Promise<void> {
+  await initI18n();
+  if (document.documentElement) {
+    init();
+    return;
+  }
   const observer = new MutationObserver(() => {
     if (document.documentElement) {
       observer.disconnect();
@@ -356,3 +369,5 @@ if (document.documentElement) {
   });
   observer.observe(document, { childList: true });
 }
+
+void bootstrap();

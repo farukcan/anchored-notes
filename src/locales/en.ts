@@ -1,0 +1,67 @@
+// English translations. This is the canonical dictionary: its keys define the
+// MessageKey type, so every other locale must provide the same keys.
+
+export const en = {
+  // popup
+  addNote: "⚓ Add note to this page",
+  noActivePage: "No active page.",
+  notesOnPage: "{count} note(s) on this page",
+  manageAllNotes: "Manage all notes →",
+  cantAddNote: "Can't add a note on this page.",
+  language: "Language",
+  // options
+  optionsTitle: "Anchored Notes — Options",
+  searchPlaceholder: "Search notes…",
+  exportJson: "Export JSON",
+  importJson: "Import JSON",
+  colNote: "Note",
+  colScope: "Scope",
+  colAnchor: "Anchor",
+  colCreated: "Created",
+  noNotesYet: "No notes yet.",
+  invalidNotesFile: "Invalid notes file: expected an array of notes.",
+  importConfirm: "Replace all current notes with {count} imported note(s)?",
+  // shared
+  delete: "Delete",
+  deleteConfirm: "Delete this note?",
+  empty: "(empty)",
+  // note card scopes
+  scopeEverywhereLabel: "🌐 Everywhere",
+  scopeSiteLabel: "🌍 Site",
+  scopePageLabel: "📄 Page",
+  scopeTabLabel: "🗂️ Tab",
+  scopeEverywhereHint: "Anchored everywhere — shows on every page you open",
+  scopeSiteHint: "Anchored to this site — shows on every page of this domain",
+  scopePageHint: "Anchored to this page — shows only on this exact URL",
+  scopeTabHint: "Anchored to this tab — follows it across navigation, gone on restart",
+  scopeSiteHintNamed: "Anchored to {name} — shows on every page of this domain",
+  scopePageHintNamed: "Anchored to this page ({title}) — shows only on this exact URL",
+  // note card tools
+  anchorTitle: "Anchored to",
+  scopeSelectTitle: "⚓ Where this note is anchored",
+  colorTitle: "Color",
+  optionsMenuTitle: "Options",
+  hide: "Hide",
+  // hidden-notes badge
+  badgeTitle: "Hidden notes (drag to move)",
+  // slash menu
+  slashText: "Text",
+  slashHeading1: "Heading 1",
+  slashHeading2: "Heading 2",
+  slashHeading3: "Heading 3",
+  slashBulletList: "Bullet List",
+  slashOrderedList: "Ordered List",
+  slashTaskList: "Task List",
+  slashQuote: "Quote",
+  slashCode: "Code",
+  slashTable: "Table",
+  slashDivider: "Divider",
+  // table toolbar
+  tableAddColumn: "Add column",
+  tableDeleteColumn: "Delete column",
+  tableAddRow: "Add row",
+  tableDeleteRow: "Delete row",
+  tableDeleteTable: "Delete table",
+  // background context menu
+  addNoteHere: "Add Note Here"
+} as const;

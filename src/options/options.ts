@@ -4,6 +4,7 @@ import type { Note } from "../types.js";
 import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { formatRelativeTime } from "../relative-time.js";
+import { initI18n, onLangChanged, t } from "../i18n.js";
 
 const SWATCH: Record<string, string> = {
   yellow: "#fcee5f",
@@ -64,10 +65,10 @@ async function render(): Promise<void> {
 
     const tdActions = document.createElement("td");
     const del = document.createElement("button");
-    del.textContent = "Delete";
+    del.textContent = t("delete", null);
     del.addEventListener("click", (e) => {
       e.stopPropagation();
-      if (note.content.trim() && !window.confirm("Delete this note?")) return;
+      if (note.content.trim() && !window.confirm(t("deleteConfirm", null))) return;
       void deleteNote(note.id);
     });
     tdActions.appendChild(del);
@@ -79,7 +80,7 @@ async function render(): Promise<void> {
     tdDetail.colSpan = 5;
     const content = document.createElement("div");
     content.className = "content";
-    content.textContent = note.content || "(empty)";
+    content.textContent = note.content || t("empty", null);
     tdDetail.appendChild(content);
     detail.appendChild(tdDetail);
 
@@ -132,11 +133,23 @@ async function importNotes(file: File): Promise<void> {
   const text = await file.text();
   const parsed: unknown = JSON.parse(text);
   if (!Array.isArray(parsed) || !parsed.every(isValidNote)) {
-    window.alert("Invalid notes file: expected an array of notes.");
+    window.alert(t("invalidNotesFile", null));
     return;
   }
-  if (!window.confirm(`Replace all current notes with ${parsed.length} imported note(s)?`)) return;
+  if (!window.confirm(t("importConfirm", { count: parsed.length }))) return;
   await replaceAllNotes(parsed);
+}
+
+function applyStaticText(): void {
+  document.title = t("optionsTitle", null);
+  (document.getElementById("search") as HTMLInputElement).placeholder = t("searchPlaceholder", null);
+  (document.getElementById("export") as HTMLButtonElement).textContent = t("exportJson", null);
+  (document.getElementById("import") as HTMLButtonElement).textContent = t("importJson", null);
+  (document.getElementById("col-note") as HTMLTableCellElement).textContent = t("colNote", null);
+  (document.getElementById("col-scope") as HTMLTableCellElement).textContent = t("colScope", null);
+  (document.getElementById("col-anchor") as HTMLTableCellElement).textContent = t("colAnchor", null);
+  (document.getElementById("col-created") as HTMLTableCellElement).textContent = t("colCreated", null);
+  (document.getElementById("empty") as HTMLDivElement).textContent = t("noNotesYet", null);
 }
 
 document.getElementById("search")?.addEventListener("input", (e) => {
@@ -156,4 +169,15 @@ document.getElementById("file")?.addEventListener("change", (e) => {
 });
 
 onNotesChanged(() => void render());
-void render();
+onLangChanged(() => {
+  applyStaticText();
+  void render();
+});
+
+async function main(): Promise<void> {
+  await initI18n();
+  applyStaticText();
+  await render();
+}
+
+void main();

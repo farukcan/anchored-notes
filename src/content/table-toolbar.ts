@@ -14,19 +14,20 @@ import {
 } from "@milkdown/prose/tables";
 import type { Command } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
+import { t, type MessageKey } from "../i18n.js";
 
 interface ToolbarButton {
   label: string;
-  title: string;
+  titleKey: MessageKey;
   command: Command;
 }
 
 const BUTTONS: ToolbarButton[] = [
-  { label: "+Col", title: "Add column", command: addColumnAfter },
-  { label: "−Col", title: "Delete column", command: deleteColumn },
-  { label: "+Row", title: "Add row", command: addRowAfter },
-  { label: "−Row", title: "Delete row", command: deleteRow },
-  { label: "✕", title: "Delete table", command: deleteTable }
+  { label: "+Col", titleKey: "tableAddColumn", command: addColumnAfter },
+  { label: "−Col", titleKey: "tableDeleteColumn", command: deleteColumn },
+  { label: "+Row", titleKey: "tableAddRow", command: addRowAfter },
+  { label: "−Row", titleKey: "tableDeleteRow", command: deleteRow },
+  { label: "✕", titleKey: "tableDeleteTable", command: deleteTable }
 ];
 
 export function tableToolbarPlugin(rootEl: HTMLElement): ReturnType<typeof $prose> {
@@ -43,7 +44,7 @@ export function tableToolbarPlugin(rootEl: HTMLElement): ReturnType<typeof $pros
           el.type = "button";
           el.className = "table-toolbar-btn";
           el.textContent = btn.label;
-          el.title = btn.title;
+          el.title = t(btn.titleKey, null);
           el.addEventListener("mousedown", (e) => {
             e.preventDefault(); // keep the table cell selection in the editor
             view.focus();

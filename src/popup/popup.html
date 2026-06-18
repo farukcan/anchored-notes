@@ -25,6 +25,48 @@
       }
       button.primary:hover { background: #d8c22f; }
       .count { margin: 10px 0 4px; color: #666; }
+      .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
+      .head h1 { margin: 0; }
+      .lang { position: relative; }
+      .lang-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      .lang-btn:hover { background: #f0f0f0; }
+      .lang-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 4px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px #0002;
+        padding: 4px;
+        z-index: 10;
+        min-width: 120px;
+      }
+      .lang-menu[hidden] { display: none; }
+      .lang-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+        text-align: left;
+      }
+      .lang-item:hover { background: #f4f4f4; }
+      .lang-item[aria-current="true"] { font-weight: 600; }
       ul { list-style: none; margin: 0; padding: 0; max-height: 220px; overflow: auto; }
       li {
         padding: 6px 8px;
@@ -41,11 +83,17 @@
     </style>
   </head>
   <body>
-    <h1>⚓ Anchored Notes</h1>
-    <button id="add" class="primary">⚓ Add note to this page</button>
+    <div class="head">
+      <h1>⚓ Anchored Notes</h1>
+      <div class="lang">
+        <button id="lang-btn" class="lang-btn" type="button"></button>
+        <div id="lang-menu" class="lang-menu" hidden></div>
+      </div>
+    </div>
+    <button id="add" class="primary"></button>
     <div class="count" id="count"></div>
     <ul id="list"></ul>
-    <a id="options" href="#">Manage all notes →</a>
+    <a id="options" href="#"></a>
     <script src="popup.js"></script>
   </body>
 </html>

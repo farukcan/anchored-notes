@@ -19,9 +19,10 @@ import { TextSelection } from "@milkdown/prose/state";
 import type { EditorState, PluginSpec } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
 import type { Ctx } from "@milkdown/ctx";
+import { t, type MessageKey } from "../i18n.js";
 
 interface SlashItem {
-  label: string;
+  labelKey: MessageKey;
   icon: string;
   run: (ctx: Ctx) => void;
 }
@@ -64,17 +65,17 @@ function turnIntoText(ctx: Ctx): void {
 }
 
 const ITEMS: SlashItem[] = [
-  { label: "Text", icon: "¶", run: turnIntoText },
-  { label: "Heading 1", icon: "H1", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 1) },
-  { label: "Heading 2", icon: "H2", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 2) },
-  { label: "Heading 3", icon: "H3", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 3) },
-  { label: "Bullet List", icon: "•", run: (ctx) => ctx.get(commandsCtx).call(wrapInBulletListCommand.key) },
-  { label: "Ordered List", icon: "1.", run: (ctx) => ctx.get(commandsCtx).call(wrapInOrderedListCommand.key) },
-  { label: "Task List", icon: "☑", run: wrapInTaskList },
-  { label: "Quote", icon: "❝", run: (ctx) => ctx.get(commandsCtx).call(wrapInBlockquoteCommand.key) },
-  { label: "Code", icon: "</>", run: (ctx) => ctx.get(commandsCtx).call(createCodeBlockCommand.key) },
-  { label: "Table", icon: "▦", run: (ctx) => ctx.get(commandsCtx).call(insertTableCommand.key) },
-  { label: "Divider", icon: "―", run: (ctx) => ctx.get(commandsCtx).call(insertHrCommand.key) }
+  { labelKey: "slashText", icon: "¶", run: turnIntoText },
+  { labelKey: "slashHeading1", icon: "H1", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 1) },
+  { labelKey: "slashHeading2", icon: "H2", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 2) },
+  { labelKey: "slashHeading3", icon: "H3", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 3) },
+  { labelKey: "slashBulletList", icon: "•", run: (ctx) => ctx.get(commandsCtx).call(wrapInBulletListCommand.key) },
+  { labelKey: "slashOrderedList", icon: "1.", run: (ctx) => ctx.get(commandsCtx).call(wrapInOrderedListCommand.key) },
+  { labelKey: "slashTaskList", icon: "☑", run: wrapInTaskList },
+  { labelKey: "slashQuote", icon: "❝", run: (ctx) => ctx.get(commandsCtx).call(wrapInBlockquoteCommand.key) },
+  { labelKey: "slashCode", icon: "</>", run: (ctx) => ctx.get(commandsCtx).call(createCodeBlockCommand.key) },
+  { labelKey: "slashTable", icon: "▦", run: (ctx) => ctx.get(commandsCtx).call(insertTableCommand.key) },
+  { labelKey: "slashDivider", icon: "―", run: (ctx) => ctx.get(commandsCtx).call(insertHrCommand.key) }
 ];
 
 // Text of the current paragraph up to the cursor, used to detect "/query".
@@ -113,7 +114,7 @@ export function createSlashMenu(rootEl: HTMLElement): SlashMenu {
       icon.className = "slash-icon";
       icon.textContent = item.icon;
       const label = document.createElement("span");
-      label.textContent = item.label;
+      label.textContent = t(item.labelKey, null);
       row.append(icon, label);
       row.addEventListener("mousedown", (e) => {
         e.preventDefault(); // keep editor focus
@@ -131,7 +132,7 @@ export function createSlashMenu(rootEl: HTMLElement): SlashMenu {
     shouldShow: (v) => {
       const q = slashQuery(v);
       if (q === null) return false;
-      filtered = ITEMS.filter((it) => it.label.toLowerCase().includes(q.toLowerCase()));
+      filtered = ITEMS.filter((it) => t(it.labelKey, null).toLowerCase().includes(q.toLowerCase()));
       if (filtered.length === 0) return false;
       if (selected >= filtered.length) selected = 0;
       return true;

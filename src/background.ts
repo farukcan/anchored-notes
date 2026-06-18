@@ -2,28 +2,39 @@
 
 import type { GetTabIdResponse, Message } from "./types.js";
 import { deleteAllTabNotes, deleteTabNotes } from "./storage.js";
+import { initI18n, onLangChanged, t } from "./i18n.js";
 
 const MENU_ID = "anchored-notes-add";
 
-function createContextMenu(): void {
+function buildContextMenu(): void {
   chrome.contextMenus.removeAll(() => {
     chrome.contextMenus.create({
       id: MENU_ID,
-      title: "Add Note Here",
+      title: t("addNoteHere", null),
       contexts: ["page", "selection", "link", "image"],
     });
   });
 }
 
+async function createContextMenu(): Promise<void> {
+  await initI18n();
+  buildContextMenu();
+}
+
 chrome.runtime.onInstalled.addListener(() => {
-  createContextMenu();
+  void createContextMenu();
 });
 
 chrome.runtime.onStartup.addListener(() => {
-  createContextMenu();
+  void createContextMenu();
   // Tab ids from the previous session are meaningless now: drop tab notes.
   void deleteAllTabNotes();
 });
+
+// Keep the context-menu label in sync when the language is switched at runtime.
+// onLangChanged already updated the active language, so rebuild the menu (which
+// also creates it if this service-worker wake never ran createContextMenu).
+onLangChanged(() => buildContextMenu());
 
 chrome.contextMenus.onClicked.addListener((_info, tab) => {
   if (tab?.id === undefined) return;
