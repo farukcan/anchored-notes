@@ -406,6 +406,8 @@
   width: 22px;
   height: 22px;
   border-radius: 50%;
+  pointer-events: none; /* let the badge handle all pointer/drag events */
+  -webkit-user-drag: none;
 }
 
 .an-badge-count {
@@ -414,6 +416,7 @@
   color: #222222;
   min-width: 12px;
   text-align: center;
+  pointer-events: none;
 }
 
 .an-badge-list {
