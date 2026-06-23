@@ -27,5 +27,6 @@ cpSync("manifest.json", `${OUT}/manifest.json`);
 cpSync("src/options/options.html", `${OUT}/options.html`);
 cpSync("src/popup/popup.html", `${OUT}/popup.html`);
 cpSync("icons", `${OUT}/icons`, { recursive: true });
+cpSync("_locales", `${OUT}/_locales`, { recursive: true });
 
 console.log(`Built into ${OUT}/`);

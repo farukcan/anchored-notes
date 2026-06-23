@@ -6,9 +6,11 @@
   "private": true,
   "scripts": {
     "icons": "node mkicons.mjs",
+    "locales": "node mklocales.mjs",
     "typecheck": "tsc --noEmit",
-    "build": "node mkicons.mjs && node build.mjs",
-    "test": "node --test"
+    "build": "node mkicons.mjs && node mklocales.mjs && node build.mjs",
+    "test": "node --test",
+    "package": "node package.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",

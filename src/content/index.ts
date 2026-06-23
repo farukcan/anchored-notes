@@ -333,15 +333,20 @@ function init(): void {
     if (badge) badge.root.title = t("badgeTitle", null);
   });
 
-  // Re-evaluate visibility on SPA navigation (URL changes without reload).
-  window.addEventListener("popstate", () => {
+  // Re-evaluate visibility when the URL changes without a reload. SPAs navigate
+  // via history.pushState/replaceState, which emit no popstate; the Navigation
+  // API observes those same-document navigations, so prefer it when present and
+  // fall back to popstate/hashchange otherwise.
+  const onUrlChange = (): void => {
     resolvePageTitle();
     redraw(shadow);
-  });
-  window.addEventListener("hashchange", () => {
-    resolvePageTitle();
-    redraw(shadow);
-  });
+  };
+  if (navigation) {
+    navigation.addEventListener("navigatesuccess", onUrlChange);
+  } else {
+    window.addEventListener("popstate", onUrlChange);
+    window.addEventListener("hashchange", onUrlChange);
+  }
   // Keep notes inside the viewport when the window is resized smaller.
   window.addEventListener("resize", () => {
     for (const handle of cards.values()) handle.clamp();

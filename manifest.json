@@ -1,8 +1,9 @@
 {
   "manifest_version": 3,
-  "name": "Anchored Notes",
+  "name": "__MSG_extName__",
   "version": "0.1.0",
-  "description": "Leave sticky notes anchored to a page, site, tab or globally.",
+  "description": "__MSG_extDesc__",
+  "default_locale": "en",
   "permissions": [
     "storage",
     "contextMenus",
@@ -28,10 +29,10 @@
   ],
   "action": {
     "default_popup": "popup.html",
-    "default_title": "Anchored Notes",
+    "default_title": "__MSG_extName__",
     "default_icon": {
-      "16": "icons/icon-128.png",
-      "48": "icons/icon-128.png",
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
       "128": "icons/icon-128.png"
     }
   },
@@ -43,8 +44,8 @@
     }
   ],
   "icons": {
-    "16": "icons/icon-128.png",
-    "48": "icons/icon-128.png",
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
   }
 }

@@ -1,8 +1,11 @@
-// Generates a simple sticky-note PNG icon without external deps.
+// Generates sticky-note PNG icons at 16/48/128 without external deps. All
+// geometry is defined in a 128px design space; smaller sizes sample that same
+// space so the shape stays consistent across icon sizes.
 import { deflateSync } from "node:zlib";
 import { mkdirSync, writeFileSync } from "node:fs";
 
-const SIZE = 128;
+const DESIGN = 128; // design-space resolution all geometry is expressed in
+const SIZES = [16, 48, 128];
 const PAPER = [244, 211, 94]; // yellow
 const HEADER = [212, 175, 55]; // darker yellow header strip
 const ANCHOR = [51, 51, 51]; // dark anchor mark centered on the note body
@@ -74,7 +77,7 @@ const inAnchor = (px, py) => {
 };
 
 const MARGIN = 8;
-const INNER = SIZE - MARGIN * 2;
+const INNER = DESIGN - MARGIN * 2;
 const RADIUS = 16;
 const SS = 4; // supersampling factor for anti-aliased edges
 
@@ -88,13 +91,14 @@ const sampleColor = (fx, fy) => {
   return ly < INNER * 0.18 ? [...HEADER, 255] : [...PAPER, 255];
 };
 
-const buildImage = () => {
-  const stride = SIZE * 4 + 1;
-  const raw = Buffer.alloc(stride * SIZE);
+const buildImage = (size) => {
+  const stride = size * 4 + 1;
+  const raw = Buffer.alloc(stride * size);
   const samples = SS * SS;
-  for (let y = 0; y < SIZE; y++) {
+  const scale = DESIGN / size; // map output pixels back into design space
+  for (let y = 0; y < size; y++) {
     raw[y * stride] = 0; // filter byte: none
-    for (let x = 0; x < SIZE; x++) {
+    for (let x = 0; x < size; x++) {
       // Average SS×SS sub-samples using premultiplied alpha so transparent
       // edges blend cleanly instead of darkening toward black.
       let ra = 0;
@@ -103,7 +107,9 @@ const buildImage = () => {
       let a = 0;
       for (let sy = 0; sy < SS; sy++) {
         for (let sx = 0; sx < SS; sx++) {
-          const [r, g, b, sa] = sampleColor(x + (sx + 0.5) / SS, y + (sy + 0.5) / SS);
+          const dx = (x + (sx + 0.5) / SS) * scale;
+          const dy = (y + (sy + 0.5) / SS) * scale;
+          const [r, g, b, sa] = sampleColor(dx, dy);
           ra += r * sa;
           ga += g * sa;
           ba += b * sa;
@@ -121,21 +127,23 @@ const buildImage = () => {
   return raw;
 };
 
-const encodePng = () => {
+const encodePng = (size) => {
   const sig = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(SIZE, 0);
-  ihdr.writeUInt32BE(SIZE, 4);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
   ihdr[8] = 8; // bit depth
   ihdr[9] = 6; // color type RGBA
   ihdr[10] = 0;
   ihdr[11] = 0;
   ihdr[12] = 0;
-  const idat = deflateSync(buildImage());
+  const idat = deflateSync(buildImage(size));
   return Buffer.concat([sig, chunk("IHDR", ihdr), chunk("IDAT", idat), chunk("IEND", Buffer.alloc(0))]);
 };
 
 mkdirSync("icons", { recursive: true });
-const png = encodePng();
-writeFileSync("icons/icon-128.png", png);
-console.log("icons/icon-128.png written", png.length, "bytes");
+for (const size of SIZES) {
+  const png = encodePng(size);
+  writeFileSync(`icons/icon-${size}.png`, png);
+  console.log(`icons/icon-${size}.png written ${png.length} bytes`);
+}

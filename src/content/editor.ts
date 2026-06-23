@@ -7,7 +7,8 @@ import { commonmark, listItemSchema, liftListItemCommand } from "@milkdown/prese
 import { gfm } from "@milkdown/preset-gfm";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { clipboard } from "@milkdown/plugin-clipboard";
-import { $useKeymap, $view } from "@milkdown/utils";
+import { $prose, $useKeymap, $view } from "@milkdown/utils";
+import { history, undo, redo } from "@milkdown/prose/history";
 import { TextSelection } from "@milkdown/prose/state";
 import type { Node as ProseNode } from "@milkdown/prose/model";
 import { createSlashMenu } from "./slash-menu.js";
@@ -90,6 +91,27 @@ const exitListItemKeymap = $useKeymap("anchoredExitListItem", {
   }
 });
 
+// Undo/redo. The commonmark preset does not register prosemirror-history, so
+// without this the editor has no edit history and Mod-z/Mod-y do nothing.
+const historyPlugin = $prose(() => history());
+
+const historyKeymap = $useKeymap("anchoredHistory", {
+  Undo: {
+    shortcuts: "Mod-z",
+    command: (ctx) => () => {
+      const view = ctx.get(editorViewCtx);
+      return undo(view.state, view.dispatch);
+    }
+  },
+  Redo: {
+    shortcuts: ["Mod-y", "Mod-Shift-z"],
+    command: (ctx) => () => {
+      const view = ctx.get(editorViewCtx);
+      return redo(view.state, view.dispatch);
+    }
+  }
+});
+
 export function createMarkdownEditor(
   host: HTMLElement,
   menuRoot: HTMLElement,
@@ -108,6 +130,8 @@ export function createMarkdownEditor(
     .use(commonmark)
     .use(gfm)
     .use(taskListItemView)
+    .use(historyPlugin)
+    .use(historyKeymap)
     .use(exitListItemKeymap)
     .use(listener)
     .use(clipboard)
