@@ -191,16 +191,26 @@ export function createNoteCard(
   // Created via mount() only after the card is attached to the shadow root, so
   // ProseMirror resolves the shadow root for selection/coordinate handling.
   let editor: MarkdownEditorHandle | undefined;
+  // Track focus so external (synced) content updates don't clobber active typing.
+  let editorFocused = false;
+  body.addEventListener("focusin", () => {
+    editorFocused = true;
+  });
+  body.addEventListener("focusout", () => {
+    editorFocused = false;
+  });
   function mount(): void {
     if (editor) return;
     editor = createMarkdownEditor(body, el, note.content, (markdown) => {
       latestContent = markdown;
       if (markdown === note.content) return; // ignore the initial value echo
       window.clearTimeout(contentTimer);
-      contentTimer = window.setTimeout(
-        () => patch({ content: markdown }),
-        SAVE_DEBOUNCE_MS,
-      );
+      contentTimer = window.setTimeout(() => {
+        // Clear the handle so update()'s "save pending" guard reflects reality;
+        // otherwise a stale id would block all future external content updates.
+        contentTimer = undefined;
+        patch({ content: markdown });
+      }, SAVE_DEBOUNCE_MS);
     });
   }
 
@@ -293,8 +303,9 @@ export function createNoteCard(
     patch({ w: note.w, h: note.h });
   });
 
-  // --- external updates (e.g. edited in another tab) ---
+  // --- external updates (e.g. edited in another tab or synced from another device) ---
   function update(next: Note): void {
+    const contentChanged = next.content !== note.content;
     note = { ...next };
     el.className = `note color-${next.color}`;
     el.style.left = `${next.x}px`;
@@ -303,8 +314,13 @@ export function createNoteCard(
     el.style.height = `${next.h}px`;
     scope.value = next.scope;
     date.textContent = formatRelativeTime(next.createdAt);
-    // Note content lives in the Milkdown editor; external content edits are not
-    // re-synced into an open editor to avoid clobbering in-progress typing.
+    // Note content lives in the Milkdown editor. Apply external content changes
+    // into it, but not while the user is editing this card (focused or a save
+    // pending), to avoid clobbering in-progress typing.
+    if (contentChanged && editor && !editorFocused && contentTimer === undefined) {
+      latestContent = next.content;
+      editor.replace(next.content);
+    }
   }
 
   // --- keep the card inside the viewport (e.g. after the window shrinks) ---

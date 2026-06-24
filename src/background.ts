@@ -1,8 +1,12 @@
 // Service worker: context menu, tab id replies, tab-note cleanup.
 
-import type { GetTabIdResponse, Message } from "./types.js";
-import { deleteAllTabNotes, deleteTabNotes } from "./storage.js";
+import type { GetTabIdResponse, LoginResponse, Message } from "./types.js";
+import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js";
+import { login, onAuthChanged } from "./auth.js";
+import { sync } from "./sync.js";
 import { initI18n, onLangChanged, t } from "./i18n.js";
+
+const SYNC_ALARM = "anchored-notes-sync";
 
 const MENU_ID = "anchored-notes-add";
 
@@ -48,12 +52,47 @@ chrome.tabs.onRemoved.addListener((tabId) => {
   void deleteTabNotes(tabId);
 });
 
+// Sync triggers. sync() is a no-op for anonymous users, so these are safe to
+// always register. Local note edits are debounced; a periodic alarm pulls
+// changes made on other devices; signing in syncs immediately.
+let syncTimer: ReturnType<typeof setTimeout> | undefined;
+function scheduleSync(): void {
+  if (syncTimer) clearTimeout(syncTimer);
+  syncTimer = setTimeout(() => void sync(), 2000);
+}
+
+onNotesChanged(() => scheduleSync());
+onAuthChanged((auth) => {
+  if (auth) void sync();
+});
+
+chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
+chrome.alarms.onAlarm.addListener((alarm) => {
+  if (alarm.name === SYNC_ALARM) void sync();
+});
+
 chrome.runtime.onMessage.addListener(
   (message: Message, sender, sendResponse) => {
     if (message.type === "GET_TAB_ID") {
       const response: GetTabIdResponse = { tabId: sender.tab?.id ?? -1 };
       sendResponse(response);
       return true;
+    }
+    if (message.type === "SYNC") {
+      void sync();
+      return undefined;
+    }
+    if (message.type === "LOGIN") {
+      // Run the OAuth flow here, not in the popup: opening the auth window makes
+      // the popup lose focus and close, which would kill an in-popup flow before
+      // the token exchange completes.
+      login()
+        .then(() => sendResponse({ ok: true } satisfies LoginResponse))
+        .catch((err: unknown) => {
+          console.error("[anchored-notes] login failed:", err);
+          sendResponse({ ok: false, error: String(err) } satisfies LoginResponse);
+        });
+      return true; // keep the message channel open for the async response
     }
     return undefined;
   },

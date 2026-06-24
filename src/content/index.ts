@@ -17,7 +17,9 @@ import {
 } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { initI18n, onLangChanged, t } from "../i18n.js";
-import { NOTE_LIMIT } from "../limits.js";
+import { formatLimit, getCurrentLimit } from "../limits.js";
+import { getAuthState, onAuthChanged } from "../auth.js";
+import { connectRealtime } from "../realtime.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
 
 const HOST_ID = "anchored-notes-host";
@@ -309,6 +311,43 @@ function redraw(shadow: ShadowRoot): void {
   void getNotesMap().then((m) => reconcile(shadow, Object.values(m)));
 }
 
+// Live updates: subscribe to PocketBase realtime for the signed-in user's notes
+// while this tab is visible, so changes from other devices appear without
+// waiting for the periodic sync. A realtime event only triggers a background
+// sync (the single reconciliation path); the resulting storage change then
+// re-renders the page through onNotesChanged. Debounced to collapse bursts.
+let disconnectRealtime: (() => void) | null = null;
+let realtimeSyncTimer: ReturnType<typeof setTimeout> | undefined;
+
+function triggerRealtimeSync(): void {
+  if (realtimeSyncTimer) clearTimeout(realtimeSyncTimer);
+  realtimeSyncTimer = setTimeout(() => {
+    void chrome.runtime.sendMessage({ type: "SYNC" } satisfies Message);
+  }, 300);
+}
+
+// Serialize connect/disconnect so overlapping triggers (visibilitychange +
+// onAuthChanged) can't both pass the guard across an await and leak a second
+// EventSource.
+let realtimeOp: Promise<void> = Promise.resolve();
+
+function refreshRealtime(): void {
+  realtimeOp = realtimeOp.then(applyRealtimeState);
+}
+
+async function applyRealtimeState(): Promise<void> {
+  const auth = await getAuthState();
+  const shouldRun = auth !== null && document.visibilityState === "visible";
+  if (shouldRun && !disconnectRealtime) {
+    disconnectRealtime = connectRealtime(triggerRealtimeSync);
+    // Catch up on changes missed while this tab was hidden/disconnected.
+    triggerRealtimeSync();
+  } else if (!shouldRun && disconnectRealtime) {
+    disconnectRealtime();
+    disconnectRealtime = null;
+  }
+}
+
 function init(): void {
   const shadow = mountHost();
 
@@ -324,6 +363,12 @@ function init(): void {
   watchPageTitle();
 
   onNotesChanged((next) => reconcile(shadow, Object.values(next)));
+
+  // Connect realtime when signed in and this tab is visible; reconnect/disconnect
+  // as visibility or auth state changes.
+  refreshRealtime();
+  document.addEventListener("visibilitychange", () => refreshRealtime());
+  onAuthChanged(() => refreshRealtime());
 
   // Language switched (from the popup): relocalize existing cards in place so
   // their labels, hints and tooltips pick up the new language without tearing
@@ -367,8 +412,9 @@ function showToast(shadow: ShadowRoot, text: string): void {
 // context menu reach note creation through this CREATE_NOTE message.
 async function createNoteWithinLimit(content: string): Promise<void> {
   const map = await getNotesMap();
-  if (Object.keys(map).length >= NOTE_LIMIT) {
-    showToast(mountHost(), t("noteLimitReached", { limit: NOTE_LIMIT }));
+  const limit = await getCurrentLimit();
+  if (Object.keys(map).length >= limit) {
+    showToast(mountHost(), t("noteLimitReached", { limit: formatLimit(limit) }));
     return;
   }
   await saveNote(newNote(content));

@@ -9,6 +9,10 @@ export const pl: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit} notatek użytych",
   noteLimitReached: "Osiągnięto limit notatek ({limit}). Usuń notatkę, aby dodać nową.",
   language: "Język",
+  // account
+  accountSignIn: "Zaloguj się przez Google",
+  accountSignOut: "Wyloguj się",
+  accountSignInFailed: "Logowanie nie powiodło się.",
   optionsTitle: "Anchored Notes — Opcje",
   searchPlaceholder: "Szukaj notatek…",
   exportJson: "Eksportuj JSON",

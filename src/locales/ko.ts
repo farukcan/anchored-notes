@@ -9,6 +9,10 @@ export const ko: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit}개 메모 사용 중",
   noteLimitReached: "메모 한도에 도달했습니다 ({limit}). 새 메모를 추가하려면 메모를 삭제하세요.",
   language: "언어",
+  // account
+  accountSignIn: "Google로 로그인",
+  accountSignOut: "로그아웃",
+  accountSignInFailed: "로그인 실패.",
   optionsTitle: "Anchored Notes — 옵션",
   searchPlaceholder: "메모 검색…",
   exportJson: "JSON 내보내기",

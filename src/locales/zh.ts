@@ -9,6 +9,10 @@ export const zh: Record<MessageKey, string> = {
   notesUsage: "已使用 {count} / {limit} 条笔记",
   noteLimitReached: "已达到笔记上限（{limit}）。请删除一条笔记后再添加新笔记。",
   language: "语言",
+  // account
+  accountSignIn: "使用 Google 登录",
+  accountSignOut: "退出登录",
+  accountSignInFailed: "登录失败。",
   optionsTitle: "Anchored Notes — 选项",
   searchPlaceholder: "搜索笔记…",
   exportJson: "导出 JSON",

@@ -9,6 +9,10 @@ export const fa: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit} یادداشت استفاده‌شده",
   noteLimitReached: "به سقف یادداشت‌ها رسیدید ({limit}). برای افزودن یادداشت جدید، یکی را حذف کنید.",
   language: "زبان",
+  // account
+  accountSignIn: "ورود با Google",
+  accountSignOut: "خروج",
+  accountSignInFailed: "ورود ناموفق بود.",
   optionsTitle: "Anchored Notes — تنظیمات",
   searchPlaceholder: "جستجوی یادداشت‌ها…",
   exportJson: "خروجی JSON",

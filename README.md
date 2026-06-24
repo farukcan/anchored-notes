@@ -62,6 +62,104 @@ flowchart LR
   its keys define the `MessageKey` type, so any missing translation is a
   compile-time error.
 
+### Accounts, tiers & sync
+
+Notes work fully offline without an account. Signing in (Google OAuth via
+PocketBase) syncs notes across devices. The extension authenticates against
+PocketBase and sends all note sync through the Go backend
+([anchored-notes-backend](../anchored-notes-backend)). How the backend stores
+notes and enforces limits is documented in that repo; this section covers only
+the **client behavior and the API the extension calls**.
+
+```mermaid
+flowchart LR
+  EXT[extension] -- "1. Google OAuth → token" --> PB[(PocketBase)]
+  EXT -- "2. notes sync (token)" --> BE[anchored-notes-backend]
+```
+
+| Tier | Note limit | Sync |
+|------|-----------|------|
+| no account | 10 (one device) | none |
+| free | 20 | across devices |
+| pro | unlimited | across devices |
+
+Client modules:
+
+- **Limit** — `src/limits.ts` is the single source of truth. `getCurrentLimit`
+  resolves the cap from the signed-in plan (anonymous = 10, free = 20, pro = ∞);
+  all enforcement points (content script, popup, options) read from it.
+- **Auth** — `src/auth.ts` runs the OAuth2 authorization-code flow via
+  `chrome.identity.launchWebAuthFlow` and stores `{ token, email, plan }` under
+  the `auth` key in `chrome.storage.local`. The flow runs in the **background
+  worker** (`LOGIN` message) because opening the auth window closes the popup.
+- **Sync** — `src/sync.ts` runs only in the background worker (single context, no
+  cross-context races). It pushes local non-`tab` notes plus tombstoned deletions
+  (`deletedNoteIds` in `src/storage.ts`) and merges the response into local
+  storage atomically (last-write-wins on `updatedAt`). Triggers: note changes
+  (debounced), sign-in, a 5-minute alarm, and realtime events. `tab`-scoped notes
+  are session-only and never sync.
+- **Realtime** — `src/realtime.ts` subscribes to PocketBase's SSE realtime for the
+  signed-in user's own notes, so changes from other devices appear live instead of
+  waiting for the alarm. The content script connects while the tab is **visible
+  and signed in** (and disconnects otherwise); a realtime event just triggers a
+  background sync (the single reconciliation path), which updates storage and
+  re-renders every context.
+- **Config** — `src/config.ts` holds the PocketBase and backend URLs and the
+  OAuth provider name. Loading the extension requires the `identity` permission
+  and a Google OAuth provider configured in PocketBase.
+
+#### API the extension calls
+
+**Authentication — PocketBase** (`src/auth.ts`), standard OAuth2 code flow:
+
+| Method | Endpoint | Purpose |
+|--------|----------|---------|
+| GET | `…/api/collections/users/auth-methods` | get the Google provider `authURL`, `state`, `codeVerifier` |
+| POST | `…/api/collections/users/auth-with-oauth2` | exchange `{ provider, code, codeVerifier, redirectUrl }` → `{ token, record }` |
+
+The extension's OAuth `redirectUrl` is `chrome.identity.getRedirectURL()`
+(`https://<extension-id>.chromiumapp.org/`) and must be registered in the Google
+OAuth client's authorized redirect URIs.
+
+**Sync — backend** (`src/sync.ts`), `Authorization: Bearer <PocketBase token>`:
+
+`POST /api/notes/sync`
+
+```jsonc
+// request
+{
+  "upserts": [ /* Note in wire format (below) */ ],
+  "deletes": [ "clientId", … ]            // tombstoned local deletions
+}
+// response — authoritative set after reconciliation
+{
+  "notes":    [ /* Note[], incl. deleted=true tombstones */ ],
+  "rejected": [ "clientId", … ],          // would exceed the plan limit
+  "failed":   [ "clientId", … ],          // backend rejected (e.g. content too long)
+  "plan":     "free" | "pro",
+  "limit":    20                          // -1 = unlimited
+}
+```
+
+Deletes are soft: the client sends deleted `clientId`s in `deletes`, and the
+backend returns them as `deleted=true` tombstones. The client drops tombstoned
+notes locally (and never resurrects a note another device deleted). `rejected`
+and `failed` notes are kept local-only so nothing is lost. The wire
+format maps the local `Note` fields: `id → clientId`, `createdAt → noteCreatedAt`,
+`updatedAt → noteUpdatedAt`; all other fields (`content`, `color`, `scope`,
+`anchorKey`, `x/y/w/h`, `hidden`) are sent as-is.
+
+**Realtime — PocketBase** (`src/realtime.ts`): open an `EventSource` to
+`…/api/realtime`, read the `clientId` from the `PB_CONNECT` event, then `POST`
+`{ clientId, subscriptions: ["notes/*"] }` with `Authorization: <token>`. Events
+arrive as `{ action, record }`; the owner-only `listRule` scopes them to the
+user's own notes. `EventSource` auto-reconnects (re-subscribe on each
+`PB_CONNECT`).
+
+> The backend also exposes `GET /api/me` and `GET /api/notes`; the extension does
+> not use them. See [anchored-notes-backend](../anchored-notes-backend) for the
+> full API reference and the backend's internals.
+
 ## Develop
 
 ```bash

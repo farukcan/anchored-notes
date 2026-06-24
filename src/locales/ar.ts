@@ -9,6 +9,10 @@ export const ar: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit} ملاحظة مستخدمة",
   noteLimitReached: "تم بلوغ حد الملاحظات ({limit}). احذف ملاحظة لإضافة ملاحظة جديدة.",
   language: "اللغة",
+  // account
+  accountSignIn: "تسجيل الدخول باستخدام Google",
+  accountSignOut: "تسجيل الخروج",
+  accountSignInFailed: "فشل تسجيل الدخول.",
   optionsTitle: "Anchored Notes — الخيارات",
   searchPlaceholder: "البحث في الملاحظات…",
   exportJson: "تصدير JSON",

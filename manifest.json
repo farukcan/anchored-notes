@@ -8,7 +8,9 @@
     "storage",
     "contextMenus",
     "tabs",
-    "activeTab"
+    "activeTab",
+    "identity",
+    "alarms"
   ],
   "host_permissions": [
     "<all_urls>"

@@ -13,6 +13,10 @@ export const tr: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit} not kullanıldı",
   noteLimitReached: "Not limitine ulaşıldı ({limit}). Yeni not eklemek için bir notu silin.",
   language: "Dil",
+  // account
+  accountSignIn: "Google ile giriş yap",
+  accountSignOut: "Çıkış yap",
+  accountSignInFailed: "Giriş başarısız.",
   // options
   optionsTitle: "Anchored Notes — Seçenekler",
   searchPlaceholder: "Notlarda ara…",

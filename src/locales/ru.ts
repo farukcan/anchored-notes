@@ -9,6 +9,10 @@ export const ru: Record<MessageKey, string> = {
   notesUsage: "Использовано {count} / {limit} заметок",
   noteLimitReached: "Достигнут лимит заметок ({limit}). Удалите заметку, чтобы добавить новую.",
   language: "Язык",
+  // account
+  accountSignIn: "Войти через Google",
+  accountSignOut: "Выйти",
+  accountSignInFailed: "Не удалось войти.",
   optionsTitle: "Anchored Notes — Настройки",
   searchPlaceholder: "Поиск заметок…",
   exportJson: "Экспорт JSON",

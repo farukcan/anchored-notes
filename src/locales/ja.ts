@@ -9,6 +9,10 @@ export const ja: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit} 件のメモを使用中",
   noteLimitReached: "メモの上限に達しました（{limit}）。新しいメモを追加するには、メモを削除してください。",
   language: "言語",
+  // account
+  accountSignIn: "Googleでログイン",
+  accountSignOut: "ログアウト",
+  accountSignInFailed: "ログインに失敗しました。",
   optionsTitle: "Anchored Notes — オプション",
   searchPlaceholder: "メモを検索…",
   exportJson: "JSON をエクスポート",

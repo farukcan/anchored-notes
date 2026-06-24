@@ -9,6 +9,10 @@ export const vi: Record<MessageKey, string> = {
   notesUsage: "Đã dùng {count} / {limit} ghi chú",
   noteLimitReached: "Đã đạt giới hạn ghi chú ({limit}). Xóa một ghi chú để thêm ghi chú mới.",
   language: "Ngôn ngữ",
+  // account
+  accountSignIn: "Đăng nhập bằng Google",
+  accountSignOut: "Đăng xuất",
+  accountSignInFailed: "Đăng nhập thất bại.",
   optionsTitle: "Anchored Notes — Tùy chọn",
   searchPlaceholder: "Tìm ghi chú…",
   exportJson: "Xuất JSON",

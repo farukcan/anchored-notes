@@ -4,8 +4,16 @@ import type { Message } from "../types.js";
 import { isNoteVisible, pageContextFromLocation } from "../matching.js";
 import { getAllNotes, saveNote } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
-import { NOTE_LIMIT } from "../limits.js";
+import { formatLimit, getCurrentLimit } from "../limits.js";
+import type { LoginResponse } from "../types.js";
+import { getAuthState, logout, onAuthChanged, type AuthState } from "../auth.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
+
+// Sync runs only in the background worker (single context) to avoid races on
+// the shared notes key; the popup just asks it to run.
+function requestSync(): void {
+  void chrome.runtime.sendMessage({ type: "SYNC" } satisfies Message);
+}
 
 async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
@@ -44,20 +52,71 @@ async function chooseLang(lang: Lang): Promise<void> {
   await render();
 }
 
-function renderUsage(total: number): void {
+function renderUsage(total: number, limit: number): void {
   const usage = document.getElementById("usage") as HTMLDivElement;
   const add = document.getElementById("add") as HTMLButtonElement;
-  const atLimit = total >= NOTE_LIMIT;
-  usage.textContent = t("notesUsage", { count: total, limit: NOTE_LIMIT });
+  const atLimit = total >= limit;
+  usage.textContent = t("notesUsage", { count: total, limit: formatLimit(limit) });
   usage.classList.toggle("limit", atLimit);
   add.disabled = atLimit;
+}
+
+// Render the account section: a Google sign-in button when signed out, or the
+// email + plan badge + sign-out when signed in.
+function renderAccount(auth: AuthState | null): void {
+  const account = document.getElementById("account") as HTMLDivElement;
+  account.replaceChildren();
+
+  if (!auth) {
+    const signIn = document.createElement("button");
+    signIn.className = "account-signin";
+    signIn.type = "button";
+    signIn.textContent = t("accountSignIn", null);
+    signIn.addEventListener("click", () => void handleSignIn(signIn));
+    account.appendChild(signIn);
+    return;
+  }
+
+  const email = document.createElement("span");
+  email.className = "account-email";
+  email.textContent = auth.email;
+
+  const badge = document.createElement("span");
+  badge.className = `plan-badge plan-${auth.plan}`;
+  badge.textContent = auth.plan === "pro" ? "Pro" : "Free";
+
+  const signOut = document.createElement("button");
+  signOut.className = "account-signout";
+  signOut.type = "button";
+  signOut.textContent = t("accountSignOut", null);
+  signOut.addEventListener("click", () => void logout());
+
+  account.append(email, badge, signOut);
+}
+
+async function handleSignIn(button: HTMLButtonElement): Promise<void> {
+  button.disabled = true;
+  // The background worker runs the OAuth flow (the popup may close when the auth
+  // window opens). If the popup survives, reflect the result; otherwise the
+  // background completes login on its own and the next popup open shows it.
+  try {
+    const res = (await chrome.runtime.sendMessage({ type: "LOGIN" })) as LoginResponse;
+    if (res.ok) {
+      requestSync();
+    } else {
+      button.disabled = false;
+      button.textContent = t("accountSignInFailed", null);
+    }
+  } catch {
+    // Popup was closed during the flow; background finishes login independently.
+  }
 }
 
 async function render(): Promise<void> {
   const list = document.getElementById("list") as HTMLUListElement;
   const count = document.getElementById("count") as HTMLDivElement;
   const all = await getAllNotes();
-  renderUsage(all.length);
+  renderUsage(all.length, await getCurrentLimit());
   const tab = await activeTab();
   if (!tab?.url || tab.id === undefined) {
     count.textContent = t("noActivePage", null);
@@ -121,11 +180,19 @@ document.addEventListener("click", (e) => {
   if (!(e.target as HTMLElement).closest(".lang")) menu.hidden = true;
 });
 
+onAuthChanged((auth) => {
+  renderAccount(auth);
+  void render();
+});
+
 async function main(): Promise<void> {
   await initI18n();
   applyStaticText();
   renderLangMenu();
+  renderAccount(await getAuthState());
   await render();
+  // Refresh from the backend in the background when signed in.
+  requestSync();
 }
 
 void main();

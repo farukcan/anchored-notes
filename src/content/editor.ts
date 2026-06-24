@@ -7,7 +7,7 @@ import { commonmark, listItemSchema, liftListItemCommand } from "@milkdown/prese
 import { gfm } from "@milkdown/preset-gfm";
 import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { clipboard } from "@milkdown/plugin-clipboard";
-import { $prose, $useKeymap, $view } from "@milkdown/utils";
+import { $prose, $useKeymap, $view, replaceAll } from "@milkdown/utils";
 import { history, undo, redo } from "@milkdown/prose/history";
 import { TextSelection } from "@milkdown/prose/state";
 import type { Node as ProseNode } from "@milkdown/prose/model";
@@ -16,6 +16,8 @@ import { tableToolbarPlugin } from "./table-toolbar.js";
 
 export interface MarkdownEditorHandle {
   destroy: () => void;
+  // Replace the whole document, e.g. when a newer version arrives from sync.
+  replace: (markdown: string) => void;
 }
 
 // Render GFM task list items (list_item with a non-null `checked` attribute) as
@@ -143,6 +145,7 @@ export function createMarkdownEditor(
     });
 
   return {
-    destroy: () => void ready.then(() => editor?.destroy())
+    destroy: () => void ready.then(() => editor?.destroy()),
+    replace: (markdown: string) => void ready.then(() => editor?.action(replaceAll(markdown)))
   };
 }

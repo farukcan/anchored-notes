@@ -11,6 +11,10 @@ export const en = {
   notesUsage: "{count} / {limit} notes used",
   noteLimitReached: "Note limit reached ({limit}). Delete a note to add a new one.",
   language: "Language",
+  // account
+  accountSignIn: "Sign in with Google",
+  accountSignOut: "Sign out",
+  accountSignInFailed: "Sign-in failed.",
   // options
   optionsTitle: "Anchored Notes — Options",
   searchPlaceholder: "Search notes…",

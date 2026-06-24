@@ -9,6 +9,10 @@ export const de: Record<MessageKey, string> = {
   notesUsage: "{count} / {limit} Notizen verwendet",
   noteLimitReached: "Notizlimit erreicht ({limit}). Lösche eine Notiz, um eine neue hinzuzufügen.",
   language: "Sprache",
+  // account
+  accountSignIn: "Mit Google anmelden",
+  accountSignOut: "Abmelden",
+  accountSignInFailed: "Anmeldung fehlgeschlagen.",
   optionsTitle: "Anchored Notes — Optionen",
   searchPlaceholder: "Notizen suchen…",
   exportJson: "JSON exportieren",

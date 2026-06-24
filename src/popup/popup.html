@@ -25,6 +25,38 @@
       }
       button.primary:hover { background: #d8c22f; }
       button.primary:disabled { background: #e7e7e7; color: #999; cursor: not-allowed; }
+      .account {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin: 0 0 10px;
+        min-height: 24px;
+      }
+      .account-email { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #444; font-size: 12px; }
+      .plan-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+      .plan-badge.plan-free { background: #ececec; color: #666; }
+      .plan-badge.plan-pro { background: #e7d23c; color: #5a4d00; }
+      .account-signin {
+        width: 100%;
+        padding: 7px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background: #fff;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .account-signin:hover { background: #f6f6f6; }
+      .account-signin:disabled { color: #999; cursor: default; }
+      .account-signout {
+        border: none;
+        background: transparent;
+        color: #1a73e8;
+        cursor: pointer;
+        font-size: 12px;
+        padding: 2px 4px;
+      }
+      .account-signout:hover { text-decoration: underline; }
       .count { margin: 10px 0 4px; color: #666; text-align: center; }
       .count.limit { color: #c0392b; }
       .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
@@ -96,6 +128,7 @@
         <div id="lang-menu" class="lang-menu" hidden></div>
       </div>
     </div>
+    <div class="account" id="account"></div>
     <button id="add" class="primary"></button>
     <div class="count" id="usage"></div>
     <div class="count" id="count"></div>
