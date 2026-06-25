@@ -113,6 +113,12 @@ export async function clearDeletedNoteIds(ids: string[]): Promise<void> {
   await chrome.storage.local.set({ [DELETED_KEY]: remaining });
 }
 
+// Remove all locally stored notes and pending deletion tombstones. Used after
+// account deletion so no synced data lingers on the device.
+export async function wipeLocalNotes(): Promise<void> {
+  await chrome.storage.local.remove([NOTES_KEY, DELETED_KEY]);
+}
+
 // Field-wise note equality, used to skip storage writes when a sync produced no
 // real change (JSON.stringify would be sensitive to key order).
 function sameNote(a: Note, b: Note): boolean {

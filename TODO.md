@@ -19,9 +19,14 @@ so everything below is **packaging / compliance**, not feature work.
   retention, and how to request deletion (see item 4).
 
 ### 2. Account / data deletion
-- [ ] Add a "Delete my account & data" action (options page or popup).
-- [ ] Backend endpoint to hard-delete the user's notes + account.
-- [ ] On success, clear local `auth` + `notes` and sign out.
+- [x] Add a "Delete my account & data" action (options page or popup).
+  Options page account section: type-your-email-to-confirm "Delete account"
+  (also adds sign-in / sign-out, previously missing on the options page).
+- [x] Backend endpoint to hard-delete the user's notes + account.
+  `DELETE /api/account` (`account.go` → `pb.Client.DeleteUser`); notes
+  cascade-delete via the `notes.user` relation.
+- [x] On success, clear local `auth` + `notes` and sign out.
+  `deleteAccount()` signs out, then `wipeLocalNotes()` clears notes + tombstones.
 - Why: `logout()` only clears `chrome.storage.local`; backend notes persist.
   Chrome's data policy (and GDPR) expect a user-initiated deletion path. Likely
   rejection reason if missing.

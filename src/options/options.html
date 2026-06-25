@@ -29,10 +29,23 @@
       tr:hover .title { color: #000; text-decoration: underline; }
       .detail td { background: #fafafa; }
       .detail .content { white-space: pre-wrap; word-break: break-word; font-size: 13px; color: #333; }
+      .account { display: flex; align-items: center; gap: 8px; margin: 12px 0; min-height: 28px; }
+      .account-email { color: #444; font-size: 13px; }
+      .plan-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.03em; }
+      .plan-badge.plan-free { background: #ececec; color: #666; }
+      .plan-badge.plan-pro { background: #e7d23c; color: #5a4d00; }
+      .account-signin { padding: 6px 12px; border: 1px solid #ddd; border-radius: 4px; background: #fff; cursor: pointer; font-weight: 600; }
+      .account-signin:hover { background: #f6f6f6; }
+      .account-signin:disabled { color: #999; cursor: default; }
+      .account-signout { border: none; background: transparent; color: #1a73e8; cursor: pointer; font-size: 13px; padding: 2px 4px; }
+      .account-signout:hover { text-decoration: underline; }
+      .account-delete { margin-left: auto; border: 1px solid #e0b4b4; background: #fff; color: #c0392b; cursor: pointer; font-size: 13px; padding: 6px 12px; border-radius: 4px; }
+      .account-delete:hover { background: #fdecea; }
     </style>
   </head>
   <body>
     <h1>⚓ Anchored Notes</h1>
+    <div class="account" id="account"></div>
     <div class="usage" id="usage"></div>
     <div class="toolbar">
       <input type="search" id="search" />

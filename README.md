@@ -92,6 +92,10 @@ Client modules:
   `chrome.identity.launchWebAuthFlow` and stores `{ token, email, plan }` under
   the `auth` key in `chrome.storage.local`. The flow runs in the **background
   worker** (`LOGIN` message) because opening the auth window closes the popup.
+  `deleteAccount` calls the backend `DELETE /api/account` to hard-delete the
+  account and all synced notes, then signs out and wipes local notes
+  (`wipeLocalNotes`). The options page exposes sign-in, sign-out and a
+  type-your-email-to-confirm **Delete account** action.
 - **Sync** — `src/sync.ts` runs only in the background worker (single context, no
   cross-context races). It pushes local non-`tab` notes plus tombstoned deletions
   (`deletedNoteIds` in `src/storage.ts`) and merges the response into local

@@ -17,6 +17,9 @@ export const tr: Record<MessageKey, string> = {
   accountSignIn: "Google ile giriş yap",
   accountSignOut: "Çıkış yap",
   accountSignInFailed: "Giriş başarısız.",
+  accountDeleteAccount: "Hesabı sil",
+  accountDeleteConfirm: "Hesabını ve eşitlenmiş tüm notları kalıcı olarak silmek için e-postanı yaz:",
+  accountDeleteFailed: "Hesap silme başarısız.",
   // options
   optionsTitle: "Anchored Notes — Seçenekler",
   searchPlaceholder: "Notlarda ara…",

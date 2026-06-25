@@ -4,7 +4,7 @@
 // (popup, content, background) can read the current account state synchronously
 // after an initial async load.
 
-import { getRuntimeConfig } from "./config.js";
+import { BACKEND_URL, getRuntimeConfig } from "./config.js";
 
 export type Plan = "free" | "pro";
 
@@ -113,6 +113,23 @@ export async function login(): Promise<AuthState> {
 }
 
 export async function logout(): Promise<void> {
+  await setAuthState(null);
+}
+
+// Hard-delete the account and all synced notes on the backend, then sign out.
+// A 401 means the token/account is already gone, so we still clear local auth.
+// Callers clear local notes afterwards (storage isn't imported here to avoid a
+// circular import: storage.ts depends on this module).
+export async function deleteAccount(): Promise<void> {
+  const auth = await getAuthState();
+  if (!auth) return;
+  const res = await fetch(`${BACKEND_URL}/api/account`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${auth.token}` },
+  });
+  if (!res.ok && res.status !== 401) {
+    throw new Error(`account deletion failed: ${res.status} ${await res.text()}`);
+  }
   await setAuthState(null);
 }
 

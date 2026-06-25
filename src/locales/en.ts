@@ -15,6 +15,9 @@ export const en = {
   accountSignIn: "Sign in with Google",
   accountSignOut: "Sign out",
   accountSignInFailed: "Sign-in failed.",
+  accountDeleteAccount: "Delete account",
+  accountDeleteConfirm: "Type your email to permanently delete your account and all synced notes:",
+  accountDeleteFailed: "Account deletion failed.",
   // options
   optionsTitle: "Anchored Notes — Options",
   searchPlaceholder: "Search notes…",

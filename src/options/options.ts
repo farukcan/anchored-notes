@@ -1,10 +1,11 @@
 // Options page: list, search, delete, export and import all notes.
 
-import type { Note } from "../types.js";
-import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes } from "../storage.js";
+import type { LoginResponse, Note } from "../types.js";
+import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes, wipeLocalNotes } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { formatRelativeTime } from "../relative-time.js";
 import { formatLimit, getCurrentLimit } from "../limits.js";
+import { deleteAccount, getAuthState, logout, onAuthChanged, type AuthState } from "../auth.js";
 import { initI18n, onLangChanged, t } from "../i18n.js";
 
 const SWATCH: Record<string, string> = {
@@ -30,6 +31,84 @@ function renderUsage(total: number, limit: number): void {
   const usage = document.getElementById("usage") as HTMLDivElement;
   usage.textContent = t("notesUsage", { count: total, limit: formatLimit(limit) });
   usage.classList.toggle("limit", total >= limit);
+}
+
+// Sync runs only in the background worker; the options page just asks it to run.
+function requestSync(): void {
+  void chrome.runtime.sendMessage({ type: "SYNC" });
+}
+
+// Render the account section: a Google sign-in button when signed out, or the
+// email + plan badge + sign-out + delete-account when signed in.
+function renderAccount(auth: AuthState | null): void {
+  const account = document.getElementById("account") as HTMLDivElement;
+  account.replaceChildren();
+
+  if (!auth) {
+    const signIn = document.createElement("button");
+    signIn.className = "account-signin";
+    signIn.type = "button";
+    signIn.textContent = t("accountSignIn", null);
+    signIn.addEventListener("click", () => void handleSignIn(signIn));
+    account.appendChild(signIn);
+    return;
+  }
+
+  const email = document.createElement("span");
+  email.className = "account-email";
+  email.textContent = auth.email;
+
+  const badge = document.createElement("span");
+  badge.className = `plan-badge plan-${auth.plan}`;
+  badge.textContent = auth.plan === "pro" ? "Pro" : "Free";
+
+  const signOut = document.createElement("button");
+  signOut.className = "account-signout";
+  signOut.type = "button";
+  signOut.textContent = t("accountSignOut", null);
+  signOut.addEventListener("click", () => void logout());
+
+  const del = document.createElement("button");
+  del.className = "account-delete";
+  del.type = "button";
+  del.textContent = t("accountDeleteAccount", null);
+  del.addEventListener("click", () => void handleDeleteAccount(del, auth));
+
+  account.append(email, badge, signOut, del);
+}
+
+async function handleSignIn(button: HTMLButtonElement): Promise<void> {
+  button.disabled = true;
+  try {
+    const res = (await chrome.runtime.sendMessage({ type: "LOGIN" })) as LoginResponse;
+    if (res.ok) {
+      requestSync();
+    } else {
+      button.disabled = false;
+      button.textContent = t("accountSignInFailed", null);
+    }
+  } catch {
+    // Background finishes login independently; onAuthChanged refreshes the UI.
+  }
+}
+
+// Require the user to type their email, then hard-delete the account + all synced
+// notes on the backend and wipe local notes. deleteAccount() signs out first, so
+// the wipe's change event can't trigger a resync (sync is a no-op when signed out).
+async function handleDeleteAccount(button: HTMLButtonElement, auth: AuthState): Promise<void> {
+  const typed = window.prompt(t("accountDeleteConfirm", null));
+  if (typed === null || typed.trim().toLowerCase() !== auth.email.toLowerCase()) return;
+  button.disabled = true;
+  try {
+    await deleteAccount();
+  } catch {
+    button.disabled = false;
+    window.alert(t("accountDeleteFailed", null));
+    return;
+  }
+  // Account is gone server-side; clear local notes (failure here isn't a delete
+  // failure, so it must not surface the delete-failed alert).
+  await wipeLocalNotes();
 }
 
 async function render(): Promise<void> {
@@ -177,16 +256,29 @@ document.getElementById("file")?.addEventListener("change", (e) => {
   if (file) void importNotes(file);
 });
 
+// Last known account state, so a language switch can re-render account labels
+// without an async storage read.
+let currentAuth: AuthState | null = null;
+
 onNotesChanged(() => void render());
+onAuthChanged((auth) => {
+  currentAuth = auth;
+  renderAccount(auth);
+});
 onLangChanged(() => {
   applyStaticText();
+  renderAccount(currentAuth);
   void render();
 });
 
 async function main(): Promise<void> {
   await initI18n();
   applyStaticText();
+  currentAuth = await getAuthState();
+  renderAccount(currentAuth);
   await render();
+  // Refresh from the backend in the background when signed in.
+  requestSync();
 }
 
 void main();
