@@ -4,7 +4,7 @@
 // (popup, content, background) can read the current account state synchronously
 // after an initial async load.
 
-import { OAUTH_PROVIDER, PB_URL } from "./config.js";
+import { getRuntimeConfig } from "./config.js";
 
 export type Plan = "free" | "pro";
 
@@ -53,14 +53,15 @@ function normalizePlan(plan: string): Plan {
 // Run the Google OAuth2 code flow and persist the resulting account state.
 // Throws with context on failure; callers surface a localized message.
 export async function login(): Promise<AuthState> {
-  const methodsRes = await fetch(`${PB_URL}/api/collections/users/auth-methods`);
+  const { pbUrl, oauthProvider } = await getRuntimeConfig();
+  const methodsRes = await fetch(`${pbUrl}/api/collections/users/auth-methods`);
   if (!methodsRes.ok) {
     throw new Error(`auth-methods failed: ${methodsRes.status}`);
   }
   const methods = (await methodsRes.json()) as AuthMethodsResponse;
-  const provider = methods.oauth2.providers.find((p) => p.name === OAUTH_PROVIDER);
+  const provider = methods.oauth2.providers.find((p) => p.name === oauthProvider);
   if (!provider) {
-    throw new Error(`OAuth provider "${OAUTH_PROVIDER}" not enabled in PocketBase`);
+    throw new Error(`OAuth provider "${oauthProvider}" not enabled in PocketBase`);
   }
 
   const redirectUrl = chrome.identity.getRedirectURL();
@@ -86,11 +87,11 @@ export async function login(): Promise<AuthState> {
     throw new Error("OAuth state mismatch");
   }
 
-  const exchangeRes = await fetch(`${PB_URL}/api/collections/users/auth-with-oauth2`, {
+  const exchangeRes = await fetch(`${pbUrl}/api/collections/users/auth-with-oauth2`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      provider: OAUTH_PROVIDER,
+      provider: oauthProvider,
       code,
       codeVerifier: provider.codeVerifier,
       redirectUrl,

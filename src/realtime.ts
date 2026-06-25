@@ -10,10 +10,9 @@
 // EventSource auto-reconnects on drop and emits a fresh PB_CONNECT, so we simply
 // re-subscribe whenever PB_CONNECT arrives.
 
-import { PB_URL } from "./config.js";
+import { getRuntimeConfig } from "./config.js";
 import { getAuthState } from "./auth.js";
 
-const REALTIME_URL = `${PB_URL}/api/realtime`;
 const NOTES_TOPIC = "notes/*";
 
 interface ConnectEvent {
@@ -32,11 +31,11 @@ export function connectRealtime(onChange: () => void): () => void {
     source = null;
   };
 
-  const subscribe = async (clientId: string): Promise<void> => {
+  const subscribe = async (realtimeUrl: string, clientId: string): Promise<void> => {
     const auth = await getAuthState();
     if (!auth || closed) return;
     try {
-      const res = await fetch(REALTIME_URL, {
+      const res = await fetch(realtimeUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: auth.token },
         body: JSON.stringify({ clientId, subscriptions: [NOTES_TOPIC] }),
@@ -53,12 +52,17 @@ export function connectRealtime(onChange: () => void): () => void {
     }
   };
 
-  source = new EventSource(REALTIME_URL);
-  source.addEventListener("PB_CONNECT", (event) => {
-    const data = JSON.parse((event as MessageEvent).data) as ConnectEvent;
-    void subscribe(data.clientId);
-  });
-  source.addEventListener(NOTES_TOPIC, () => onChange());
+  void (async (): Promise<void> => {
+    const { pbUrl } = await getRuntimeConfig();
+    if (closed) return;
+    const realtimeUrl = `${pbUrl}/api/realtime`;
+    source = new EventSource(realtimeUrl);
+    source.addEventListener("PB_CONNECT", (event) => {
+      const data = JSON.parse((event as MessageEvent).data) as ConnectEvent;
+      void subscribe(realtimeUrl, data.clientId);
+    });
+    source.addEventListener(NOTES_TOPIC, () => onChange());
+  })();
 
   return disconnect;
 }

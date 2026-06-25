@@ -104,9 +104,10 @@ Client modules:
   and signed in** (and disconnects otherwise); a realtime event just triggers a
   background sync (the single reconciliation path), which updates storage and
   re-renders every context.
-- **Config** — `src/config.ts` holds the PocketBase and backend URLs and the
-  OAuth provider name. Loading the extension requires the `identity` permission
-  and a Google OAuth provider configured in PocketBase.
+- **Config** — `src/config.ts` hardcodes only the backend URL; the PocketBase
+  URL and OAuth provider name are fetched at runtime from the backend's
+  `/api/config` (cached per session). Loading the extension requires the
+  `identity` permission and a Google OAuth provider configured in PocketBase.
 
 #### API the extension calls
 
