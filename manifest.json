@@ -7,7 +7,6 @@
   "permissions": [
     "storage",
     "contextMenus",
-    "tabs",
     "activeTab",
     "identity",
     "alarms"

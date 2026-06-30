@@ -40,6 +40,7 @@ export const fr: Record<MessageKey, string> = {
   scopeTabHint: "Ancrée à cet onglet — suit la navigation, disparaît au redémarrage",
   scopeSiteHintNamed: "Ancrée à {name} — s'affiche sur chaque page de ce domaine",
   scopePageHintNamed: "Ancrée à cette page ({title}) — s'affiche uniquement sur cette URL exacte",
+  tabNoteWarning: "Les notes d'onglet ne sont ni synchronisées ni enregistrées, et sont supprimées à la fin de la session.",
   anchorTitle: "Ancrée à",
   scopeSelectTitle: "⚓ Où cette note est ancrée",
   colorTitle: "Couleur",

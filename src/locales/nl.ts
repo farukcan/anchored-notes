@@ -40,6 +40,7 @@ export const nl: Record<MessageKey, string> = {
   scopeTabHint: "Verankerd aan dit tabblad — volgt navigatie, verdwijnt na herstart",
   scopeSiteHintNamed: "Verankerd aan {name} — verschijnt op elke pagina van dit domein",
   scopePageHintNamed: "Verankerd aan deze pagina ({title}) — alleen op deze exacte URL",
+  tabNoteWarning: "Tabbladnotities worden niet gesynchroniseerd of opgeslagen en worden verwijderd wanneer de sessie eindigt.",
   anchorTitle: "Verankerd aan",
   scopeSelectTitle: "⚓ Waar deze notitie is verankerd",
   colorTitle: "Kleur",

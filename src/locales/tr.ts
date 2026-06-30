@@ -47,6 +47,7 @@ export const tr: Record<MessageKey, string> = {
   scopeTabHint: "Bu sekmeye sabitlendi — gezinmede takip eder, yeniden başlatınca gider",
   scopeSiteHintNamed: "{name} sitesine sabitlendi — bu alan adının her sayfasında görünür",
   scopePageHintNamed: "Bu sayfaya sabitlendi ({title}) — yalnızca bu URL'de görünür",
+  tabNoteWarning: "Sekme notları senkronize edilmez, saklanmaz ve oturum bitince silinir.",
   // note card tools
   anchorTitle: "Sabitlenme yeri",
   scopeSelectTitle: "⚓ Bu notun nereye sabitlendiği",

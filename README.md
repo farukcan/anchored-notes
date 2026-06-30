@@ -101,7 +101,11 @@ Client modules:
   (`deletedNoteIds` in `src/storage.ts`) and merges the response into local
   storage atomically (last-write-wins on `updatedAt`). Triggers: note changes
   (debounced), sign-in, a 5-minute alarm, and realtime events. `tab`-scoped notes
-  are session-only and never sync.
+  are session-only and never sync; switching an already-synced note to `tab`
+  scope tombstones it so the next sync deletes the server copy, while the note
+  lives on locally (`applySyncResult` keeps `tab` notes through applied deletes).
+  The note card shows a small notice on `tab`-scoped notes that they aren't
+  synced or saved and vanish at session end.
 - **Realtime** — `src/realtime.ts` subscribes to PocketBase's SSE realtime for the
   signed-in user's own notes, so changes from other devices appear live instead of
   waiting for the alarm. The content script connects while the tab is **visible

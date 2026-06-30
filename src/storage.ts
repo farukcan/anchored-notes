@@ -43,11 +43,18 @@ export async function getAllNotes(): Promise<Note[]> {
   return Object.values(await getNotesMap());
 }
 
-export function saveNote(note: Note): Promise<void> {
-  return mutate((map) => {
+export async function saveNote(note: Note): Promise<void> {
+  let switchedToTab = false;
+  await mutate((map) => {
+    const prev = map[note.id];
+    switchedToTab = note.scope === "tab" && prev !== undefined && prev.scope !== "tab";
     map[note.id] = note;
     return true;
   });
+  // Switching a synced note to tab scope unsyncs it: tombstone it so the next
+  // sync drops the server copy. The note lives on locally as a session-only tab
+  // note (applySyncResult keeps tab notes through the applied deletes).
+  if (switchedToTab && (await getAuthState())) await recordDeletedNote(note.id);
 }
 
 export async function deleteNote(id: string): Promise<void> {
@@ -159,14 +166,20 @@ export function applySyncResult(params: {
   return mutate((map) => {
     let changed = false;
     for (const id of deleted) {
-      if (id in map) {
-        delete map[id];
-        changed = true;
-      }
+      const local = map[id];
+      if (!local) continue;
+      // A note switched to tab scope is tombstoned to drop its server copy, but
+      // stays locally as a session-only tab note — don't delete it here.
+      if (local.scope === "tab") continue;
+      delete map[id];
+      changed = true;
     }
     for (const [id, serverNote] of serverById) {
       const local = map[id];
-      if (local && local.scope !== "tab" && local.updatedAt > serverNote.updatedAt) continue;
+      // A note switched to tab scope is session-only and authoritative locally;
+      // never let the stale pre-switch server copy overwrite it back.
+      if (local && local.scope === "tab") continue;
+      if (local && local.updatedAt > serverNote.updatedAt) continue;
       if (!local || !sameNote(local, serverNote)) {
         map[id] = serverNote;
         changed = true;

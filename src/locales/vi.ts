@@ -40,6 +40,7 @@ export const vi: Record<MessageKey, string> = {
   scopeTabHint: "Neo vào tab này — theo khi điều hướng, biến mất khi khởi động lại",
   scopeSiteHintNamed: "Neo vào {name} — hiển thị trên mọi trang của tên miền này",
   scopePageHintNamed: "Neo vào trang này ({title}) — chỉ hiển thị trên URL chính xác này",
+  tabNoteWarning: "Ghi chú tab không được đồng bộ hay lưu lại, và sẽ bị xóa khi phiên kết thúc.",
   anchorTitle: "Neo tại",
   scopeSelectTitle: "⚓ Ghi chú này được neo ở đâu",
   colorTitle: "Màu",

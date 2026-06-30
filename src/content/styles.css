@@ -159,6 +159,19 @@
   line-height: 1.4;
 }
 
+.note-tab-notice {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  font-size: 10px;
+  line-height: 1.3;
+  opacity: 0.7;
+  border-top: 1px solid var(--header);
+}
+
+.note-tab-notice[hidden] {
+  display: none;
+}
+
 .note-body .milkdown {
   height: 100%;
 }
@@ -252,6 +265,10 @@
   background: rgba(74, 144, 217, 0.18);
   pointer-events: none;
   z-index: 2;
+}
+.note-body .ProseMirror img {
+  width: 100%;
+  height: auto;
 }
 .note-body .ProseMirror del { text-decoration: line-through; opacity: 0.75; }
 .note-body .ProseMirror a { color: inherit; text-decoration: underline; }

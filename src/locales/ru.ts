@@ -40,6 +40,7 @@ export const ru: Record<MessageKey, string> = {
   scopeTabHint: "Закреплена на этой вкладке — следует при навигации, исчезает после перезапуска",
   scopeSiteHintNamed: "Закреплена на {name} — показывается на каждой странице домена",
   scopePageHintNamed: "Закреплена на этой странице ({title}) — только по этому точному URL",
+  tabNoteWarning: "Заметки вкладки не синхронизируются и не сохраняются, они удаляются по завершении сеанса.",
   anchorTitle: "Закреплена на",
   scopeSelectTitle: "⚓ Где закреплена эта заметка",
   colorTitle: "Цвет",

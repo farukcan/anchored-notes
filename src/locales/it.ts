@@ -40,6 +40,7 @@ export const it: Record<MessageKey, string> = {
   scopeTabHint: "Ancorata a questa scheda — segue la navigazione, scompare al riavvio",
   scopeSiteHintNamed: "Ancorata a {name} — appare su ogni pagina di questo dominio",
   scopePageHintNamed: "Ancorata a questa pagina ({title}) — appare solo su questo URL esatto",
+  tabNoteWarning: "Le note della scheda non vengono sincronizzate né salvate e vengono rimosse alla fine della sessione.",
   anchorTitle: "Ancorata a",
   scopeSelectTitle: "⚓ Dove è ancorata questa nota",
   colorTitle: "Colore",

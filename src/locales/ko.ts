@@ -40,6 +40,7 @@ export const ko: Record<MessageKey, string> = {
   scopeTabHint: "이 탭에 고정 — 이동 시 따라감, 재시작 시 사라짐",
   scopeSiteHintNamed: "{name}에 고정 — 이 도메인의 모든 페이지에 표시",
   scopePageHintNamed: "이 페이지에 고정 ({title}) — 이 정확한 URL에서만 표시",
+  tabNoteWarning: "탭 메모는 동기화되거나 저장되지 않으며 세션이 끝나면 삭제됩니다.",
   anchorTitle: "고정 위치",
   scopeSelectTitle: "⚓ 이 메모가 고정된 위치",
   colorTitle: "색상",

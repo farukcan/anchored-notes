@@ -45,6 +45,7 @@ export const en = {
   scopeTabHint: "Anchored to this tab — follows it across navigation, gone on restart",
   scopeSiteHintNamed: "Anchored to {name} — shows on every page of this domain",
   scopePageHintNamed: "Anchored to this page ({title}) — shows only on this exact URL",
+  tabNoteWarning: "Tab notes aren't synced or saved, and are removed when the session ends.",
   // note card tools
   anchorTitle: "Anchored to",
   scopeSelectTitle: "⚓ Where this note is anchored",

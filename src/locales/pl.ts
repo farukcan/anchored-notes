@@ -40,6 +40,7 @@ export const pl: Record<MessageKey, string> = {
   scopeTabHint: "Zakotwiczona na tej karcie — podąża za nawigacją, znika po ponownym uruchomieniu",
   scopeSiteHintNamed: "Zakotwiczona na {name} — widoczna na każdej stronie tej domeny",
   scopePageHintNamed: "Zakotwiczona na tej stronie ({title}) — widoczna tylko pod tym dokładnym adresem URL",
+  tabNoteWarning: "Notatki karty nie są synchronizowane ani zapisywane i są usuwane po zakończeniu sesji.",
   anchorTitle: "Zakotwiczona na",
   scopeSelectTitle: "⚓ Gdzie jest zakotwiczona ta notatka",
   colorTitle: "Kolor",

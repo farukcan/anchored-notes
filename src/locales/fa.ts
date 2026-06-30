@@ -40,6 +40,7 @@ export const fa: Record<MessageKey, string> = {
   scopeTabHint: "به این زبانه لنگر انداخته — در پیمایش دنبال می‌کند، پس از راه‌اندازی مجدد ناپدید می‌شود",
   scopeSiteHintNamed: "به {name} لنگر انداخته — در هر صفحهٔ این دامنه نمایش داده می‌شود",
   scopePageHintNamed: "به این صفحه لنگر انداخته ({title}) — فقط در این URL دقیق نمایش داده می‌شود",
+  tabNoteWarning: "یادداشت‌های زبانه همگام‌سازی یا ذخیره نمی‌شوند و با پایان نشست حذف می‌شوند.",
   anchorTitle: "لنگر انداخته در",
   scopeSelectTitle: "⚓ این یادداشت کجا لنگر انداخته",
   colorTitle: "رنگ",

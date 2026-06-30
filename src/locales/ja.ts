@@ -40,6 +40,7 @@ export const ja: Record<MessageKey, string> = {
   scopeTabHint: "このタブに固定 — 移動に追従、再起動で消える",
   scopeSiteHintNamed: "{name} に固定 — このドメインのすべてのページに表示",
   scopePageHintNamed: "このページに固定 ({title}) — この URL にのみ表示",
+  tabNoteWarning: "タブのメモは同期も保存もされず、セッション終了時に削除されます。",
   anchorTitle: "固定先",
   scopeSelectTitle: "⚓ このメモの固定先",
   colorTitle: "色",

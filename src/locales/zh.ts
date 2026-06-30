@@ -40,6 +40,7 @@ export const zh: Record<MessageKey, string> = {
   scopeTabHint: "锚定到此标签页 — 跟随导航，重启后消失",
   scopeSiteHintNamed: "锚定到 {name} — 在此域名的每个页面显示",
   scopePageHintNamed: "锚定到此页面（{title}）— 仅在此确切 URL 显示",
+  tabNoteWarning: "标签页便签不会同步或保存，并在会话结束时删除。",
   anchorTitle: "锚定于",
   scopeSelectTitle: "⚓ 此笔记的锚定位置",
   colorTitle: "颜色",

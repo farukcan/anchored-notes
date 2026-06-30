@@ -40,14 +40,56 @@ so everything below is **packaging / compliance**, not feature work.
 - Why: required fields in the submission form. None exist in the repo yet.
 
 ### 4. Permission justifications
-- [ ] Write a one-line justification per permission for the dashboard:
-  - `<all_urls>` host permission — notes can be placed on any page.
-  - `tabs` — tab-scoped notes need tab ids.
-  - `identity` — Google OAuth sign-in.
-  - `contextMenus`, `storage`, `activeTab`, `alarms` — brief each.
-- [ ] Single-purpose statement: "sticky notes anchored to pages/sites/tabs".
+- [x] One-line justification per permission for the dashboard:
+  - `<all_urls>` (host) — the content script injects the sticky-note UI into
+    every page so a note can be anchored to any URL the user visits.
+  - `identity` — Google OAuth2 sign-in via `chrome.identity.launchWebAuthFlow`
+    to authenticate the user for cross-device note sync.
+  - `activeTab` — the popup reads the current tab (`chrome.tabs.query`) to
+    create/show a note for the page the user is looking at.
+  - `contextMenus` — right-click menu entry to add a note to the current page.
+  - `storage` — persists notes, tombstones, and the auth token in
+    `chrome.storage.local`.
+  - `alarms` — a periodic alarm (every 5 min) triggers background sync with the
+    backend.
+- [x] Single-purpose statement: "sticky notes anchored to pages/sites/tabs".
+- Where to paste (dashboard **Privacy** tab, not the package upload step):
+  - Single purpose → "Single purpose" field.
+  - The 6 API permissions → each gets its own "Permission justification" box
+    (auto-listed from the manifest).
+  - `<all_urls>` → the separate "Host permission justification" box.
+  - Privacy policy URL (item 1) + data-usage disclosures also live here.
+  - Note: uploading the zip only stores the package; these Privacy-tab fields
+    must be filled or the submission is blocked / rejected on review.
+  - Ref: https://developer.chrome.com/docs/webstore/cws-dashboard-privacy
 - Why: `<all_urls>` + `identity` trigger **manual review**. Clear
   justifications reduce review friction and rejection risk.
+
+### 5. OAuth consent screen must be in Production
+- [ ] In Google Cloud Console, publish the OAuth consent screen (**Testing →
+  Production**). While in Testing, only manually-added test users can sign in,
+  so published-extension users would all fail login.
+- `email` / `profile` are non-sensitive scopes, so Google verification is not
+  required — but the app must still be **published**, otherwise tokens are
+  capped/short-lived and only test users get through.
+- Why: a Testing-mode consent screen silently blocks every real user. Login
+  works locally only because your account is the test user.
+- Files: none (Google Cloud Console config), affects `src/auth.ts` flow.
+
+### 6. Stabilize the extension id for the OAuth redirect URI
+- [ ] The unpacked dev id ≠ the Web Store id, and
+  `chrome.identity.getRedirectURL()` (`https://<id>.chromiumapp.org/`) depends on
+  it. Pick one:
+  - **Preferred:** create the CWS item (draft upload), copy its **public key**
+    from the dashboard into `manifest.json` as `"key": "..."`, so local and store
+    share one id → a single redirect URI covers both.
+  - **Alternative:** register both ids' `https://<id>.chromiumapp.org/` in the
+    Google OAuth client's Authorized redirect URIs (multiple allowed).
+- [ ] Add the published-id redirect URI to the Google OAuth client **before**
+  publishing, or first-run login throws `redirect_uri_mismatch`.
+- Why: without this, sign-in is broken for every store install even though it
+  works in local dev. (Expanded from the redirect-URI item below.)
+- Files: `manifest.json` (`key`), `src/auth.ts` (consumer, no change needed).
 
 ## Pre-submit checklist
 - [ ] Bump `version` in `manifest.json` + `package.json` if needed (0.1.0 is OK

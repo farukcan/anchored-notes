@@ -177,10 +177,15 @@ export function createNoteCard(
   const body = document.createElement("div");
   body.className = "note-body";
 
+  const tabNotice = document.createElement("div");
+  tabNotice.className = "note-tab-notice";
+  tabNotice.textContent = t("tabNoteWarning", null);
+  tabNotice.hidden = note.scope !== "tab";
+
   const resize = document.createElement("div");
   resize.className = "note-resize";
 
-  el.append(header, palette, menu, body, resize);
+  el.append(header, palette, menu, body, tabNotice, resize);
 
   function patch(changes: Partial<Note>): void {
     note = { ...note, ...changes, updatedAt: Date.now() };
@@ -230,6 +235,7 @@ export function createNoteCard(
   scope.addEventListener("change", () => {
     const next = scope.value as AnchorScope;
     patch({ scope: next, anchorKey: deps.anchorKeyForScope(next) });
+    tabNotice.hidden = next !== "tab";
   });
 
   // --- hide (collapse into the bottom-right badge) ---
@@ -313,6 +319,7 @@ export function createNoteCard(
     el.style.width = `${next.w}px`;
     el.style.height = `${next.h}px`;
     scope.value = next.scope;
+    tabNotice.hidden = next.scope !== "tab";
     date.textContent = formatRelativeTime(next.createdAt);
     // Note content lives in the Milkdown editor. Apply external content changes
     // into it, but not while the user is editing this card (focused or a save
@@ -353,6 +360,7 @@ export function createNoteCard(
     menuBtn.title = t("optionsMenuTitle", null);
     hideItem.textContent = t("hide", null);
     deleteItem.textContent = t("delete", null);
+    tabNotice.textContent = t("tabNoteWarning", null);
     date.textContent = formatRelativeTime(note.createdAt);
   }
 

@@ -40,6 +40,7 @@ export const ar: Record<MessageKey, string> = {
   scopeTabHint: "مثبتة على علامة التبويب هذه — تتبع التنقل، وتختفي عند إعادة التشغيل",
   scopeSiteHintNamed: "مثبتة على {name} — تظهر في كل صفحة من هذا النطاق",
   scopePageHintNamed: "مثبتة على هذه الصفحة ({title}) — تظهر فقط على هذا الرابط بالضبط",
+  tabNoteWarning: "ملاحظات علامة التبويب لا تتم مزامنتها أو حفظها، وتُحذف عند انتهاء الجلسة.",
   anchorTitle: "مثبتة على",
   scopeSelectTitle: "⚓ مكان تثبيت هذه الملاحظة",
   colorTitle: "اللون",

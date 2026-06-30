@@ -40,6 +40,7 @@ export const pt: Record<MessageKey, string> = {
   scopeTabHint: "Ancorada a este separador — segue a navegação, desaparece ao reiniciar",
   scopeSiteHintNamed: "Ancorada a {name} — aparece em cada página deste domínio",
   scopePageHintNamed: "Ancorada a esta página ({title}) — aparece apenas neste URL exato",
+  tabNoteWarning: "As notas de aba não são sincronizadas nem salvas e são removidas ao encerrar a sessão.",
   anchorTitle: "Ancorada a",
   scopeSelectTitle: "⚓ Onde esta nota está ancorada",
   colorTitle: "Cor",

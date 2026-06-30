@@ -40,6 +40,7 @@ export const de: Record<MessageKey, string> = {
   scopeTabHint: "An diesem Tab verankert — folgt der Navigation, verschwindet nach Neustart",
   scopeSiteHintNamed: "An {name} verankert — erscheint auf jeder Seite dieser Domain",
   scopePageHintNamed: "An dieser Seite verankert ({title}) — erscheint nur unter dieser exakten URL",
+  tabNoteWarning: "Tab-Notizen werden nicht synchronisiert oder gespeichert und beim Beenden der Sitzung entfernt.",
   anchorTitle: "Verankert an",
   scopeSelectTitle: "⚓ Wo diese Notiz verankert ist",
   colorTitle: "Farbe",

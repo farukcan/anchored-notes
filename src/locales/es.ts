@@ -40,6 +40,7 @@ export const es: Record<MessageKey, string> = {
   scopeTabHint: "Anclada a esta pestaña — la sigue al navegar, desaparece al reiniciar",
   scopeSiteHintNamed: "Anclada a {name} — aparece en cada página de este dominio",
   scopePageHintNamed: "Anclada a esta página ({title}) — aparece solo en esta URL exacta",
+  tabNoteWarning: "Las notas de pestaña no se sincronizan ni se guardan, y se eliminan al finalizar la sesión.",
   anchorTitle: "Anclada a",
   scopeSelectTitle: "⚓ Dónde está anclada esta nota",
   colorTitle: "Color",
