@@ -20,6 +20,9 @@ export const tr: Record<MessageKey, string> = {
   accountDeleteAccount: "Hesabı sil",
   accountDeleteConfirm: "Hesabını ve eşitlenmiş tüm notları kalıcı olarak silmek için e-postanı yaz:",
   accountDeleteFailed: "Hesap silme başarısız.",
+  accountUpgrade: "Pro'ya yükselt",
+  accountManageBilling: "Aboneliği yönet",
+  accountBillingFailed: "İşlem başarısız.",
   // options
   optionsTitle: "Anchored Notes — Seçenekler",
   searchPlaceholder: "Notlarda ara…",

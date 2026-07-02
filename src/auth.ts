@@ -133,6 +133,35 @@ export async function deleteAccount(): Promise<void> {
   await setAuthState(null);
 }
 
+// Ask the backend to create a Polar session (checkout or customer portal) and
+// open the returned hosted URL in a new tab. The user id comes from the verified
+// token server-side, so a user can only act on their own subscription. Plan
+// changes arrive asynchronously via the Polar webhook; callers re-sync to pick
+// them up. Throws with context on failure.
+async function openPolarSession(path: string): Promise<void> {
+  const auth = await getAuthState();
+  if (!auth) throw new Error("not signed in");
+  const res = await fetch(`${BACKEND_URL}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${auth.token}` },
+  });
+  if (!res.ok) {
+    throw new Error(`${path} failed: ${res.status} ${await res.text()}`);
+  }
+  const { url } = (await res.json()) as { url: string };
+  await chrome.tabs.create({ url });
+}
+
+// Open the Pro checkout (free users).
+export function startUpgrade(): Promise<void> {
+  return openPolarSession("/api/checkout");
+}
+
+// Open the Polar customer portal to manage/cancel the subscription (pro users).
+export function openBilling(): Promise<void> {
+  return openPolarSession("/api/portal");
+}
+
 // Persist a refreshed plan (e.g. after the backend reports an upgrade) without
 // changing the token.
 export async function updatePlan(plan: Plan): Promise<void> {

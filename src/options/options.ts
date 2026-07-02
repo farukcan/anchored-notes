@@ -5,7 +5,7 @@ import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes, wipeLocalNote
 import { deriveTitle } from "../note-title.js";
 import { formatRelativeTime } from "../relative-time.js";
 import { formatLimit, getCurrentLimit } from "../limits.js";
-import { deleteAccount, getAuthState, logout, onAuthChanged, type AuthState } from "../auth.js";
+import { deleteAccount, getAuthState, logout, onAuthChanged, openBilling, startUpgrade, type AuthState } from "../auth.js";
 import { initI18n, onLangChanged, t } from "../i18n.js";
 
 const SWATCH: Record<string, string> = {
@@ -62,6 +62,14 @@ function renderAccount(auth: AuthState | null): void {
   badge.className = `plan-badge plan-${auth.plan}`;
   badge.textContent = auth.plan === "pro" ? "Pro" : "Free";
 
+  // Free users get an upgrade button; pro users get a "manage subscription"
+  // button that opens the Polar customer portal (cancel/card/invoices).
+  const billing = document.createElement("button");
+  billing.className = auth.plan === "pro" ? "account-billing" : "account-upgrade";
+  billing.type = "button";
+  billing.textContent = auth.plan === "pro" ? t("accountManageBilling", null) : t("accountUpgrade", null);
+  billing.addEventListener("click", () => void handleBilling(billing, auth));
+
   const signOut = document.createElement("button");
   signOut.className = "account-signout";
   signOut.type = "button";
@@ -74,7 +82,22 @@ function renderAccount(auth: AuthState | null): void {
   del.textContent = t("accountDeleteAccount", null);
   del.addEventListener("click", () => void handleDeleteAccount(del, auth));
 
-  account.append(email, badge, signOut, del);
+  account.append(email, badge, billing, signOut, del);
+}
+
+// Open the Polar checkout (free) or customer portal (pro) in a new tab. The plan
+// change lands asynchronously via the Polar webhook; a re-sync on window focus
+// (see below) picks it up when the user returns from Polar.
+async function handleBilling(button: HTMLButtonElement, auth: AuthState): Promise<void> {
+  button.disabled = true;
+  try {
+    if (auth.plan === "pro") await openBilling();
+    else await startUpgrade();
+  } catch {
+    window.alert(t("accountBillingFailed", null));
+  } finally {
+    button.disabled = false;
+  }
 }
 
 async function handleSignIn(button: HTMLButtonElement): Promise<void> {
@@ -259,6 +282,10 @@ document.getElementById("file")?.addEventListener("change", (e) => {
 // Last known account state, so a language switch can re-render account labels
 // without an async storage read.
 let currentAuth: AuthState | null = null;
+
+// Returning to this tab (e.g. after completing a Polar checkout) triggers a
+// re-sync so a webhook-driven plan change (free→pro) is reflected in the badge.
+window.addEventListener("focus", () => requestSync());
 
 onNotesChanged(() => void render());
 onAuthChanged((auth) => {

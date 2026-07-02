@@ -18,6 +18,9 @@ export const en = {
   accountDeleteAccount: "Delete account",
   accountDeleteConfirm: "Type your email to permanently delete your account and all synced notes:",
   accountDeleteFailed: "Account deletion failed.",
+  accountUpgrade: "Upgrade to Pro",
+  accountManageBilling: "Manage subscription",
+  accountBillingFailed: "Billing action failed.",
   // options
   optionsTitle: "Anchored Notes — Options",
   searchPlaceholder: "Search notes…",
