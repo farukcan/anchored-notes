@@ -10,6 +10,9 @@ export const zh: Record<MessageKey, string> = {
   noteLimitReached: "已达到笔记上限（{limit}）。请删除一条笔记后再添加新笔记。",
   language: "语言",
   // account
+  accountSignInBenefit: "登录后，你的笔记将在所有设备间同步并安全保存。",
+  usageSignInCta: "登录以提高笔记上限",
+  usageUpgradeCta: "升级 Pro，畅享无限笔记",
   accountSignIn: "使用 Google 登录",
   accountSignOut: "退出登录",
   accountSignInFailed: "登录失败。",

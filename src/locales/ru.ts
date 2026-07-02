@@ -10,6 +10,9 @@ export const ru: Record<MessageKey, string> = {
   noteLimitReached: "Достигнут лимит заметок ({limit}). Удалите заметку, чтобы добавить новую.",
   language: "Язык",
   // account
+  accountSignInBenefit: "Войдите, чтобы синхронизировать заметки на всех устройствах и хранить их в безопасности.",
+  usageSignInCta: "Войдите, чтобы увеличить лимит заметок",
+  usageUpgradeCta: "Перейдите на Pro для безлимитных заметок",
   accountSignIn: "Войти через Google",
   accountSignOut: "Выйти",
   accountSignInFailed: "Не удалось войти.",

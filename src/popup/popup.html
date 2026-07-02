@@ -48,6 +48,20 @@
       }
       .account-signin:hover { background: #f6f6f6; }
       .account-signin:disabled { color: #999; cursor: default; }
+      .account-signin-wrap { width: 100%; }
+      .account-signin-benefit { margin-top: 5px; font-size: 11px; line-height: 1.35; color: #666; text-align: center; }
+      .usage-cta { text-align: center; margin: 2px 0 0; }
+      .usage-cta-btn {
+        border: none;
+        background: transparent;
+        color: #1a73e8;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 2px 4px;
+      }
+      .usage-cta-btn:hover { text-decoration: underline; }
+      .usage-cta-btn:disabled { color: #999; cursor: default; text-decoration: none; }
       .account-signout {
         border: none;
         background: transparent;
@@ -131,6 +145,7 @@
     <div class="account" id="account"></div>
     <button id="add" class="primary"></button>
     <div class="count" id="usage"></div>
+    <div class="usage-cta" id="usage-cta"></div>
     <div class="count" id="count"></div>
     <ul id="list"></ul>
     <a id="options" href="#"></a>

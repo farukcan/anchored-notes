@@ -10,6 +10,9 @@ export const nl: Record<MessageKey, string> = {
   noteLimitReached: "Notitielimiet bereikt ({limit}). Verwijder een notitie om een nieuwe toe te voegen.",
   language: "Taal",
   // account
+  accountSignInBenefit: "Meld je aan om je notities op al je apparaten te synchroniseren en veilig te bewaren.",
+  usageSignInCta: "Meld je aan om je notitielimiet te verhogen",
+  usageUpgradeCta: "Ga Pro voor onbeperkte notities",
   accountSignIn: "Inloggen met Google",
   accountSignOut: "Uitloggen",
   accountSignInFailed: "Inloggen mislukt.",

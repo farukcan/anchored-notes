@@ -12,6 +12,9 @@ export const en = {
   noteLimitReached: "Note limit reached ({limit}). Delete a note to add a new one.",
   language: "Language",
   // account
+  accountSignInBenefit: "Sign in to sync your notes across devices and keep them safe.",
+  usageSignInCta: "Sign in to raise your note limit",
+  usageUpgradeCta: "Go Pro for unlimited notes",
   accountSignIn: "Sign in with Google",
   accountSignOut: "Sign out",
   accountSignInFailed: "Sign-in failed.",

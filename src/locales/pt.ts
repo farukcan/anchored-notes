@@ -10,6 +10,9 @@ export const pt: Record<MessageKey, string> = {
   noteLimitReached: "Limite de notas atingido ({limit}). Exclua uma nota para adicionar uma nova.",
   language: "Idioma",
   // account
+  accountSignInBenefit: "Faça login para sincronizar suas notas em todos os dispositivos e mantê-las seguras.",
+  usageSignInCta: "Faça login para aumentar seu limite de notas",
+  usageUpgradeCta: "Seja Pro para notas ilimitadas",
   accountSignIn: "Entrar com o Google",
   accountSignOut: "Sair",
   accountSignInFailed: "Falha ao entrar.",

@@ -4,9 +4,9 @@ import type { Message } from "../types.js";
 import { isNoteVisible, pageContextFromLocation } from "../matching.js";
 import { getAllNotes, saveNote } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
-import { formatLimit, getCurrentLimit } from "../limits.js";
+import { formatLimit, limitForPlan } from "../limits.js";
 import type { LoginResponse } from "../types.js";
-import { getAuthState, logout, onAuthChanged, type AuthState } from "../auth.js";
+import { getAuthState, logout, onAuthChanged, startUpgrade, type AuthState } from "../auth.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
 
 // Sync runs only in the background worker (single context) to avoid races on
@@ -61,6 +61,35 @@ function renderUsage(total: number, limit: number): void {
   add.disabled = atLimit;
 }
 
+// Conversion CTA under the usage line: push anonymous users to sign in (higher
+// limit + sync) and free users to upgrade to Pro (unlimited). Pro users see none.
+function renderUsageCta(auth: AuthState | null): void {
+  const cta = document.getElementById("usage-cta") as HTMLDivElement;
+  cta.replaceChildren();
+  if (auth && auth.plan === "pro") return;
+  const btn = document.createElement("button");
+  btn.className = "usage-cta-btn";
+  btn.type = "button";
+  if (!auth) {
+    btn.textContent = t("usageSignInCta", null);
+    btn.addEventListener("click", () => void handleSignIn(btn));
+  } else {
+    btn.textContent = t("usageUpgradeCta", null);
+    btn.addEventListener("click", () => void handleUpgrade(btn));
+  }
+  cta.appendChild(btn);
+}
+
+async function handleUpgrade(button: HTMLButtonElement): Promise<void> {
+  button.disabled = true;
+  try {
+    await startUpgrade();
+  } catch {
+    button.disabled = false;
+    button.textContent = t("accountBillingFailed", null);
+  }
+}
+
 // Render the account section: a Google sign-in button when signed out, or the
 // email + plan badge + sign-out when signed in.
 function renderAccount(auth: AuthState | null): void {
@@ -68,12 +97,18 @@ function renderAccount(auth: AuthState | null): void {
   account.replaceChildren();
 
   if (!auth) {
+    const wrap = document.createElement("div");
+    wrap.className = "account-signin-wrap";
     const signIn = document.createElement("button");
     signIn.className = "account-signin";
     signIn.type = "button";
     signIn.textContent = t("accountSignIn", null);
     signIn.addEventListener("click", () => void handleSignIn(signIn));
-    account.appendChild(signIn);
+    const benefit = document.createElement("div");
+    benefit.className = "account-signin-benefit";
+    benefit.textContent = t("accountSignInBenefit", null);
+    wrap.append(signIn, benefit);
+    account.appendChild(wrap);
     return;
   }
 
@@ -116,7 +151,9 @@ async function render(): Promise<void> {
   const list = document.getElementById("list") as HTMLUListElement;
   const count = document.getElementById("count") as HTMLDivElement;
   const all = await getAllNotes();
-  renderUsage(all.length, await getCurrentLimit());
+  const auth = await getAuthState();
+  renderUsage(all.length, limitForPlan(auth ? auth.plan : null));
+  renderUsageCta(auth);
   const tab = await activeTab();
   if (!tab?.url || tab.id === undefined) {
     count.textContent = t("noActivePage", null);

@@ -10,6 +10,9 @@ export const de: Record<MessageKey, string> = {
   noteLimitReached: "Notizlimit erreicht ({limit}). Lösche eine Notiz, um eine neue hinzuzufügen.",
   language: "Sprache",
   // account
+  accountSignInBenefit: "Melde dich an, um deine Notizen geräteübergreifend zu synchronisieren und sicher aufzubewahren.",
+  usageSignInCta: "Melde dich an, um dein Notizlimit zu erhöhen",
+  usageUpgradeCta: "Hol dir Pro für unbegrenzte Notizen",
   accountSignIn: "Mit Google anmelden",
   accountSignOut: "Abmelden",
   accountSignInFailed: "Anmeldung fehlgeschlagen.",

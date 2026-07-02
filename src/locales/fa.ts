@@ -10,6 +10,9 @@ export const fa: Record<MessageKey, string> = {
   noteLimitReached: "به سقف یادداشت‌ها رسیدید ({limit}). برای افزودن یادداشت جدید، یکی را حذف کنید.",
   language: "زبان",
   // account
+  accountSignInBenefit: "وارد شوید تا یادداشت‌هایتان بین همه دستگاه‌ها همگام و ایمن بماند.",
+  usageSignInCta: "وارد شوید و محدودیت یادداشت را افزایش دهید",
+  usageUpgradeCta: "به Pro ارتقا دهید تا یادداشت نامحدود داشته باشید",
   accountSignIn: "ورود با Google",
   accountSignOut: "خروج",
   accountSignInFailed: "ورود ناموفق بود.",

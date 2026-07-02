@@ -10,6 +10,9 @@ export const vi: Record<MessageKey, string> = {
   noteLimitReached: "Đã đạt giới hạn ghi chú ({limit}). Xóa một ghi chú để thêm ghi chú mới.",
   language: "Ngôn ngữ",
   // account
+  accountSignInBenefit: "Đăng nhập để đồng bộ ghi chú trên mọi thiết bị và giữ chúng an toàn.",
+  usageSignInCta: "Đăng nhập để tăng giới hạn ghi chú",
+  usageUpgradeCta: "Lên Pro để có ghi chú không giới hạn",
   accountSignIn: "Đăng nhập bằng Google",
   accountSignOut: "Đăng xuất",
   accountSignInFailed: "Đăng nhập thất bại.",

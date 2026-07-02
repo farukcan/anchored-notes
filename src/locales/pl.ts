@@ -10,6 +10,9 @@ export const pl: Record<MessageKey, string> = {
   noteLimitReached: "Osiągnięto limit notatek ({limit}). Usuń notatkę, aby dodać nową.",
   language: "Język",
   // account
+  accountSignInBenefit: "Zaloguj się, aby synchronizować notatki na wszystkich urządzeniach i bezpiecznie je przechowywać.",
+  usageSignInCta: "Zaloguj się, aby zwiększyć limit notatek",
+  usageUpgradeCta: "Przejdź na Pro, aby mieć nieograniczone notatki",
   accountSignIn: "Zaloguj się przez Google",
   accountSignOut: "Wyloguj się",
   accountSignInFailed: "Logowanie nie powiodło się.",

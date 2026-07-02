@@ -10,6 +10,9 @@ export const ko: Record<MessageKey, string> = {
   noteLimitReached: "메모 한도에 도달했습니다 ({limit}). 새 메모를 추가하려면 메모를 삭제하세요.",
   language: "언어",
   // account
+  accountSignInBenefit: "로그인하면 메모가 모든 기기에서 동기화되고 안전하게 보관됩니다.",
+  usageSignInCta: "로그인하고 메모 한도를 늘리세요",
+  usageUpgradeCta: "Pro로 업그레이드하고 무제한 메모를 이용하세요",
   accountSignIn: "Google로 로그인",
   accountSignOut: "로그아웃",
   accountSignInFailed: "로그인 실패.",

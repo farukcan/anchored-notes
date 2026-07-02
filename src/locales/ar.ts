@@ -10,6 +10,9 @@ export const ar: Record<MessageKey, string> = {
   noteLimitReached: "تم بلوغ حد الملاحظات ({limit}). احذف ملاحظة لإضافة ملاحظة جديدة.",
   language: "اللغة",
   // account
+  accountSignInBenefit: "سجّل الدخول لمزامنة ملاحظاتك عبر جميع الأجهزة والحفاظ على أمانها.",
+  usageSignInCta: "سجّل الدخول لرفع حد الملاحظات",
+  usageUpgradeCta: "اشترك في Pro للحصول على ملاحظات غير محدودة",
   accountSignIn: "تسجيل الدخول باستخدام Google",
   accountSignOut: "تسجيل الخروج",
   accountSignInFailed: "فشل تسجيل الدخول.",

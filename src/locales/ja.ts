@@ -10,6 +10,9 @@ export const ja: Record<MessageKey, string> = {
   noteLimitReached: "メモの上限に達しました（{limit}）。新しいメモを追加するには、メモを削除してください。",
   language: "言語",
   // account
+  accountSignInBenefit: "サインインすると、メモが全デバイスで同期され、安全に保管されます。",
+  usageSignInCta: "サインインしてメモの上限を増やす",
+  usageUpgradeCta: "Proにアップグレードしてメモを無制限に",
   accountSignIn: "Googleでログイン",
   accountSignOut: "ログアウト",
   accountSignInFailed: "ログインに失敗しました。",

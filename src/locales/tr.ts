@@ -14,6 +14,9 @@ export const tr: Record<MessageKey, string> = {
   noteLimitReached: "Not limitine ulaşıldı ({limit}). Yeni not eklemek için bir notu silin.",
   language: "Dil",
   // account
+  accountSignInBenefit: "Giriş yap; notların tüm cihazlarında senkronize olsun ve güvende kalsın.",
+  usageSignInCta: "Giriş yap ve not limitini artır",
+  usageUpgradeCta: "Pro'ya geç, sınırsız not kaydet",
   accountSignIn: "Google ile giriş yap",
   accountSignOut: "Çıkış yap",
   accountSignInFailed: "Giriş başarısız.",
