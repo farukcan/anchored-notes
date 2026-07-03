@@ -5,8 +5,8 @@
 import { getAuthState, type Plan } from "./auth.js";
 
 export const NOTE_LIMITS: { anonymous: number; free: number; pro: number } = {
-  anonymous: 10,
-  free: 20,
+  anonymous: 15,
+  free: 30,
   pro: Infinity,
 };
 

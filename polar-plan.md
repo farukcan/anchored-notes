@@ -22,7 +22,7 @@ the `users.plan` field** that the backend already enforces.
 | ----- | ----- |
 | Auth | Google OAuth2 **direct to PocketBase** (`src/auth.ts` → `auth-with-oauth2`). No password auth. |
 | Plan source of truth | `users.plan` select field on PocketBase (`free` \| `pro`, empty = free). |
-| Enforcement | Go backend reads `user.plan`, applies note limits (`limits.go`: free 20, pro unlimited) on every sync write. |
+| Enforcement | Go backend reads `user.plan`, applies note limits (`limits.go`: free 30, pro unlimited) on every sync write. |
 | Plan surfaced to client | `GET /api/me` → `{ email, plan, limit, count }`; `src/auth.ts` caches plan in `chrome.storage.local`. |
 | Upgrade path | **None.** README: "Set `pro` manually from the PocketBase admin UI; payment integration is out of scope for now." |
 
@@ -35,7 +35,7 @@ need a system that flips `plan` to `pro` when a Pro subscription is active and b
 | Plan | Note limit | Polar product |
 | ---- | ---------- | ------------- |
 | anonymous (no account) | 10 (client‑side only) | — (never touches Polar) |
-| free (signed in) | 20 | Free product (nominal — see §3) |
+| free (signed in) | 30 | Free product (nominal — see §3) |
 | pro | unlimited | Pro product, $5/mo, 1‑mo trial |
 
 ---

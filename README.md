@@ -79,14 +79,14 @@ flowchart LR
 
 | Tier | Note limit | Sync |
 |------|-----------|------|
-| no account | 10 (one device) | none |
-| free | 20 | across devices |
+| no account | 15 (one device) | none |
+| free | 30 | across devices |
 | pro | unlimited | across devices |
 
 Client modules:
 
 - **Limit** — `src/limits.ts` is the single source of truth. `getCurrentLimit`
-  resolves the cap from the signed-in plan (anonymous = 10, free = 20, pro = ∞);
+  resolves the cap from the signed-in plan (anonymous = 15, free = 30, pro = ∞);
   all enforcement points (content script, popup, options) read from it.
 - **Auth** — `src/auth.ts` runs the OAuth2 authorization-code flow via
   `chrome.identity.launchWebAuthFlow` and stores `{ token, email, plan }` under
@@ -146,7 +146,7 @@ OAuth client's authorized redirect URIs.
   "rejected": [ "clientId", … ],          // would exceed the plan limit
   "failed":   [ "clientId", … ],          // backend rejected (e.g. content too long)
   "plan":     "free" | "pro",
-  "limit":    20                          // -1 = unlimited
+  "limit":    30                          // -1 = unlimited
 }
 ```
 
