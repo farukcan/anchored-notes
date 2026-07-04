@@ -3,6 +3,7 @@
 import type { GetTabIdResponse, LoginResponse, Message } from "./types.js";
 import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js";
 import { login, onAuthChanged } from "./auth.js";
+import { ensureEncryptionReady } from "./encryption.js";
 import { sync } from "./sync.js";
 import { initI18n, onLangChanged, t } from "./i18n.js";
 
@@ -63,7 +64,16 @@ function scheduleSync(): void {
 
 onNotesChanged(() => scheduleSync());
 onAuthChanged((auth) => {
-  if (auth) void sync();
+  // Set up the encryption key eagerly so a required custom password surfaces
+  // in the UI right after sign-in instead of at the first sync attempt.
+  // Errors (e.g. offline at sign-in) are logged; the periodic alarm retries.
+  if (auth) {
+    void ensureEncryptionReady()
+      .then(() => sync())
+      .catch((err: unknown) => {
+        console.error("[anchored-notes] post-sign-in encryption setup failed:", err);
+      });
+  }
 });
 
 chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });

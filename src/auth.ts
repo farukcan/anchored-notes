@@ -5,6 +5,7 @@
 // after an initial async load.
 
 import { BACKEND_URL, getRuntimeConfig } from "./config.js";
+import { wipeEncryptionState } from "./crypto.js";
 
 export type Plan = "free" | "pro";
 
@@ -114,6 +115,8 @@ export async function login(): Promise<AuthState> {
 
 export async function logout(): Promise<void> {
   await setAuthState(null);
+  // The encryption key is account-bound; never leave it on a signed-out device.
+  await wipeEncryptionState();
 }
 
 // Hard-delete the account and all synced notes on the backend, then sign out.
@@ -131,6 +134,7 @@ export async function deleteAccount(): Promise<void> {
     throw new Error(`account deletion failed: ${res.status} ${await res.text()}`);
   }
   await setAuthState(null);
+  await wipeEncryptionState();
 }
 
 // Ask the backend to create a Polar session (checkout or customer portal) and

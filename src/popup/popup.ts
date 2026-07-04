@@ -7,6 +7,7 @@ import { deriveTitle } from "../note-title.js";
 import { formatLimit, limitForPlan } from "../limits.js";
 import type { LoginResponse } from "../types.js";
 import { getAuthState, logout, onAuthChanged, startUpgrade, type AuthState } from "../auth.js";
+import { getEncStatus, onEncStatusChanged } from "../encryption.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
 
 // Sync runs only in the background worker (single context) to avoid races on
@@ -147,6 +148,27 @@ async function handleSignIn(button: HTMLButtonElement): Promise<void> {
   }
 }
 
+// Monotonic token: overlapping async renders must not both append (see the
+// same guard in options.ts renderEncryption).
+let encWarnSeq = 0;
+
+// Warn when sync is gated because the encryption password (changed/set on
+// another device) hasn't been entered here; the options page hosts the unlock.
+async function renderEncWarning(auth: AuthState | null): Promise<void> {
+  const seq = ++encWarnSeq;
+  const required = auth !== null && (await getEncStatus()) === "password-required";
+  if (seq !== encWarnSeq) return;
+  const box = document.getElementById("enc-warning") as HTMLDivElement;
+  box.replaceChildren();
+  if (!required) return;
+  const btn = document.createElement("button");
+  btn.className = "enc-warning-btn";
+  btn.type = "button";
+  btn.textContent = t("encPasswordRequired", null);
+  btn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  box.appendChild(btn);
+}
+
 async function render(): Promise<void> {
   const list = document.getElementById("list") as HTMLUListElement;
   const count = document.getElementById("count") as HTMLDivElement;
@@ -154,6 +176,7 @@ async function render(): Promise<void> {
   const auth = await getAuthState();
   renderUsage(all.length, limitForPlan(auth ? auth.plan : null));
   renderUsageCta(auth);
+  await renderEncWarning(auth);
   const tab = await activeTab();
   if (!tab?.url || tab.id === undefined) {
     count.textContent = t("noActivePage", null);
@@ -221,6 +244,8 @@ onAuthChanged((auth) => {
   renderAccount(auth);
   void render();
 });
+
+onEncStatusChanged(() => void render());
 
 async function main(): Promise<void> {
   await initI18n();

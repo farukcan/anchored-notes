@@ -6,6 +6,7 @@ import { deriveTitle } from "../note-title.js";
 import { formatRelativeTime } from "../relative-time.js";
 import { formatLimit, getCurrentLimit } from "../limits.js";
 import { deleteAccount, getAuthState, logout, onAuthChanged, openBilling, startUpgrade, type AuthState } from "../auth.js";
+import { getEncStatus, getReadyKey, onEncStatusChanged, setCustomPassword, unlockWithPassword } from "../encryption.js";
 import { initI18n, onLangChanged, t } from "../i18n.js";
 
 const SWATCH: Record<string, string> = {
@@ -83,6 +84,119 @@ function renderAccount(auth: AuthState | null): void {
   del.addEventListener("click", () => void handleDeleteAccount(del, auth));
 
   account.append(email, badge, billing, signOut, del);
+}
+
+// Monotonic token so overlapping async renders (auth-change, enc-status-change
+// and initial load can fire near-simultaneously) don't each append and
+// duplicate the block: only the latest call may touch the DOM.
+let encRenderSeq = 0;
+
+// Render the encryption section under the account row. Every signed-in account
+// is encrypted (default key derived from the user id); this block lets the
+// user upgrade to a custom password (true E2E) or unlock a device after the
+// password changed elsewhere.
+async function renderEncryption(auth: AuthState | null): Promise<void> {
+  const seq = ++encRenderSeq;
+  const box = document.getElementById("encryption") as HTMLDivElement;
+  if (!auth) {
+    box.replaceChildren();
+    return;
+  }
+
+  // Gather all async state first; DOM is written synchronously below.
+  const status = await getEncStatus();
+  const keyState = status === "ready" ? await getReadyKey() : null;
+  if (seq !== encRenderSeq) return;
+  box.replaceChildren();
+
+  if (status === "password-required") {
+    const label = document.createElement("span");
+    label.className = "enc-required";
+    label.textContent = t("encPasswordRequired", null);
+
+    const input = document.createElement("input");
+    input.type = "password";
+    input.className = "enc-password";
+
+    const unlock = document.createElement("button");
+    unlock.className = "enc-unlock";
+    unlock.type = "button";
+    unlock.textContent = t("encUnlock", null);
+
+    const error = document.createElement("span");
+    error.className = "enc-error";
+
+    const tryUnlock = async (): Promise<void> => {
+      if (!input.value) return;
+      unlock.disabled = true;
+      error.textContent = "";
+      try {
+        if (await unlockWithPassword(input.value)) {
+          // onEncStatusChanged re-renders this block as "ready".
+          requestSync();
+          return;
+        }
+        error.textContent = t("encWrongPassword", null);
+      } catch (err) {
+        console.error("[anchored-notes] unlock failed:", err);
+        error.textContent = t("encChangeFailed", null);
+      } finally {
+        unlock.disabled = false;
+      }
+    };
+    unlock.addEventListener("click", () => void tryUnlock());
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") void tryUnlock();
+    });
+
+    box.append(label, input, unlock, error);
+    return;
+  }
+
+  // "unconfigured": the background worker initializes encryption right after
+  // sign-in; the status change re-renders this block once it's ready.
+  if (status !== "ready" || !keyState) return;
+
+  const statusLine = document.createElement("span");
+  statusLine.className = "enc-status";
+  statusLine.textContent =
+    keyState.mode === "custom" ? t("encStatusCustom", null) : t("encStatusDefault", null);
+
+  const action = document.createElement("button");
+  action.className = "enc-action";
+  action.type = "button";
+  action.textContent =
+    keyState.mode === "custom" ? t("encChangePassword", null) : t("encSetPassword", null);
+  action.addEventListener("click", () => void handleSetPassword(action));
+
+  box.append(statusLine, action);
+}
+
+// Prompt for a new custom password (twice) with an explicit data-loss warning,
+// then re-key the account. setCustomPassword bumps all note timestamps, which
+// schedules the re-encrypting sync; requestSync just accelerates it.
+async function handleSetPassword(button: HTMLButtonElement): Promise<void> {
+  const password = window.prompt(t("encNewPasswordPrompt", null));
+  if (!password) return;
+  const repeat = window.prompt(t("encConfirmPasswordPrompt", null));
+  if (repeat === null) return;
+  if (password !== repeat) {
+    window.alert(t("encConfirmMismatch", null));
+    return;
+  }
+  if (!window.confirm(t("encLossWarning", null))) return;
+
+  button.disabled = true;
+  try {
+    await setCustomPassword(password);
+    requestSync();
+  } catch (err) {
+    console.error("[anchored-notes] set encryption password failed:", err);
+    window.alert(t("encChangeFailed", null));
+  } finally {
+    button.disabled = false;
+  }
+  await renderEncryption(currentAuth);
 }
 
 // Open the Polar checkout (free) or customer portal (pro) in a new tab. The plan
@@ -291,10 +405,13 @@ onNotesChanged(() => void render());
 onAuthChanged((auth) => {
   currentAuth = auth;
   renderAccount(auth);
+  void renderEncryption(auth);
 });
+onEncStatusChanged(() => void renderEncryption(currentAuth));
 onLangChanged(() => {
   applyStaticText();
   renderAccount(currentAuth);
+  void renderEncryption(currentAuth);
   void render();
 });
 
@@ -303,6 +420,7 @@ async function main(): Promise<void> {
   applyStaticText();
   currentAuth = await getAuthState();
   renderAccount(currentAuth);
+  await renderEncryption(currentAuth);
   await render();
   // Refresh from the backend in the background when signed in.
   requestSync();

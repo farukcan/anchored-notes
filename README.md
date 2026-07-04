@@ -106,6 +106,23 @@ Client modules:
   lives on locally (`applySyncResult` keeps `tab` notes through applied deletes).
   The note card shows a small notice on `tab`-scoped notes that they aren't
   synced or saved and vanish at session end.
+- **Encryption** — note `content` is encrypted at the sync boundary
+  (`src/sync.ts` encrypts on push, decrypts on pull); local storage stays
+  plaintext so search/titles/export are unaffected. `src/crypto.ts` holds the
+  primitives (PBKDF2-SHA256 600k iters → AES-256-GCM, random IV per encryption,
+  wire format `enc:v1:<base64(iv || ciphertext)>`); `src/encryption.ts` holds the
+  key lifecycle. Every signed-in account is encrypted: without a custom password
+  the key derives from the PocketBase user id (zero-friction encryption at
+  rest); setting a password in the options page upgrades to true end-to-end
+  encryption — losing that password makes synced notes unrecoverable, and the
+  UI warns so. The account's salt + verifier (`encSalt`/`encCheck`) live on the
+  backend; a device whose key stops matching (password changed elsewhere) gets
+  a `409` from sync, wipes its key, and shows a "password required" unlock in
+  the popup/options until the new password is entered. Legacy plaintext pulled
+  from the server is accepted and self-heals: the note's `updatedAt` is bumped
+  to the server timestamp + 1 so the follow-up sync re-pushes it encrypted.
+  The derived key persists in `chrome.storage.local` and is wiped on
+  sign-out/account deletion.
 - **Realtime** — `src/realtime.ts` subscribes to PocketBase's SSE realtime for the
   signed-in user's own notes, so changes from other devices appear live instead of
   waiting for the alarm. The content script connects while the tab is **visible
@@ -137,8 +154,9 @@ OAuth client's authorized redirect URIs.
 ```jsonc
 // request
 {
-  "upserts": [ /* Note in wire format (below) */ ],
-  "deletes": [ "clientId", … ]            // tombstoned local deletions
+  "upserts":  [ /* Note in wire format (below), content encrypted */ ],
+  "deletes":  [ "clientId", … ],          // tombstoned local deletions
+  "encCheck": "enc:v1:…"                  // this device's key verifier; 409 if stale
 }
 // response — authoritative set after reconciliation
 {
@@ -146,7 +164,8 @@ OAuth client's authorized redirect URIs.
   "rejected": [ "clientId", … ],          // would exceed the plan limit
   "failed":   [ "clientId", … ],          // backend rejected (e.g. content too long)
   "plan":     "free" | "pro",
-  "limit":    30                          // -1 = unlimited
+  "limit":    30,                         // -1 = unlimited
+  "encCheck": "enc:v1:…"                  // account's current key verifier
 }
 ```
 
@@ -155,8 +174,9 @@ backend returns them as `deleted=true` tombstones. The client drops tombstoned
 notes locally (and never resurrects a note another device deleted). `rejected`
 and `failed` notes are kept local-only so nothing is lost. The wire
 format maps the local `Note` fields: `id → clientId`, `createdAt → noteCreatedAt`,
-`updatedAt → noteUpdatedAt`; all other fields (`content`, `color`, `scope`,
-`anchorKey`, `x/y/w/h`, `hidden`) are sent as-is.
+`updatedAt → noteUpdatedAt`; `content` is encrypted in transit (see
+**Encryption** above); all other fields (`color`, `scope`, `anchorKey`,
+`x/y/w/h`, `hidden`) are sent as-is.
 
 **Realtime — PocketBase** (`src/realtime.ts`): open an `EventSource` to
 `…/api/realtime`, read the `clientId` from the `PB_CONNECT` event, then `POST`
@@ -165,9 +185,14 @@ arrive as `{ action, record }`; the owner-only `listRule` scopes them to the
 user's own notes. `EventSource` auto-reconnects (re-subscribe on each
 `PB_CONNECT`).
 
-> The backend also exposes `GET /api/me` and `GET /api/notes`; the extension does
-> not use them. See [anchored-notes-backend](../anchored-notes-backend) for the
-> full API reference and the backend's internals.
+**Encryption state — backend** (`src/encryption.ts`): `GET /api/me` returns
+`{ id, encSalt, encCheck, … }` used to derive/verify the device key, and
+`PUT /api/me/encryption` stores a new `{ encSalt, encCheck }` with a
+compare-and-swap on `expectedEncCheck` (409 = changed on another device).
+
+> The backend also exposes `GET /api/notes`; the extension does not use it. See
+> [anchored-notes-backend](../anchored-notes-backend) for the full API
+> reference and the backend's internals.
 
 ## Develop
 

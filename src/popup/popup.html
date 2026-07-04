@@ -71,6 +71,19 @@
         padding: 2px 4px;
       }
       .account-signout:hover { text-decoration: underline; }
+      .enc-warning-btn {
+        width: 100%;
+        margin: 0 0 10px;
+        padding: 7px;
+        border: 1px solid #e0b4b4;
+        border-radius: 4px;
+        background: #fdecea;
+        color: #c0392b;
+        cursor: pointer;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .enc-warning-btn:hover { background: #fbdcd8; }
       .count { margin: 10px 0 4px; color: #666; text-align: center; }
       .count.limit { color: #c0392b; }
       .head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; }
@@ -143,6 +156,7 @@
       </div>
     </div>
     <div class="account" id="account"></div>
+    <div id="enc-warning"></div>
     <button id="add" class="primary"></button>
     <div class="count" id="usage"></div>
     <div class="usage-cta" id="usage-cta"></div>

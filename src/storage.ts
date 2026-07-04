@@ -120,6 +120,38 @@ export async function clearDeletedNoteIds(ids: string[]): Promise<void> {
   await chrome.storage.local.set({ [DELETED_KEY]: remaining });
 }
 
+// Bump updatedAt on all syncable (non-tab) notes by 1ms so the server's
+// strictly-newer LWW check accepts a re-push of unchanged content. Used when
+// the encryption key changes and every note must be re-encrypted server-side.
+export function bumpAllNoteTimestamps(): Promise<void> {
+  return mutate((map) => {
+    let changed = false;
+    for (const note of Object.values(map)) {
+      if (note.scope === "tab") continue;
+      note.updatedAt += 1;
+      changed = true;
+    }
+    return changed;
+  });
+}
+
+// Bump specific notes to the given updatedAt values (id -> new timestamp).
+// Used by the pull-side self-heal: notes whose server copy is legacy plaintext
+// or unreadable get re-pushed encrypted on the follow-up sync.
+export function bumpNoteTimestamps(timestamps: Map<string, number>): Promise<void> {
+  return mutate((map) => {
+    let changed = false;
+    for (const [id, updatedAt] of timestamps) {
+      const note = map[id];
+      if (!note || note.scope === "tab") continue;
+      if (note.updatedAt >= updatedAt) continue;
+      note.updatedAt = updatedAt;
+      changed = true;
+    }
+    return changed;
+  });
+}
+
 // Remove all locally stored notes and pending deletion tombstones. Used after
 // account deletion so no synced data lingers on the device.
 export async function wipeLocalNotes(): Promise<void> {
@@ -193,6 +225,9 @@ export function applySyncResult(params: {
     }
     for (const note of params.rejected) {
       const local = map[note.id];
+      // Don't roll back an edit made during the sync round-trip: the kept-local
+      // copy is the pre-push snapshot and may be older than the live note.
+      if (local && local.updatedAt > note.updatedAt) continue;
       if (!local || !sameNote(local, note)) {
         map[note.id] = note;
         changed = true;

@@ -47,11 +47,22 @@
       .account-billing:disabled { color: #999; cursor: default; }
       .account-delete { margin-left: auto; border: 1px solid #e0b4b4; background: #fff; color: #c0392b; cursor: pointer; font-size: 13px; padding: 6px 12px; border-radius: 4px; }
       .account-delete:hover { background: #fdecea; }
+      .encryption { display: flex; align-items: center; gap: 8px; margin: 12px 0; font-size: 13px; flex-wrap: wrap; min-height: 0; }
+      .enc-status { color: #666; }
+      .enc-required { color: #c0392b; font-weight: 600; }
+      .enc-error { color: #c0392b; font-size: 12px; }
+      .enc-action { border: none; background: transparent; color: #1a73e8; cursor: pointer; font-size: 13px; padding: 2px 4px; }
+      .enc-action:hover { text-decoration: underline; }
+      .enc-action:disabled { color: #999; cursor: default; text-decoration: none; }
+      .enc-password { padding: 6px 8px; border: 1px solid #ccc; border-radius: 4px; }
+      .enc-unlock { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; cursor: pointer; }
+      .enc-unlock:disabled { color: #999; cursor: default; }
     </style>
   </head>
   <body>
     <h1>⚓ Anchored Notes</h1>
     <div class="account" id="account"></div>
+    <div class="encryption" id="encryption"></div>
     <div class="usage" id="usage"></div>
     <div class="toolbar">
       <input type="search" id="search" />
