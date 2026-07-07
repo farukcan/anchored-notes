@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;0,9..144,700;1,9..144,460&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  html, body { width: 1400px; height: 560px; }
+  .wordmark { top: 44px; left: 64px; }
+  .copy { position: absolute; top: 138px; left: 64px; width: 480px; z-index: 4; }
+  h1 { font-size: 50px; }
+  h1 .hl { background: var(--yellow); box-shadow: 0 2px 0 #e3d340; }
+  .copy .sub { margin-top: 22px; width: 430px; font-size: 20px; }
+  .scopes { position: absolute; left: 64px; bottom: 48px; display: flex; gap: 12px; z-index: 4; }
+  .chip {
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+    font-size: 14px; font-weight: 600; color: var(--ink);
+    padding: 8px 14px; border-radius: 8px;
+    box-shadow: 0 3px 8px rgba(43,32,16,0.18);
+  }
+  .chip small { display: block; font-weight: 400; font-size: 11px; color: #00000088; margin-top: 1px; }
+  .c1 { background: var(--yellow); transform: rotate(-1.6deg); }
+  .c2 { background: var(--blue);   transform: rotate(1.2deg); }
+  .c3 { background: var(--purple); transform: rotate(-0.8deg); }
+  .c4 { background: var(--pink);   transform: rotate(1.6deg); }
+  .shot {
+    position: absolute; top: 84px; left: 640px; width: 716px; z-index: 3;
+    transform: rotate(-1.2deg);
+  }
+  .shot .tape { top: -13px; left: 64px; transform: rotate(-5deg); z-index: 6; }
+  /* Crop the page's left edge so the notes on the right stay large and whole;
+     the frame bleeds off the bottom of the canvas. */
+  .viewport { width: 716px; height: 470px; overflow: hidden; position: relative; }
+  .viewport img { width: 774px; margin-left: -58px; }
+</style>
+</head>
+<body>
+  <div class="wordmark"><img src="../../../icons/icon-128.png" alt="">Anchored Notes</div>
+
+  <div class="copy">
+    <h1>Sticky notes that <span class="hl">stay</span> where you put them</h1>
+    <p class="sub">Leave a note on any web page — it’s right there waiting the next time you visit.</p>
+  </div>
+
+  <div class="scopes">
+    <div class="chip c1">This page<small>one exact URL</small></div>
+    <div class="chip c2">This site<small>every page of it</small></div>
+    <div class="chip c3">This tab<small>follows navigation</small></div>
+    <div class="chip c4">Everywhere<small>all pages</small></div>
+  </div>
+
+  <div class="shot">
+    <div class="tape"></div>
+    <div class="browser">
+      <div class="bar">
+        <span class="dot" style="background:#ff5f57"></span>
+        <span class="dot" style="background:#febc2e"></span>
+        <span class="dot" style="background:#28c840"></span>
+        <span class="url">theslowroute.com/journal/kyoto</span>
+      </div>
+      <div class="viewport"><img src="../raw/hero.png" alt=""></div>
+    </div>
+  </div>
+</body>
+</html>

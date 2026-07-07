@@ -1,8 +1,13 @@
 # TODO — Chrome Web Store Release
 
 Tracks what's left before submitting Anchored Notes to the Chrome Web Store.
-The code is functional (typecheck clean, 70/70 unit tests pass, backend live),
+The code is functional (typecheck clean, 78/78 unit tests pass, backend live),
 so everything below is **packaging / compliance**, not feature work.
+
+Store draft item id: `dnmmgfkolmlieeempmfjghddbcehijgc`
+→ OAuth redirect URI: `https://dnmmgfkolmlieeempmfjghddbcehijgc.chromiumapp.org/`
+→ Google OAuth client (configured in PocketBase):
+`314642322120-b3i962l3rt2gta218h8d1v4voh5ap25b.apps.googleusercontent.com`
 
 ## Blockers (store will reject without these)
 
@@ -33,11 +38,12 @@ so everything below is **packaging / compliance**, not feature work.
 - Files: `src/auth.ts` (logout flow), options/popup UI, backend.
 
 ### 3. Store listing assets
-- [ ] At least 1 screenshot, **1280×800** (or 640×400) PNG/JPG. Recommend 3–5.
-- [ ] Small promo tile **440×280** (optional but recommended).
-- [ ] Detailed description (the README intro is a good base).
-- [ ] Category + language selection in the dashboard.
-- Why: required fields in the submission form. None exist in the repo yet.
+- [x] 3 screenshots **1280×800** PNG (no alpha): `store-assets/screenshot-{1,2,3}.png`.
+- [x] Small promo tile **440×280**: `store-assets/promo-small-440x280.png`.
+- [x] Detailed description: `store-assets/listing.md`.
+- [ ] Upload assets + paste description, pick Category (**Productivity →
+  Workflow & Planning**) + language (English) in the dashboard; store icon =
+  `icons/icon-128.png`.
 
 ### 4. Permission justifications
 - [x] One-line justification per permission for the dashboard:
@@ -77,28 +83,27 @@ so everything below is **packaging / compliance**, not feature work.
 - Files: none (Google Cloud Console config), affects `src/auth.ts` flow.
 
 ### 6. Stabilize the extension id for the OAuth redirect URI
-- [ ] The unpacked dev id ≠ the Web Store id, and
-  `chrome.identity.getRedirectURL()` (`https://<id>.chromiumapp.org/`) depends on
-  it. Pick one:
-  - **Preferred:** create the CWS item (draft upload), copy its **public key**
-    from the dashboard into `manifest.json` as `"key": "..."`, so local and store
-    share one id → a single redirect URI covers both.
-  - **Alternative:** register both ids' `https://<id>.chromiumapp.org/` in the
-    Google OAuth client's Authorized redirect URIs (multiple allowed).
-- [ ] Add the published-id redirect URI to the Google OAuth client **before**
-  publishing, or first-run login throws `redirect_uri_mismatch`.
-- Why: without this, sign-in is broken for every store install even though it
-  works in local dev. (Expanded from the redirect-URI item below.)
+- [x] Create the CWS item (draft upload) → id `dnmmgfkolmlieeempmfjghddbcehijgc`.
+- [ ] Register the store-id redirect URI in the Google OAuth client
+  (`314642322120-b3i962l3rt2gta218h8d1v4voh5ap25b.apps.googleusercontent.com`,
+  Google Cloud Console → Credentials → Authorized redirect URIs):
+  `https://dnmmgfkolmlieeempmfjghddbcehijgc.chromiumapp.org/`
+  Keep the unpacked dev id's URI too until the `key` step below lands.
+  Without this, first-run login on every store install throws
+  `redirect_uri_mismatch`.
+- [x] Copy the item's **public key** into `manifest.json` as `"key"` so the
+  unpacked dev build shares the store id (`dist/` id verified =
+  `dnmmgfkolmlieeempmfjghddbcehijgc`) and one redirect URI covers both.
+  `package.mjs` strips `key` from the store zip (CWS packages must not carry
+  it) while `dist/` keeps it for Load unpacked.
 - Files: `manifest.json` (`key`), `src/auth.ts` (consumer, no change needed).
 
 ## Pre-submit checklist
 - [ ] Bump `version` in `manifest.json` + `package.json` if needed (0.1.0 is OK
   for a first release).
 - [ ] `npm run package` → produces `anchored-notes-<version>.zip` from `dist/`.
-- [ ] Verify the OAuth `redirectUrl` (`chrome.identity.getRedirectURL()`,
-  `https://<extension-id>.chromiumapp.org/`) is registered in the Google OAuth
-  client's authorized redirect URIs **for the published extension id** (the id
-  changes once it's in the store).
+- [ ] Verify `https://dnmmgfkolmlieeempmfjghddbcehijgc.chromiumapp.org/` is
+  registered in the Google OAuth client's authorized redirect URIs (item 6).
 - [ ] Smoke test the packaged build via Load unpacked: create/edit/delete a
   note in each scope, sign in, sync across two browsers, switch language.
 

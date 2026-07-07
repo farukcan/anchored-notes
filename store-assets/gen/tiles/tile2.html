@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;0,9..144,700;1,9..144,460&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  .copy { position: absolute; top: 208px; right: 72px; width: 460px; z-index: 4; }
+  h1 { font-size: 54px; }
+  h1 .hl { background: var(--blue); box-shadow: 0 2px 0 #92bfe8; }
+  .copy .sub { margin-top: 26px; }
+  .polaroid {
+    position: absolute; top: 158px; left: 84px; z-index: 3;
+    background: #fffdf7; padding: 16px 16px 52px;
+    border-radius: 4px; transform: rotate(1.6deg);
+    box-shadow: 0 34px 70px -20px rgba(43, 32, 16, 0.5), 0 6px 16px rgba(43, 32, 16, 0.12);
+  }
+  .polaroid img { display: block; width: 548px; border-radius: 3px; }
+  .polaroid .cap {
+    position: absolute; left: 0; right: 0; bottom: 14px; text-align: center;
+    font-family: "Newsreader"; font-style: italic; font-size: 17px; color: #8b7f69;
+  }
+  .polaroid .tape { top: -14px; left: 226px; transform: rotate(3deg); }
+  .feats { position: absolute; right: 72px; top: 486px; width: 470px; display: flex; flex-wrap: wrap; gap: 14px; z-index: 4; }
+  .feat {
+    display: flex; align-items: center; gap: 10px;
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+    font-size: 15.5px; font-weight: 600;
+    padding: 12px 18px; border-radius: 9px;
+    box-shadow: 0 4px 10px rgba(43,32,16,0.16);
+  }
+  .feat code {
+    font-family: "SF Mono", Menlo, monospace; font-size: 14px; font-weight: 700;
+    background: #00000012; border-radius: 5px; padding: 2px 7px;
+  }
+  .f1 { background: var(--yellow); transform: rotate(-1.4deg); }
+  .f2 { background: var(--pink);   transform: rotate(1.1deg); }
+  .f3 { background: var(--purple); transform: rotate(-0.7deg); }
+  .f4 { background: #d9ecc8;       transform: rotate(1.4deg); }
+  .foot {
+    position: absolute; left: 84px; bottom: 46px; z-index: 4;
+    font-family: "Newsreader"; font-style: italic; font-size: 18px; color: var(--soft);
+  }
+</style>
+</head>
+<body>
+  <div class="wordmark"><img src="../../../icons/icon-128.png" alt="">Anchored Notes</div>
+
+  <div class="polaroid">
+    <div class="tape"></div>
+    <img src="../raw/note-closeup.png" alt="">
+    <div class="cap">a real note, on a real page</div>
+  </div>
+
+  <div class="copy">
+    <h1>A full <span class="hl">markdown</span> editor in every note</h1>
+    <p class="sub">Write the way you think — the note formats itself as you type.</p>
+  </div>
+
+  <div class="feats">
+    <div class="feat f1">☑&nbsp; Task lists with checkboxes</div>
+    <div class="feat f2">Tables &amp; quotes</div>
+    <div class="feat f3"><code>/</code> Notion-style slash menu</div>
+    <div class="feat f4"><code>{}</code> Code blocks</div>
+  </div>
+</body>
+</html>

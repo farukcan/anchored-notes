@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>The Slow Route — Kyoto in Autumn</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="manifest" href="/manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,700;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --paper: #f8f4ec;
+    --ink: #211c15;
+    --ink-soft: #5c5346;
+    --rule: #d9d0c0;
+    --accent: #a4552e;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Newsreader", Georgia, serif;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 48px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .masthead {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 700; font-size: 21px; letter-spacing: 0.02em;
+  }
+  .masthead span { color: var(--accent); }
+  nav { display: flex; gap: 28px; font-size: 14.5px; color: var(--ink-soft); }
+  nav b { color: var(--ink); font-weight: 500; border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+  .wrap { max-width: 1180px; margin: 0 auto; padding: 44px 48px 80px; }
+  .kicker {
+    font-family: "Newsreader"; font-style: italic; color: var(--accent);
+    font-size: 16px; margin-bottom: 10px;
+  }
+  h1 {
+    font-family: "Fraunces", Georgia, serif;
+    font-weight: 560; font-size: 58px; line-height: 1.04;
+    letter-spacing: -0.015em; max-width: 700px;
+  }
+  .byline {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 34px; font-size: 14.5px; color: var(--ink-soft);
+  }
+  .avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #d8a06b, #8a5a3b);
+  }
+  .cols { display: grid; grid-template-columns: 620px 1fr; gap: 56px; }
+  .article p { margin-bottom: 20px; color: #332b20; }
+  .article p:first-of-type::first-letter {
+    font-family: "Fraunces"; font-size: 58px; font-weight: 560;
+    float: left; line-height: 0.85; padding: 6px 10px 0 0; color: var(--accent);
+  }
+  .photo {
+    border-radius: 6px; margin: 8px 0 26px;
+    height: 240px; position: relative; overflow: hidden;
+    background:
+      radial-gradient(120% 90% at 20% 10%, #e8b04a 0%, transparent 55%),
+      radial-gradient(130% 100% at 85% 20%, #c0392b33 0%, transparent 60%),
+      linear-gradient(180deg, #b9c8b1 0%, #7e9377 42%, #4f5f4c 100%);
+  }
+  .photo::after {
+    content: ""; position: absolute; inset: 0;
+    background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)' opacity='0.16'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+  }
+  .torii {
+    position: absolute; bottom: 26px; left: 50%; transform: translateX(-50%);
+    width: 150px; height: 110px;
+  }
+  .torii i { position: absolute; background: #8e2f1e; border-radius: 2px; box-shadow: 0 4px 14px #0003; }
+  .torii .beam1 { top: 0; left: -12px; right: -12px; height: 14px; border-radius: 4px; }
+  .torii .beam2 { top: 24px; left: 4px; right: 4px; height: 9px; }
+  .torii .legl { top: 8px; left: 18px; width: 11px; bottom: 0; }
+  .torii .legr { top: 8px; right: 18px; width: 11px; bottom: 0; }
+  .cap { font-size: 13.5px; font-style: italic; color: var(--ink-soft); margin: -16px 0 26px; }
+  .side { position: relative; }
+  .pull {
+    font-family: "Fraunces"; font-style: italic; font-weight: 400;
+    font-size: 26px; line-height: 1.35; color: var(--ink);
+    border-top: 3px solid var(--ink); padding-top: 18px; max-width: 380px;
+  }
+  .pull small { display: block; font-family: "Newsreader"; font-style: normal; font-size: 13px; color: var(--ink-soft); margin-top: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="masthead">The Slow Route<span>.</span></div>
+    <nav><b>Journal</b><span>Guides</span><span>Maps</span><span>About</span></nav>
+  </div>
+  <div class="wrap">
+    <div class="kicker">Field notes · Japan</div>
+    <h1>Kyoto in autumn, one temple at a time</h1>
+    <div class="byline"><div class="avatar"></div><span>By <b>June Okada</b> · October 14 · 12 min read</span></div>
+    <div class="cols">
+      <div class="article">
+        <p>The city wakes slowly in October. By six, the mist still holds the eastern hills, and the first light catches the vermilion gates of Fushimi Inari long before the crowds arrive. If you climb only once, climb now — the mountain belongs to the foxes and to you.</p>
+        <div class="photo"><div class="torii"><i class="beam1"></i><i class="beam2"></i><i class="legl"></i><i class="legr"></i></div></div>
+        <div class="cap">The thousand gates of Fushimi Inari, an hour before opening.</div>
+        <p>Breakfast is best taken standing: a skewer of grilled mochi from the stall beside the shrine office, dusted with kinako. Then the long walk north along the Kamo river, where herons pose like garden statues and university crews slice the water into ribbons.</p>
+        <p>Nishiki Market rewards the patient. Skip the first row of stalls and go deeper — the knife shop that has sharpened steel for four hundred years, the pickle seller who will let you taste everything, the tiny counter where a grandmother sells exactly one kind of tamagoyaki, and only until noon.</p>
+      </div>
+      <div class="side"></div>
+    </div>
+  </div>
+</body>
+</html>

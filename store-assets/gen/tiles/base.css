@@ -1,0 +1,75 @@
+/* Shared "editorial stationery" system for the CWS marketing tiles. */
+* { margin: 0; padding: 0; box-sizing: border-box; }
+:root {
+  --cream: #f6f0e3;
+  --ink: #241d13;
+  --soft: #6f6350;
+  --yellow: #fcee5f;
+  --pink: #fbd0e2;
+  --blue: #bcdcfb;
+  --purple: #e6dcfb;
+}
+html, body { width: 1280px; height: 800px; overflow: hidden; }
+body {
+  position: relative;
+  background: var(--cream);
+  color: var(--ink);
+  font-family: "Newsreader", Georgia, serif;
+  -webkit-font-smoothing: antialiased;
+}
+/* dot grid + warm glow + grain */
+body::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none;
+  background:
+    radial-gradient(90% 70% at 78% 20%, #ffffff66 0%, transparent 60%),
+    radial-gradient(rgba(36, 29, 19, 0.055) 1.1px, transparent 1.1px);
+  background-size: auto, 26px 26px;
+}
+body::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+}
+.wordmark {
+  position: absolute; top: 40px; left: 56px; z-index: 5;
+  display: flex; align-items: center; gap: 12px;
+  font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 21px;
+  letter-spacing: 0.01em;
+}
+.wordmark img { width: 30px; height: 30px; border-radius: 7px; box-shadow: 0 2px 6px #0002; }
+h1 {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 560; line-height: 1.06; letter-spacing: -0.015em;
+}
+.hl {
+  padding: 0 10px 2px; border-radius: 6px;
+  box-decoration-break: clone; -webkit-box-decoration-break: clone;
+}
+.sub { font-size: 21px; line-height: 1.5; color: var(--soft); }
+.sub em { font-family: "Newsreader"; }
+.tape {
+  position: absolute; width: 96px; height: 26px;
+  background: rgba(222, 186, 106, 0.5);
+  box-shadow: 0 1px 3px #0002; border-radius: 2px;
+  backdrop-filter: saturate(1.1);
+}
+.tape::before, .tape::after {
+  content: ""; position: absolute; top: 0; bottom: 0; width: 4px;
+}
+.browser {
+  background: #fbf8f1; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 30px 70px -18px rgba(43, 32, 16, 0.45), 0 6px 18px rgba(43, 32, 16, 0.12);
+  border: 1px solid #e2d9c6;
+}
+.browser .bar {
+  display: flex; align-items: center; gap: 8px;
+  height: 38px; padding: 0 14px;
+  background: #efe8d8; border-bottom: 1px solid #e0d7c3;
+}
+.browser .dot { width: 11px; height: 11px; border-radius: 50%; }
+.browser .url {
+  flex: 0 0 auto; margin-left: 14px;
+  font-family: -apple-system, "Helvetica Neue", sans-serif; font-size: 12.5px; color: #7a7061;
+  background: #f8f3e8; border: 1px solid #e4dbc8; border-radius: 99px;
+  padding: 4px 14px;
+}
+.browser img { display: block; width: 100%; }

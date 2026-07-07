@@ -1,0 +1,13 @@
+{
+  "name": "anchored-notes-store-assets",
+  "private": true,
+  "type": "module",
+  "description": "Regenerates the Chrome Web Store screenshots and promo tile from the real extension",
+  "scripts": {
+    "chrome": "npx @puppeteer/browsers install chrome@stable --path ./chrome",
+    "shoot": "node capture.mjs && node shoot-tiles.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.3.0"
+  }
+}
