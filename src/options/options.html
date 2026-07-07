@@ -69,7 +69,37 @@
       .title { cursor: pointer; }
       tr:hover .title { color: #000; text-decoration: underline; }
       .detail td { background: #fafafa; }
-      .detail .content { white-space: pre-wrap; word-break: break-word; font-size: 13px; color: #333; }
+      .detail .content { word-break: break-word; font-size: 13px; line-height: 1.45; color: #333; }
+      .markdown-preview .milkdown { min-height: 0; }
+      .markdown-preview .ProseMirror { outline: none; white-space: pre-wrap; word-wrap: break-word; font-variant-ligatures: none; }
+      .markdown-preview .ProseMirror > :first-child { margin-top: 0; }
+      .markdown-preview .ProseMirror > :last-child { margin-bottom: 0; }
+      .markdown-preview .ProseMirror p { margin: 0 0 0.5em; }
+      .markdown-preview .ProseMirror h1 { font-size: 1.4em; margin: 0.2em 0 0.3em; }
+      .markdown-preview .ProseMirror h2 { font-size: 1.2em; margin: 0.2em 0 0.3em; }
+      .markdown-preview .ProseMirror h3,
+      .markdown-preview .ProseMirror h4,
+      .markdown-preview .ProseMirror h5,
+      .markdown-preview .ProseMirror h6 { font-size: 1.05em; margin: 0.2em 0 0.3em; }
+      .markdown-preview .ProseMirror ul,
+      .markdown-preview .ProseMirror ol { margin: 0 0 0.5em; padding-left: 1.2em; }
+      .markdown-preview .ProseMirror li { position: relative; }
+      .markdown-preview .ProseMirror code { background: #00000012; padding: 0 3px; border-radius: 3px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+      .markdown-preview .ProseMirror pre { background: #00000012; padding: 6px 8px; border-radius: 4px; overflow: auto; white-space: pre-wrap; }
+      .markdown-preview .ProseMirror pre code { background: none; padding: 0; }
+      .markdown-preview .ProseMirror blockquote { border-left: 3px solid #00000040; margin: 0 0 0.5em; padding-left: 8px; opacity: 0.9; }
+      .markdown-preview .ProseMirror li[data-item-type="task"] { list-style: none; display: flex; align-items: flex-start; gap: 6px; margin-left: -1.2em; }
+      .markdown-preview .ProseMirror li[data-item-type="task"] .task-checkbox { flex: 0 0 auto; margin: 0.2em 0 0; }
+      .markdown-preview .ProseMirror li[data-item-type="task"] .list-item-content { flex: 1 1 auto; min-width: 0; }
+      .markdown-preview .ProseMirror .tableWrapper { overflow-x: auto; margin: 0 0 0.5em; }
+      .markdown-preview .ProseMirror table { border-collapse: collapse; table-layout: fixed; width: 100%; overflow: hidden; }
+      .markdown-preview .ProseMirror th,
+      .markdown-preview .ProseMirror td { border: 1px solid #00000040; padding: 3px 6px; text-align: left; vertical-align: top; box-sizing: border-box; position: relative; min-width: 2em; }
+      .markdown-preview .ProseMirror th { background: #00000014; font-weight: 600; }
+      .markdown-preview .ProseMirror img { width: 100%; height: auto; }
+      .markdown-preview .ProseMirror del { text-decoration: line-through; opacity: 0.75; }
+      .markdown-preview .ProseMirror a { color: #1a73e8; text-decoration: underline; }
+      .markdown-preview .ProseMirror hr { border: none; border-top: 1px solid #0003; margin: 0.5em 0; }
       .account { display: flex; align-items: center; gap: 8px; margin: 12px 0; min-height: 28px; }
       .account-email { color: #444; font-size: 13px; }
       .plan-badge { font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 10px; text-transform: uppercase; letter-spacing: 0.03em; }

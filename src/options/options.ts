@@ -1,5 +1,10 @@
 // Options page: list, search, delete, export and import all notes.
 
+import { Editor, defaultValueCtx, editorViewOptionsCtx, rootCtx } from "@milkdown/core";
+import { commonmark, listItemSchema } from "@milkdown/preset-commonmark";
+import { gfm } from "@milkdown/preset-gfm";
+import { $view } from "@milkdown/utils";
+import type { Node as ProseNode } from "@milkdown/prose/model";
 import type { LoginResponse, Note } from "../types.js";
 import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes, wipeLocalNotes } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
@@ -21,6 +26,111 @@ const SWATCH: Record<string, string> = {
 
 let query = "";
 const expanded = new Set<string>();
+const previewEditors = new Map<string, Editor>();
+const previewMountTokens = new Map<string, number>();
+let previewSeq = 0;
+
+const readonlyTaskListItemView = $view(listItemSchema.node, () => (node) => {
+  let current = node;
+  const li = document.createElement("li");
+  const contentDOM = document.createElement("div");
+  contentDOM.className = "list-item-content";
+  let checkbox: HTMLInputElement | null = null;
+
+  const render = (n: ProseNode): void => {
+    if (n.attrs.checked == null) {
+      li.removeAttribute("data-item-type");
+      checkbox?.remove();
+      checkbox = null;
+      return;
+    }
+    li.dataset.itemType = "task";
+    if (!checkbox) {
+      checkbox = document.createElement("input");
+      checkbox.type = "checkbox";
+      checkbox.className = "task-checkbox";
+      checkbox.disabled = true;
+      checkbox.contentEditable = "false";
+      checkbox.addEventListener("mousedown", (e) => e.preventDefault());
+      li.prepend(checkbox);
+    }
+    checkbox.checked = n.attrs.checked === true;
+  };
+
+  li.appendChild(contentDOM);
+  render(current);
+
+  return {
+    dom: li,
+    contentDOM,
+    update: (updated) => {
+      if (updated.type.name !== "list_item") return false;
+      current = updated;
+      render(updated);
+      return true;
+    }
+  };
+});
+
+function destroyPreview(noteId: string): void {
+  previewMountTokens.set(noteId, (previewMountTokens.get(noteId) ?? 0) + 1);
+  const editor = previewEditors.get(noteId);
+  if (!editor) return;
+  previewEditors.delete(noteId);
+  void editor.destroy();
+}
+
+function destroyAllPreviews(): void {
+  previewSeq += 1;
+  for (const editor of previewEditors.values()) void editor.destroy();
+  previewEditors.clear();
+  previewMountTokens.clear();
+}
+
+function mountReadonlyMarkdownPreview(container: HTMLElement, noteId: string, markdown: string): void {
+  destroyPreview(noteId);
+  container.replaceChildren();
+
+  if (!markdown.trim()) {
+    container.textContent = t("empty", null);
+    return;
+  }
+
+  const seq = previewSeq;
+  const mountToken = (previewMountTokens.get(noteId) ?? 0) + 1;
+  previewMountTokens.set(noteId, mountToken);
+  const editor = Editor.make()
+    .config((ctx) => {
+      ctx.set(rootCtx, container);
+      ctx.set(defaultValueCtx, markdown);
+      ctx.set(editorViewOptionsCtx, {
+        editable: () => false,
+        attributes: { "aria-readonly": "true" }
+      });
+    })
+    .use(commonmark)
+    .use(gfm)
+    .use(readonlyTaskListItemView);
+
+  void editor
+    .create()
+    .then((created) => {
+      const isStale =
+        seq !== previewSeq ||
+        previewMountTokens.get(noteId) !== mountToken ||
+        !expanded.has(noteId) ||
+        !container.isConnected;
+      if (isStale) {
+        void created.destroy();
+        return;
+      }
+      previewEditors.set(noteId, created);
+    })
+    .catch((err) => {
+      console.error("[anchored-notes] markdown preview failed:", err);
+      container.textContent = markdown;
+    });
+}
 
 function renderLangMenu(): void {
   const menu = document.getElementById("lang-menu") as HTMLDivElement;
@@ -285,6 +395,7 @@ async function render(): Promise<void> {
   renderUsage(all.length, await getCurrentLimit());
   const notes = all.filter(matchesQuery).sort((a, b) => b.createdAt - a.createdAt);
 
+  destroyAllPreviews();
   rows.replaceChildren();
   empty.hidden = notes.length > 0;
 
@@ -334,15 +445,22 @@ async function render(): Promise<void> {
     const tdDetail = document.createElement("td");
     tdDetail.colSpan = 5;
     const content = document.createElement("div");
-    content.className = "content";
-    content.textContent = note.content || t("empty", null);
+    content.className = "content markdown-preview";
+    if (!detail.hidden) mountReadonlyMarkdownPreview(content, note.id, note.content);
     tdDetail.appendChild(content);
     detail.appendChild(tdDetail);
 
     tr.addEventListener("click", () => {
-      if (expanded.has(note.id)) expanded.delete(note.id);
-      else expanded.add(note.id);
-      detail.hidden = !expanded.has(note.id);
+      if (expanded.has(note.id)) {
+        expanded.delete(note.id);
+        destroyPreview(note.id);
+        content.replaceChildren();
+        detail.hidden = true;
+      } else {
+        expanded.add(note.id);
+        detail.hidden = false;
+        mountReadonlyMarkdownPreview(content, note.id, note.content);
+      }
     });
 
     tr.append(tdNote, tdScope, tdAnchor, tdDate, tdActions);

@@ -226,7 +226,7 @@ re-evaluate without a full reload.
   The badge stays out of sight while no note on the page is hidden.
 - Manage, search, export and import all notes from the options page. Each row
   shows the note's auto-derived title (its first markdown block); click a row to
-  expand its full content inline.
+  expand a rendered markdown preview of the full content inline.
 - Switch the interface language from the small flag button in the top-right of
   the popup or options page (16 languages supported). The default follows your
   system language.
