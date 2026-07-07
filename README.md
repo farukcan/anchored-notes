@@ -55,8 +55,8 @@ flowchart LR
   languages (English, Turkish, Spanish, German, Japanese, French, Portuguese,
   Russian, Italian, Dutch, Polish, Chinese, Persian, Arabic, Vietnamese, Korean).
   The active language is stored under the `lang` key in `chrome.storage.local`,
-  defaulting to the detected system language. Switching it from the popup's flag
-  picker updates every context live (popup, options, on-page note cards,
+  defaulting to the detected system language. Switching it from the popup or
+  options flag picker updates every context live (popup, options, on-page note cards,
   slash/table menus and the context menu) via a storage change listener.
   Per-language strings live in `src/locales/<lang>.ts`; English is canonical and
   its keys define the `MessageKey` type, so any missing translation is a
@@ -228,4 +228,5 @@ re-evaluate without a full reload.
   shows the note's auto-derived title (its first markdown block); click a row to
   expand its full content inline.
 - Switch the interface language from the small flag button in the top-right of
-  the popup (16 languages supported). The default follows your system language.
+  the popup or options page (16 languages supported). The default follows your
+  system language.

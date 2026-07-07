@@ -12,7 +12,48 @@
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
         color: #222;
       }
-      h1 { font-size: 18px; margin-bottom: 4px; }
+      h1 { font-size: 18px; margin: 0; }
+      .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 4px; }
+      .lang { position: relative; }
+      .lang-btn {
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        font-size: 16px;
+        line-height: 1;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      .lang-btn:hover { background: #f0f0f0; }
+      .lang-menu {
+        position: absolute;
+        top: 100%;
+        right: 0;
+        margin-top: 4px;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 6px;
+        box-shadow: 0 4px 12px #0002;
+        padding: 4px;
+        z-index: 10;
+        min-width: 120px;
+      }
+      .lang-menu[hidden] { display: none; }
+      .lang-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        width: 100%;
+        border: none;
+        background: transparent;
+        cursor: pointer;
+        padding: 6px 8px;
+        border-radius: 4px;
+        font-size: 13px;
+        text-align: left;
+      }
+      .lang-item:hover { background: #f4f4f4; }
+      .lang-item[aria-current="true"] { font-weight: 600; }
       .usage { color: #666; font-size: 13px; margin-bottom: 8px; }
       .usage.limit { color: #c0392b; font-weight: 600; }
       .toolbar { display: flex; gap: 8px; align-items: center; margin: 16px 0; flex-wrap: wrap; }
@@ -60,7 +101,13 @@
     </style>
   </head>
   <body>
-    <h1>⚓ Anchored Notes</h1>
+    <div class="head">
+      <h1>⚓ Anchored Notes</h1>
+      <div class="lang">
+        <button id="lang-btn" class="lang-btn" type="button"></button>
+        <div id="lang-menu" class="lang-menu" hidden></div>
+      </div>
+    </div>
     <div class="account" id="account"></div>
     <div class="encryption" id="encryption"></div>
     <div class="usage" id="usage"></div>

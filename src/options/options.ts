@@ -7,7 +7,7 @@ import { formatRelativeTime } from "../relative-time.js";
 import { formatLimit, getCurrentLimit } from "../limits.js";
 import { deleteAccount, getAuthState, logout, onAuthChanged, openBilling, startUpgrade, type AuthState } from "../auth.js";
 import { getEncStatus, getReadyKey, onEncStatusChanged, setCustomPassword, unlockWithPassword } from "../encryption.js";
-import { initI18n, onLangChanged, t } from "../i18n.js";
+import { getLang, initI18n, LANG_META, LANGS, onLangChanged, setLang, t, type Lang } from "../i18n.js";
 
 const SWATCH: Record<string, string> = {
   yellow: "#fcee5f",
@@ -21,6 +21,36 @@ const SWATCH: Record<string, string> = {
 
 let query = "";
 const expanded = new Set<string>();
+
+function renderLangMenu(): void {
+  const menu = document.getElementById("lang-menu") as HTMLDivElement;
+  const active = getLang();
+  menu.replaceChildren();
+  for (const lang of LANGS) {
+    const item = document.createElement("button");
+    item.type = "button";
+    item.className = "lang-item";
+    item.setAttribute("aria-current", String(lang === active));
+    item.textContent = `${LANG_META[lang].flag} ${LANG_META[lang].name}`;
+    item.addEventListener("click", () => void chooseLang(lang));
+    menu.appendChild(item);
+  }
+}
+
+function refreshLocalizedUi(): void {
+  applyStaticText();
+  renderLangMenu();
+  renderAccount(currentAuth);
+  void renderEncryption(currentAuth);
+  void render();
+}
+
+async function chooseLang(lang: Lang): Promise<void> {
+  (document.getElementById("lang-menu") as HTMLDivElement).hidden = true;
+  if (lang === getLang()) return;
+  await setLang(lang);
+  refreshLocalizedUi();
+}
 
 function matchesQuery(note: Note): boolean {
   if (!query) return true;
@@ -367,6 +397,9 @@ async function importNotes(file: File): Promise<void> {
 
 function applyStaticText(): void {
   document.title = t("optionsTitle", null);
+  const langBtn = document.getElementById("lang-btn") as HTMLButtonElement;
+  langBtn.textContent = LANG_META[getLang()].flag;
+  langBtn.title = t("language", null);
   (document.getElementById("search") as HTMLInputElement).placeholder = t("searchPlaceholder", null);
   (document.getElementById("export") as HTMLButtonElement).textContent = t("exportJson", null);
   (document.getElementById("import") as HTMLButtonElement).textContent = t("importJson", null);
@@ -393,6 +426,17 @@ document.getElementById("file")?.addEventListener("change", (e) => {
   if (file) void importNotes(file);
 });
 
+document.getElementById("lang-btn")?.addEventListener("click", () => {
+  const menu = document.getElementById("lang-menu") as HTMLDivElement;
+  menu.hidden = !menu.hidden;
+});
+
+document.addEventListener("click", (e) => {
+  const menu = document.getElementById("lang-menu") as HTMLDivElement;
+  if (menu.hidden) return;
+  if (!(e.target as HTMLElement).closest(".lang")) menu.hidden = true;
+});
+
 // Last known account state, so a language switch can re-render account labels
 // without an async storage read.
 let currentAuth: AuthState | null = null;
@@ -408,16 +452,12 @@ onAuthChanged((auth) => {
   void renderEncryption(auth);
 });
 onEncStatusChanged(() => void renderEncryption(currentAuth));
-onLangChanged(() => {
-  applyStaticText();
-  renderAccount(currentAuth);
-  void renderEncryption(currentAuth);
-  void render();
-});
+onLangChanged(refreshLocalizedUi);
 
 async function main(): Promise<void> {
   await initI18n();
   applyStaticText();
+  renderLangMenu();
   currentAuth = await getAuthState();
   renderAccount(currentAuth);
   await renderEncryption(currentAuth);

@@ -16,6 +16,10 @@ function requestSync(): void {
   void chrome.runtime.sendMessage({ type: "SYNC" } satisfies Message);
 }
 
+function openOptionsPage(): void {
+  chrome.runtime.openOptionsPage();
+}
+
 async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   return tab;
@@ -113,9 +117,11 @@ function renderAccount(auth: AuthState | null): void {
     return;
   }
 
-  const email = document.createElement("span");
+  const email = document.createElement("button");
   email.className = "account-email";
+  email.type = "button";
   email.textContent = auth.email;
+  email.addEventListener("click", openOptionsPage);
 
   const badge = document.createElement("span");
   badge.className = `plan-badge plan-${auth.plan}`;
@@ -165,7 +171,7 @@ async function renderEncWarning(auth: AuthState | null): Promise<void> {
   btn.className = "enc-warning-btn";
   btn.type = "button";
   btn.textContent = t("encPasswordRequired", null);
-  btn.addEventListener("click", () => chrome.runtime.openOptionsPage());
+  btn.addEventListener("click", openOptionsPage);
   box.appendChild(btn);
 }
 
@@ -226,7 +232,7 @@ document.getElementById("add")?.addEventListener("click", async () => {
 
 document.getElementById("options")?.addEventListener("click", (e) => {
   e.preventDefault();
-  chrome.runtime.openOptionsPage();
+  openOptionsPage();
 });
 
 document.getElementById("lang-btn")?.addEventListener("click", () => {
