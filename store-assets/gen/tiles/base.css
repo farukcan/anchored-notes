@@ -1,4 +1,5 @@
-/* Shared "editorial stationery" system for the CWS marketing tiles. */
+/* Shared "editorial stationery" system for the CWS marketing tiles.
+   --font-head / --font-body are injected per language by the templates. */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 :root {
   --cream: #f6f0e3;
@@ -14,7 +15,7 @@ body {
   position: relative;
   background: var(--cream);
   color: var(--ink);
-  font-family: "Newsreader", Georgia, serif;
+  font-family: var(--font-body, Georgia, serif);
   -webkit-font-smoothing: antialiased;
 }
 /* dot grid + warm glow + grain */
@@ -35,30 +36,34 @@ body::after {
   font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 21px;
   letter-spacing: 0.01em;
 }
+[dir="rtl"] .wordmark { left: auto; right: 56px; }
 .wordmark img { width: 30px; height: 30px; border-radius: 7px; box-shadow: 0 2px 6px #0002; }
 h1 {
-  font-family: "Fraunces", Georgia, serif;
-  font-weight: 560; line-height: 1.06; letter-spacing: -0.015em;
+  font-family: var(--font-head, Georgia, serif);
+  font-weight: 560; line-height: 1.12; letter-spacing: -0.015em;
 }
+/* Arabic-script ascenders/descenders need looser lines than Latin. */
+[dir="rtl"] h1 { line-height: 1.55; letter-spacing: 0; }
+/* CJK glyphs fill the whole em box; 1.12 clips their tops. */
+:lang(ja) h1, :lang(ko) h1, :lang(zh-CN) h1 { line-height: 1.3; letter-spacing: 0; }
+/* Break Korean at word boundaries so the highlighted word stays whole. */
+:lang(ko) h1 { word-break: keep-all; }
 .hl {
   padding: 0 10px 2px; border-radius: 6px;
   box-decoration-break: clone; -webkit-box-decoration-break: clone;
 }
 .sub { font-size: 21px; line-height: 1.5; color: var(--soft); }
-.sub em { font-family: "Newsreader"; }
 .tape {
   position: absolute; width: 96px; height: 26px;
   background: rgba(222, 186, 106, 0.5);
   box-shadow: 0 1px 3px #0002; border-radius: 2px;
   backdrop-filter: saturate(1.1);
 }
-.tape::before, .tape::after {
-  content: ""; position: absolute; top: 0; bottom: 0; width: 4px;
-}
 .browser {
   background: #fbf8f1; border-radius: 12px; overflow: hidden;
   box-shadow: 0 30px 70px -18px rgba(43, 32, 16, 0.45), 0 6px 18px rgba(43, 32, 16, 0.12);
   border: 1px solid #e2d9c6;
+  direction: ltr; /* the framed page screenshot keeps its own layout */
 }
 .browser .bar {
   display: flex; align-items: center; gap: 8px;

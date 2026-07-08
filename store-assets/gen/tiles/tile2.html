@@ -1,27 +1,34 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;0,9..144,700;1,9..144,460&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link href="{{fontHref}}" rel="stylesheet">
 <link rel="stylesheet" href="base.css">
 <style>
-  .copy { position: absolute; top: 208px; right: 72px; width: 460px; z-index: 4; }
-  h1 { font-size: 54px; }
+  :root { --font-head: {{fontHead}}; --font-body: {{fontBody}}; }
+  .copy { position: absolute; top: 168px; right: 72px; width: 470px; z-index: 4; }
+  [dir="rtl"] .copy { right: auto; left: 72px; }
+  h1 { font-size: 46px; }
   h1 .hl { background: var(--blue); box-shadow: 0 2px 0 #92bfe8; }
-  .copy .sub { margin-top: 26px; }
+  .copy .sub { margin-top: 24px; }
   .polaroid {
     position: absolute; top: 158px; left: 84px; z-index: 3;
     background: #fffdf7; padding: 16px 16px 52px;
     border-radius: 4px; transform: rotate(1.6deg);
     box-shadow: 0 34px 70px -20px rgba(43, 32, 16, 0.5), 0 6px 16px rgba(43, 32, 16, 0.12);
   }
-  .polaroid img { display: block; width: 548px; border-radius: 3px; }
+  [dir="rtl"] .polaroid { left: auto; right: 84px; transform: rotate(-1.6deg); }
+  /* Close-up of the yellow note, cropped straight out of the hero shot
+     (region 848,96 364x260 in CSS px; mirrored to x=68 for RTL). */
+  .pcrop { width: 548px; height: 391px; overflow: hidden; position: relative; border-radius: 3px; direction: ltr; }
+  .pcrop img { display: block; width: 1927px; margin-left: -1277px; margin-top: -145px; }
+  [dir="rtl"] .pcrop img { margin-left: -102px; }
   .polaroid .cap {
     position: absolute; left: 0; right: 0; bottom: 14px; text-align: center;
-    font-family: "Newsreader"; font-style: italic; font-size: 17px; color: #8b7f69;
+    font-family: var(--font-body); font-style: italic; font-size: 17px; color: #8b7f69;
   }
   .polaroid .tape { top: -14px; left: 226px; transform: rotate(3deg); }
-  .feats { position: absolute; right: 72px; top: 486px; width: 470px; display: flex; flex-wrap: wrap; gap: 14px; z-index: 4; }
+  .feats { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 14px; }
   .feat {
     display: flex; align-items: center; gap: 10px;
     font-family: -apple-system, "Helvetica Neue", sans-serif;
@@ -37,10 +44,6 @@
   .f2 { background: var(--pink);   transform: rotate(1.1deg); }
   .f3 { background: var(--purple); transform: rotate(-0.7deg); }
   .f4 { background: #d9ecc8;       transform: rotate(1.4deg); }
-  .foot {
-    position: absolute; left: 84px; bottom: 46px; z-index: 4;
-    font-family: "Newsreader"; font-style: italic; font-size: 18px; color: var(--soft);
-  }
 </style>
 </head>
 <body>
@@ -48,20 +51,19 @@
 
   <div class="polaroid">
     <div class="tape"></div>
-    <img src="../raw/note-closeup.png" alt="">
-    <div class="cap">a real note, on a real page</div>
+    <div class="pcrop"><img src="{{raw}}/hero.png" alt=""></div>
+    <div class="cap">{{t2cap}}</div>
   </div>
 
   <div class="copy">
-    <h1>A full <span class="hl">markdown</span> editor in every note</h1>
-    <p class="sub">Write the way you think — the note formats itself as you type.</p>
-  </div>
-
-  <div class="feats">
-    <div class="feat f1">☑&nbsp; Task lists with checkboxes</div>
-    <div class="feat f2">Tables &amp; quotes</div>
-    <div class="feat f3"><code>/</code> Notion-style slash menu</div>
-    <div class="feat f4"><code>{}</code> Code blocks</div>
+    <h1>{{t2h1}}</h1>
+    <p class="sub">{{t2sub}}</p>
+    <div class="feats">
+      <div class="feat f1">{{f1}}</div>
+      <div class="feat f2">{{f2}}</div>
+      <div class="feat f3">{{f3}}</div>
+      <div class="feat f4">{{f4}}</div>
+    </div>
   </div>
 </body>
 </html>

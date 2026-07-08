@@ -1,32 +1,28 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;0,9..144,700;1,9..144,460&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link href="{{fontHref}}" rel="stylesheet">
 <link rel="stylesheet" href="base.css">
 <style>
+  :root { --font-head: {{fontHead}}; --font-body: {{fontBody}}; }
   .copy { position: absolute; top: 148px; left: 56px; width: 470px; z-index: 4; }
-  h1 { font-size: 58px; }
+  [dir="rtl"] .copy { left: auto; right: 56px; }
+  h1 { font-size: 54px; }
   h1 .hl { background: var(--yellow); box-shadow: 0 2px 0 #e3d340; }
-  .copy .sub { margin-top: 26px; width: 400px; }
+  .copy .sub { margin-top: 26px; width: 410px; }
   .shot {
     position: absolute; top: 138px; left: 540px; width: 716px; z-index: 3;
     transform: rotate(-1.4deg);
   }
+  [dir="rtl"] .shot { left: 24px; }
   .shot .tape { top: -13px; left: 60px; transform: rotate(-5deg); z-index: 6; }
-  /* Crop the page's left edge so the notes on the right stay large and whole. */
-  .viewport { width: 716px; height: 484px; overflow: hidden; position: relative; }
-  .viewport img { width: 774px; margin-left: -58px; }
-  .mini {
-    position: absolute; right: 96px; bottom: 52px; z-index: 4;
-    width: 190px; padding: 16px 18px 18px;
-    background: var(--yellow); transform: rotate(2.4deg);
-    box-shadow: 0 14px 28px -10px rgba(43,32,16,0.35);
-    font-family: "Fraunces", Georgia, serif; font-style: italic; font-size: 19px;
-    text-align: center;
-  }
-  .mini .tape { top: -12px; left: 48px; width: 90px; transform: rotate(-4deg); }
+  /* Full-width page view: the page's own side padding stays visible in both
+     text directions, nothing gets cropped. */
+  .viewport { width: 716px; height: 448px; overflow: hidden; position: relative; }
+  .viewport img { width: 716px; }
   .scopes { position: absolute; left: 56px; bottom: 64px; display: flex; gap: 12px; z-index: 4; }
+  [dir="rtl"] .scopes { left: auto; right: 56px; }
   .chip {
     font-family: -apple-system, "Helvetica Neue", sans-serif;
     font-size: 14.5px; font-weight: 600; color: var(--ink);
@@ -38,21 +34,31 @@
   .c2 { background: var(--blue);   transform: rotate(1.2deg); }
   .c3 { background: var(--purple); transform: rotate(-0.8deg); }
   .c4 { background: var(--pink);   transform: rotate(1.6deg); }
+  .mini {
+    position: absolute; right: 96px; bottom: 52px; z-index: 4;
+    width: 200px; padding: 16px 18px 18px;
+    background: var(--yellow); transform: rotate(2.4deg);
+    box-shadow: 0 14px 28px -10px rgba(43,32,16,0.35);
+    font-family: var(--font-head); font-style: italic; font-size: 19px;
+    text-align: center;
+  }
+  [dir="rtl"] .mini { right: auto; left: 96px; }
+  .mini .tape { top: -12px; left: 52px; width: 90px; transform: rotate(-4deg); }
 </style>
 </head>
 <body>
   <div class="wordmark"><img src="../../../icons/icon-128.png" alt="">Anchored Notes</div>
 
   <div class="copy">
-    <h1>Sticky notes that <span class="hl">stay</span> where you put them</h1>
-    <p class="sub">Leave a note on any web page — it’s right there waiting the next time you visit.</p>
+    <h1>{{t1h1}}</h1>
+    <p class="sub">{{t1sub}}</p>
   </div>
 
   <div class="scopes">
-    <div class="chip c1">This page<small>one exact URL</small></div>
-    <div class="chip c2">This site<small>every page of it</small></div>
-    <div class="chip c3">This tab<small>follows navigation</small></div>
-    <div class="chip c4">Everywhere<small>all pages</small></div>
+    <div class="chip c1">{{chip1}}<small>{{chip1s}}</small></div>
+    <div class="chip c2">{{chip2}}<small>{{chip2s}}</small></div>
+    <div class="chip c3">{{chip3}}<small>{{chip3s}}</small></div>
+    <div class="chip c4">{{chip4}}<small>{{chip4s}}</small></div>
   </div>
 
   <div class="shot">
@@ -64,10 +70,10 @@
         <span class="dot" style="background:#28c840"></span>
         <span class="url">theslowroute.com/journal/kyoto</span>
       </div>
-      <div class="viewport"><img src="../raw/hero.png" alt=""></div>
+      <div class="viewport"><img src="{{raw}}/hero.png" alt=""></div>
     </div>
   </div>
 
-  <div class="mini"><div class="tape"></div>pin it now,<br>find it later ⚓</div>
+  <div class="mini"><div class="tape"></div>{{mini}}</div>
 </body>
 </html>

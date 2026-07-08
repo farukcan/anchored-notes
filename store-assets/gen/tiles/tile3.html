@@ -1,12 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;0,9..144,700;1,9..144,460&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link href="{{fontHref}}" rel="stylesheet">
 <link rel="stylesheet" href="base.css">
 <style>
+  :root { --font-head: {{fontHead}}; --font-body: {{fontBody}}; }
   .copy { position: absolute; top: 112px; left: 0; right: 0; text-align: center; z-index: 4; }
-  h1 { font-size: 56px; max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 54px; max-width: 980px; margin: 0 auto; }
   h1 .hl { background: var(--pink); box-shadow: 0 2px 0 #eda8c6; }
   .copy .sub { margin-top: 22px; }
   .cards { position: absolute; left: 0; right: 0; top: 372px; display: flex; justify-content: center; gap: 40px; z-index: 3; }
@@ -17,12 +18,12 @@
   }
   .card .tape { top: -13px; left: 102px; width: 92px; }
   .card svg { width: 46px; height: 46px; margin-bottom: 18px; }
-  .card h2 { font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 24px; margin-bottom: 10px; }
-  .card p { font-size: 17.5px; line-height: 1.5; color: #00000099; }
+  .card h2 { font-family: var(--font-head); font-weight: 700; font-size: 23px; margin-bottom: 10px; }
+  .card p { font-size: 17px; line-height: 1.5; color: #00000099; }
   .k1 { background: var(--yellow); transform: rotate(-1.8deg); }
   .k2 { background: var(--blue); transform: rotate(0.9deg); top: 14px; }
   .k3 { background: var(--purple); transform: rotate(-1deg); }
-  .k1 .fold, .k2 .fold, .k3 .fold {
+  .fold {
     position: absolute; right: 0; bottom: 0; width: 26px; height: 26px;
     background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.22) 50%);
   }
@@ -32,8 +33,8 @@
   <div class="wordmark"><img src="../../../icons/icon-128.png" alt="">Anchored Notes</div>
 
   <div class="copy">
-    <h1>On every device.<br>Readable <span class="hl">only by you.</span></h1>
-    <p class="sub">Sign in with Google and your notes follow you everywhere.</p>
+    <h1>{{t3h1}}</h1>
+    <p class="sub">{{t3sub}}</p>
   </div>
 
   <div class="cards">
@@ -45,8 +46,8 @@
         <path d="M37 27a14 14 0 0 1-25 5"/>
         <path d="M11 40v-8h8"/>
       </svg>
-      <h2>Instant sync</h2>
-      <p>Write on your laptop, find it on your desktop seconds later.</p>
+      <h2>{{k1h}}</h2>
+      <p>{{k1p}}</p>
     </div>
     <div class="card k2">
       <div class="tape"></div><div class="fold"></div>
@@ -55,8 +56,8 @@
         <path d="M16 20v-5a8 8 0 0 1 16 0v5"/>
         <circle cx="24" cy="30" r="2.6" fill="#15324f"/>
       </svg>
-      <h2>End-to-end encrypted</h2>
-      <p>Add a passphrase and not even the server can read your notes.</p>
+      <h2>{{k2h}}</h2>
+      <p>{{k2p}}</p>
     </div>
     <div class="card k3">
       <div class="tape"></div><div class="fold"></div>
@@ -64,8 +65,8 @@
         <circle cx="24" cy="24" r="16"/>
         <path d="M8 24h32M24 8c5 4.5 7.5 10 7.5 16S29 35.5 24 40c-5-4.5-7.5-10-7.5-16S19 12.5 24 8z"/>
       </svg>
-      <h2>16 languages</h2>
-      <p>The whole interface, from the popup to the slash menu.</p>
+      <h2>{{k3h}}</h2>
+      <p>{{k3p}}</p>
     </div>
   </div>
 </body>

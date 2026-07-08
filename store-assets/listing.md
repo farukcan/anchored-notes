@@ -13,6 +13,14 @@ Assets in this directory (upload on the dashboard's **Store listing** tab):
 Store icon: upload `../icons/icon-128.png` (128×128).
 Category: **Productivity → Workflow & Planning**. Language: **English**.
 
+Localized variants of all five assets live under `store-assets/<lang>/` for the
+15 other extension languages (`tr`, `de`, `es`, `fr`, `it`, `nl`, `pl`,
+`pt_BR`, `ru`, `vi`, `ja`, `ko`, `zh_CN`, `ar`, `fa` — same folder codes the
+CWS dashboard uses). The demo page, the note contents, the extension UI and
+the marketing copy are all translated; `ar`/`fa` are mirrored RTL. In the
+dashboard, add each language on the Store listing tab and upload its folder's
+files into the same slots.
+
 ## Detailed description
 
 ```

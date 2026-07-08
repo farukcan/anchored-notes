@@ -24,22 +24,32 @@ Chromium — branded Chrome 137+ dropped the flag).
 flowchart LR
   D[dist/ build] --> C[capture.mjs\nseeds notes into chrome.storage,\nshoots demo page]
   K[demo/kyoto.html\nfake article backdrop] --> C
-  C --> R[raw/hero.png\nraw/note-closeup.png]
+  C --> R[raw/&lt;lang&gt;/hero.png]
   R --> T[shoot-tiles.mjs]
   H[tiles/*.html\nmarketing layouts] --> T
   T --> A[store-assets/screenshot-1..3.png\nstore-assets/promo-small-440x280.png]
 ```
 
-- `capture.mjs` — serves `demo/kyoto.html` on `localhost:8123`, loads `dist/`
-  as an unpacked extension, seeds three demo notes (page/site/global scopes)
-  into `chrome.storage.local`, and screenshots the page at 1280×800 @2x.
-- `tiles/*.html` — the marketing compositions: `tile1..3` (1280×800
-  screenshots), `promo` (440×280 small tile), `marquee` (1400×560 marquee
-  tile); `base.css` holds the shared "editorial stationery" styling. Headline
-  copy lives in these files.
-- `shoot-tiles.mjs` — renders each tile at its exact CWS size (no alpha) and
-  copies the results up into `store-assets/`.
+- `i18n.mjs` — every localized string (16 languages): demo-page copy, seeded
+  note markdown, tile headlines, plus per-script font pairings and text
+  direction. Edit marketing copy here, not in the tile HTML.
+- `capture.mjs` — serves `demo/kyoto.html` on `localhost:8123` (rendered per
+  language), loads `dist/` as an unpacked extension, seeds three localized
+  demo notes and the matching UI `lang` into `chrome.storage.local`, and
+  screenshots the page at 1280×800 @2x into `raw/<lang>/`. RTL languages get
+  mirrored note positions.
+- `tiles/*.html` — the marketing compositions as `{{placeholder}}` templates:
+  `tile1..3` (1280×800 screenshots), `promo` (440×280 small tile), `marquee`
+  (1400×560 marquee tile); `base.css` holds the shared "editorial stationery"
+  styling and the RTL overrides.
+- `shoot-tiles.mjs` — renders every tile for every language at its exact CWS
+  size (no alpha): English into `store-assets/`, the rest into
+  `store-assets/<lang>/`.
 
-Note positions in `capture.mjs` and the clip rectangle for the close-up are
-pixel-tuned to the demo page layout — if you edit `demo/kyoto.html` or the
-note sizes, eyeball `raw/hero.png` before re-rendering the tiles.
+Both scripts accept language codes as args to regenerate a subset, e.g.
+`node capture.mjs tr ja && node shoot-tiles.mjs tr ja`.
+
+Note positions in `capture.mjs` and the crop offsets in the tiles (tile1 /
+marquee viewport, tile2 polaroid `.pcrop`) are pixel-tuned to the demo page
+layout — if you edit `demo/kyoto.html` or the note sizes, eyeball
+`raw/<lang>/hero.png` before re-rendering the tiles.

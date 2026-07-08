@@ -1,17 +1,21 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="utf-8">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,560;0,9..144,700;1,9..144,460&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link href="{{fontHref}}" rel="stylesheet">
 <link rel="stylesheet" href="base.css">
 <style>
+  :root { --font-head: {{fontHead}}; --font-body: {{fontBody}}; }
   html, body { width: 1400px; height: 560px; }
   .wordmark { top: 44px; left: 64px; }
-  .copy { position: absolute; top: 138px; left: 64px; width: 480px; z-index: 4; }
-  h1 { font-size: 50px; }
+  [dir="rtl"] .wordmark { left: auto; right: 64px; }
+  .copy { position: absolute; top: 138px; left: 64px; width: 490px; z-index: 4; }
+  [dir="rtl"] .copy { left: auto; right: 64px; }
+  h1 { font-size: 46px; }
   h1 .hl { background: var(--yellow); box-shadow: 0 2px 0 #e3d340; }
-  .copy .sub { margin-top: 22px; width: 430px; font-size: 20px; }
+  .copy .sub { margin-top: 22px; width: 440px; font-size: 20px; }
   .scopes { position: absolute; left: 64px; bottom: 48px; display: flex; gap: 12px; z-index: 4; }
+  [dir="rtl"] .scopes { left: auto; right: 64px; }
   .chip {
     font-family: -apple-system, "Helvetica Neue", sans-serif;
     font-size: 14px; font-weight: 600; color: var(--ink);
@@ -27,26 +31,26 @@
     position: absolute; top: 84px; left: 640px; width: 716px; z-index: 3;
     transform: rotate(-1.2deg);
   }
+  [dir="rtl"] .shot { left: 44px; }
   .shot .tape { top: -13px; left: 64px; transform: rotate(-5deg); z-index: 6; }
-  /* Crop the page's left edge so the notes on the right stay large and whole;
-     the frame bleeds off the bottom of the canvas. */
-  .viewport { width: 716px; height: 470px; overflow: hidden; position: relative; }
-  .viewport img { width: 774px; margin-left: -58px; }
+  /* Full-width page view (no crop); the frame bleeds off the bottom edge. */
+  .viewport { width: 716px; height: 448px; overflow: hidden; position: relative; }
+  .viewport img { width: 716px; }
 </style>
 </head>
 <body>
   <div class="wordmark"><img src="../../../icons/icon-128.png" alt="">Anchored Notes</div>
 
   <div class="copy">
-    <h1>Sticky notes that <span class="hl">stay</span> where you put them</h1>
-    <p class="sub">Leave a note on any web page — it’s right there waiting the next time you visit.</p>
+    <h1>{{t1h1}}</h1>
+    <p class="sub">{{t1sub}}</p>
   </div>
 
   <div class="scopes">
-    <div class="chip c1">This page<small>one exact URL</small></div>
-    <div class="chip c2">This site<small>every page of it</small></div>
-    <div class="chip c3">This tab<small>follows navigation</small></div>
-    <div class="chip c4">Everywhere<small>all pages</small></div>
+    <div class="chip c1">{{chip1}}<small>{{chip1s}}</small></div>
+    <div class="chip c2">{{chip2}}<small>{{chip2s}}</small></div>
+    <div class="chip c3">{{chip3}}<small>{{chip3s}}</small></div>
+    <div class="chip c4">{{chip4}}<small>{{chip4s}}</small></div>
   </div>
 
   <div class="shot">
@@ -58,7 +62,7 @@
         <span class="dot" style="background:#28c840"></span>
         <span class="url">theslowroute.com/journal/kyoto</span>
       </div>
-      <div class="viewport"><img src="../raw/hero.png" alt=""></div>
+      <div class="viewport"><img src="{{raw}}/hero.png" alt=""></div>
     </div>
   </div>
 </body>

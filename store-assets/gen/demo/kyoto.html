@@ -1,13 +1,13 @@
 <!doctype html>
-<html lang="en">
+<html lang="{{lang}}" dir="{{dir}}">
 <head>
 <meta charset="utf-8">
-<title>The Slow Route — Kyoto in Autumn</title>
+<title>The Slow Route — {{title}}</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="manifest" href="/manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,560;0,9..144,700;1,9..144,400&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+<link href="{{fontHref}}" rel="stylesheet">
 <style>
   :root {
     --paper: #f8f4ec;
@@ -15,12 +15,14 @@
     --ink-soft: #5c5346;
     --rule: #d9d0c0;
     --accent: #a4552e;
+    --font-head: {{fontHead}};
+    --font-body: {{fontBody}};
   }
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
     background: var(--paper);
     color: var(--ink);
-    font-family: "Newsreader", Georgia, serif;
+    font-family: var(--font-body);
     font-size: 17px;
     line-height: 1.62;
     -webkit-font-smoothing: antialiased;
@@ -39,27 +41,30 @@
   nav b { color: var(--ink); font-weight: 500; border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
   .wrap { max-width: 1180px; margin: 0 auto; padding: 44px 48px 80px; }
   .kicker {
-    font-family: "Newsreader"; font-style: italic; color: var(--accent);
+    font-family: var(--font-body); font-style: italic; color: var(--accent);
     font-size: 16px; margin-bottom: 10px;
   }
   h1 {
-    font-family: "Fraunces", Georgia, serif;
-    font-weight: 560; font-size: 58px; line-height: 1.04;
-    letter-spacing: -0.015em; max-width: 700px;
+    font-family: var(--font-head);
+    font-weight: 560; font-size: 54px; line-height: 1.08;
+    letter-spacing: -0.015em; max-width: 720px;
   }
   .byline {
     display: flex; align-items: center; gap: 10px;
     margin: 22px 0 34px; font-size: 14.5px; color: var(--ink-soft);
   }
   .avatar {
-    width: 34px; height: 34px; border-radius: 50%;
+    width: 34px; height: 34px; border-radius: 50%; flex: none;
     background: radial-gradient(circle at 30% 30%, #d8a06b, #8a5a3b);
   }
   .cols { display: grid; grid-template-columns: 620px 1fr; gap: 56px; }
   .article p { margin-bottom: 20px; color: #332b20; }
   .article p:first-of-type::first-letter {
-    font-family: "Fraunces"; font-size: 58px; font-weight: 560;
+    font-family: var(--font-head); font-size: 58px; font-weight: 560;
     float: left; line-height: 0.85; padding: 6px 10px 0 0; color: var(--accent);
+  }
+  [dir="rtl"] .article p:first-of-type::first-letter {
+    float: right; padding: 6px 0 0 10px;
   }
   .photo {
     border-radius: 6px; margin: 8px 0 26px;
@@ -84,31 +89,23 @@
   .torii .legl { top: 8px; left: 18px; width: 11px; bottom: 0; }
   .torii .legr { top: 8px; right: 18px; width: 11px; bottom: 0; }
   .cap { font-size: 13.5px; font-style: italic; color: var(--ink-soft); margin: -16px 0 26px; }
-  .side { position: relative; }
-  .pull {
-    font-family: "Fraunces"; font-style: italic; font-weight: 400;
-    font-size: 26px; line-height: 1.35; color: var(--ink);
-    border-top: 3px solid var(--ink); padding-top: 18px; max-width: 380px;
-  }
-  .pull small { display: block; font-family: "Newsreader"; font-style: normal; font-size: 13px; color: var(--ink-soft); margin-top: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
 </style>
 </head>
 <body>
   <div class="top">
     <div class="masthead">The Slow Route<span>.</span></div>
-    <nav><b>Journal</b><span>Guides</span><span>Maps</span><span>About</span></nav>
+    <nav><b>{{nav1}}</b><span>{{nav2}}</span><span>{{nav3}}</span><span>{{nav4}}</span></nav>
   </div>
   <div class="wrap">
-    <div class="kicker">Field notes · Japan</div>
-    <h1>Kyoto in autumn, one temple at a time</h1>
-    <div class="byline"><div class="avatar"></div><span>By <b>June Okada</b> · October 14 · 12 min read</span></div>
+    <div class="kicker">{{kicker}}</div>
+    <h1>{{title}}</h1>
+    <div class="byline"><div class="avatar"></div><span>{{byline}}</span></div>
     <div class="cols">
       <div class="article">
-        <p>The city wakes slowly in October. By six, the mist still holds the eastern hills, and the first light catches the vermilion gates of Fushimi Inari long before the crowds arrive. If you climb only once, climb now — the mountain belongs to the foxes and to you.</p>
+        <p>{{p1}}</p>
         <div class="photo"><div class="torii"><i class="beam1"></i><i class="beam2"></i><i class="legl"></i><i class="legr"></i></div></div>
-        <div class="cap">The thousand gates of Fushimi Inari, an hour before opening.</div>
-        <p>Breakfast is best taken standing: a skewer of grilled mochi from the stall beside the shrine office, dusted with kinako. Then the long walk north along the Kamo river, where herons pose like garden statues and university crews slice the water into ribbons.</p>
-        <p>Nishiki Market rewards the patient. Skip the first row of stalls and go deeper — the knife shop that has sharpened steel for four hundred years, the pickle seller who will let you taste everything, the tiny counter where a grandmother sells exactly one kind of tamagoyaki, and only until noon.</p>
+        <div class="cap">{{cap}}</div>
+        <p>{{p2}}</p>
       </div>
       <div class="side"></div>
     </div>
