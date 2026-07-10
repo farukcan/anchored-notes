@@ -1,0 +1,12 @@
+Anchored Notes pozwala zostawiać karteczki przypięte do stron internetowych. Każda notatka jest przypięta do jednego z czterech zakresów i pojawia się ponownie wszędzie tam, gdzie ten zakres pasuje:
+
+• Global — wyświetla się na każdej stronie
+• Site — wyświetla się na każdej stronie witryny
+• Page — wyświetla się pod jednym dokładnym adresem URL
+• Tab — podąża za jedną kartą, dopóki nie zostanie zamknięta
+
+Pisz w pełnym edytorze markdown: nagłówki, listy, listy zadań z klikalnymi polami wyboru, tabele, cytaty i bloki kodu, z menu "/" w stylu Notion. Przeciągaj, zmieniaj rozmiar i kolor notatek (7 kolorów). Dostępne w 16 językach.
+
+Zaloguj się przez Google, aby synchronizować notatki między urządzeniami. Synchronizowane notatki są zawsze szyfrowane; ustaw opcjonalne hasło, aby przejść na szyfrowanie end-to-end, dzięki czemu tylko ty możesz je czytać.
+
+Za darmo: 10 notatek bez konta, 30 z darmowym kontem. Pro: nieograniczona liczba notatek.

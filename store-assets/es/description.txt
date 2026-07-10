@@ -1,0 +1,12 @@
+Anchored Notes te permite dejar notas adhesivas ancladas a páginas web. Cada nota se fija a uno de cuatro ámbitos y vuelve a aparecer siempre que ese ámbito coincide:
+
+• Global — se muestra en todas las páginas
+• Site — se muestra en todas las páginas de un sitio
+• Page — se muestra en una URL exacta
+• Tab — sigue una sola pestaña hasta que se cierra
+
+Escribe en un editor markdown completo: encabezados, listas, listas de tareas con casillas clicables, tablas, citas y bloques de código, con un menú "/" al estilo Notion. Arrastra, cambia el tamaño y cambia el color de las notas (7 colores). Disponible en 16 idiomas.
+
+Inicia sesión con Google para sincronizar tus notas entre dispositivos. Las notas sincronizadas siempre están cifradas; configura una contraseña opcional para pasar a cifrado de extremo a extremo, de modo que solo tú puedas leerlas.
+
+Gratis: 10 notas sin cuenta, 30 con una cuenta gratuita. Pro: notas ilimitadas.

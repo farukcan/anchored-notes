@@ -1,0 +1,12 @@
+Anchored Notes laat je plaknotities verankeren aan webpagina's. Elke notitie wordt vastgezet op een van vier bereiken en verschijnt opnieuw overal waar dat bereik overeenkomt:
+
+• Global — wordt op elke pagina getoond
+• Site — wordt op elke pagina van een site getoond
+• Page — wordt op één exacte URL getoond
+• Tab — volgt één tabblad totdat het wordt gesloten
+
+Schrijf in een volledige markdown-editor: koppen, lijsten, takenlijsten met klikbare checkboxes, tabellen, citaten en codeblokken, met een Notion-achtig "/"-menu. Sleep, verander de grootte en geef notities een andere kleur (7 kleuren). Beschikbaar in 16 talen.
+
+Log in met Google om je notities tussen apparaten te synchroniseren. Gesynchroniseerde notities zijn altijd versleuteld; stel optioneel een wachtwoordzin in om te upgraden naar end-to-end-versleuteling, zodat alleen jij ze kunt lezen.
+
+Gratis: 10 notities zonder account, 30 met een gratis account. Pro: onbeperkt notities.

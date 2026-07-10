@@ -1,0 +1,12 @@
+Anchored Notes, web sayfalarına sabitlenen yapışkan notlar bırakmanı sağlar. Her not dört kapsamdan birine iğnelenir ve kapsam eşleştiği her yerde yeniden görünür:
+
+• Global — her sayfada gösterilir
+• Site — bir sitenin her sayfasında gösterilir
+• Page — tek bir tam URL'de gösterilir
+• Tab — kapanana kadar tek bir sekmeyi izler
+
+Tam bir markdown editöründe yaz: başlıklar, listeler, tıklanabilir onay kutulu görev listeleri, tablolar, alıntılar ve kod blokları; Notion tarzı "/" menüsüyle. Notları sürükle, yeniden boyutlandır ve renklendir (7 renk). 16 dilde kullanılabilir.
+
+Notlarını cihazlar arasında senkronize etmek için Google ile giriş yap. Senkronize notlar her zaman şifrelenir; yalnızca senin okuyabilmen için isteğe bağlı bir parola belirleyerek uçtan uca şifrelemeye yükseltebilirsin.
+
+Ücretsiz: hesapsız 10 not, ücretsiz hesapla 30 not. Pro: sınırsız not.

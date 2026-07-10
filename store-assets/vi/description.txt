@@ -1,0 +1,12 @@
+Anchored Notes cho phép bạn để lại giấy nhớ được neo vào các trang web. Mỗi ghi chú được ghim vào một trong bốn phạm vi và sẽ xuất hiện lại ở bất cứ đâu phạm vi đó khớp:
+
+• Global — hiển thị trên mọi trang
+• Site — hiển thị trên mọi trang của một site
+• Page — hiển thị trên một URL chính xác
+• Tab — theo một tab duy nhất cho đến khi tab đó đóng
+
+Viết trong trình soạn markdown đầy đủ: tiêu đề, danh sách, danh sách việc với ô đánh dấu có thể nhấp, bảng, trích dẫn và khối mã, cùng menu "/" kiểu Notion. Kéo, đổi kích thước và đổi màu ghi chú (7 màu). Có sẵn bằng 16 ngôn ngữ.
+
+Đăng nhập bằng Google để đồng bộ ghi chú giữa các thiết bị. Ghi chú đã đồng bộ luôn được mã hóa; đặt mật khẩu tùy chọn để nâng cấp lên mã hóa đầu cuối, để chỉ bạn mới có thể đọc chúng.
+
+Miễn phí: 10 ghi chú không cần tài khoản, 30 ghi chú với tài khoản miễn phí. Pro: ghi chú không giới hạn.

@@ -1,0 +1,12 @@
+Anchored Notes lässt dich Haftnotizen auf Webseiten verankern. Jede Notiz wird einem von vier Bereichen zugeordnet und erscheint überall wieder, wo dieser Bereich passt:
+
+• Global — wird auf jeder Seite angezeigt
+• Site — wird auf jeder Seite einer Website angezeigt
+• Page — wird auf einer genau festgelegten URL angezeigt
+• Tab — folgt einem einzelnen Tab, bis er geschlossen wird
+
+Schreibe in einem vollwertigen Markdown-Editor: Überschriften, Listen, Aufgabenlisten mit anklickbaren Checkboxen, Tabellen, Zitate und Codeblöcke, dazu ein Notion-ähnliches "/"-Menü. Ziehe, vergrößere, verkleinere und färbe Notizen ein (7 Farben). Verfügbar in 16 Sprachen.
+
+Melde dich mit Google an, um deine Notizen geräteübergreifend zu synchronisieren. Synchronisierte Notizen sind immer verschlüsselt; lege optional eine Passphrase fest, um auf Ende-zu-Ende-Verschlüsselung umzusteigen, sodass nur du sie lesen kannst.
+
+Kostenlos: 10 Notizen ohne Konto, 30 mit kostenlosem Konto. Pro: unbegrenzt viele Notizen.

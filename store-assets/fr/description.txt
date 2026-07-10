@@ -1,0 +1,12 @@
+Anchored Notes vous permet de laisser des post-it ancrés aux pages web. Chaque note est épinglée à l'une de quatre portées et réapparaît partout où cette portée correspond :
+
+• Global — s'affiche sur toutes les pages
+• Site — s'affiche sur toutes les pages d'un site
+• Page — s'affiche sur une URL exacte
+• Tab — suit un seul onglet jusqu'à sa fermeture
+
+Écrivez dans un véritable éditeur markdown : titres, listes, listes de tâches avec cases à cocher cliquables, tableaux, citations et blocs de code, avec un menu "/" façon Notion. Déplacez, redimensionnez et recolorez les notes (7 couleurs). Disponible en 16 langues.
+
+Connectez-vous avec Google pour synchroniser vos notes entre appareils. Les notes synchronisées sont toujours chiffrées ; définissez une phrase secrète facultative pour passer au chiffrement de bout en bout afin que vous seul puissiez les lire.
+
+Gratuit : 10 notes sans compte, 30 avec un compte gratuit. Pro : notes illimitées.
