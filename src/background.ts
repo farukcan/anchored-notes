@@ -1,6 +1,7 @@
 // Service worker: context menu, tab id replies, tab-note cleanup.
 
 import type { GetTabIdResponse, LoginResponse, Message } from "./types.js";
+import { PENDING_WARNING_KEY } from "./types.js";
 import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js";
 import { login, onAuthChanged } from "./auth.js";
 import { ensureEncryptionReady } from "./encryption.js";
@@ -64,31 +65,65 @@ chrome.runtime.onStartup.addListener(() => {
 // also creates it if this service-worker wake never ran createContextMenu).
 onLangChanged(() => buildContextMenu());
 
+// Schemes/hosts where no extension content script can ever run. Detected
+// synchronously from tab.url so we can warn the user while the click's user
+// gesture is still fresh (openPopup requires it). Note: a page served over
+// http(s) but rendered by a built-in viewer (e.g. PDF) looks normal here and is
+// caught later by the injection failure path instead.
+function isRestrictedUrl(url: string | undefined): boolean {
+  if (!url) return true;
+  return (
+    url.startsWith("chrome://") ||
+    url.startsWith("chrome-extension://") ||
+    url.startsWith("edge://") ||
+    url.startsWith("about:") ||
+    url.startsWith("devtools://") ||
+    url.startsWith("view-source:") ||
+    url.startsWith("https://chrome.google.com/webstore") ||
+    url.startsWith("https://chromewebstore.google.com")
+  );
+}
+
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (tab?.id === undefined) return;
   const tabId = tab.id;
+
+  // Known-restricted page: injection can't work. Warn now, while the gesture is
+  // fresh, so openPopup() is permitted.
+  if (isRestrictedUrl(tab.url)) {
+    warnCantAddNote(tabId, true);
+    return;
+  }
+
   const message: Message = { type: "CREATE_NOTE", content: info.selectionText ?? "" };
-  // On an old tab (no content script), the first send fails; inject the bundle
-  // then retry. If injection also fails, the page is genuinely restricted — the
-  // page can't host an in-page toast, so surface a system notification instead
-  // so the failure is noticed rather than mistaken for a broken extension.
+  // Old tab (no content script): the first send fails; inject the bundle then
+  // retry. If injection also fails, the page is genuinely restricted (e.g. a PDF
+  // viewer). By then the gesture is stale, so only badge + pending flag are used
+  // (the popup shows the toast when the user clicks the icon).
   chrome.tabs.sendMessage(tabId, message).catch(() =>
     injectContentScript(tabId)
       .then(() => chrome.tabs.sendMessage(tabId, message))
       .catch((err: unknown) => {
         console.warn("[anchored-notes] Could not send CREATE_NOTE:", err);
-        notifyCantAddNote();
+        warnCantAddNote(tabId, false);
       })
   );
 });
 
-function notifyCantAddNote(): void {
-  chrome.notifications.create({
-    type: "basic",
-    iconUrl: chrome.runtime.getURL("icons/icon-128.png"),
-    title: chrome.i18n.getMessage("extName"),
-    message: t("cantAddNote", null)
-  });
+// The page can host neither the content script nor an in-page toast, so warn via
+// the toolbar icon (works without any permission): a red "!" badge, plus a
+// pending flag the popup reads to show the red error toast. When a fresh user
+// gesture is available, also open the popup immediately so the reason is shown
+// right away. openPopup() must be called synchronously within the gesture, so it
+// runs before the async storage write; the popup catches the flag via its
+// storage.onChanged listener even if it opens before the write lands.
+function warnCantAddNote(tabId: number, canOpenPopup: boolean): void {
+  void chrome.action.setBadgeBackgroundColor({ color: "#c0392b" });
+  void chrome.action.setBadgeText({ tabId, text: "!" });
+  if (canOpenPopup && chrome.action.openPopup) {
+    chrome.action.openPopup().catch(() => undefined);
+  }
+  void chrome.storage.session.set({ [PENDING_WARNING_KEY]: tabId });
 }
 
 chrome.tabs.onRemoved.addListener((tabId) => {

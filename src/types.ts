@@ -32,6 +32,12 @@ export type Message =
   | { type: "SYNC" }
   | { type: "LOGIN" };
 
+// Set by the background worker in chrome.storage.session (value: the tab id)
+// when a note couldn't be added on a restricted page (no content script
+// possible); the popup reads it on open, shows the error toast, then clears the
+// flag and that tab's badge.
+export const PENDING_WARNING_KEY = "pendingCantAddNote";
+
 export type LoginResponse = { ok: true } | { ok: false; error: string };
 
 export type GetTabIdResponse = { tabId: number };

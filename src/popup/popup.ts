@@ -11,6 +11,7 @@ import { getEncStatus, onEncStatusChanged } from "../encryption.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
 import { injectContentScript } from "../inject.js";
 import { playErrorBeep } from "../sound.js";
+import { PENDING_WARNING_KEY } from "../types.js";
 
 // Sync runs only in the background worker (single context) to avoid races on
 // the shared notes key; the popup just asks it to run.
@@ -278,12 +279,38 @@ onAuthChanged((auth) => {
 
 onEncStatusChanged(() => void render());
 
+// When a note couldn't be added on a restricted page, the background worker sets
+// a flag and opens this popup. Show the red error toast, then clear the flag and
+// the toolbar badge. Runs once per popup (the flag may be read on open or arrive
+// via the storage change if the popup opened before the write landed).
+let warningConsumed = false;
+async function consumePendingWarning(): Promise<void> {
+  if (warningConsumed) return;
+  warningConsumed = true; // claim synchronously so a concurrent call can't double-show
+  const res = await chrome.storage.session.get(PENDING_WARNING_KEY);
+  const tabId = res[PENDING_WARNING_KEY] as number | undefined;
+  if (tabId === undefined) {
+    warningConsumed = false; // nothing pending yet; let a later real warning through
+    return;
+  }
+  await chrome.storage.session.remove(PENDING_WARNING_KEY);
+  showToast(t("cantAddNote", null));
+  void chrome.action.setBadgeText({ tabId, text: "" });
+}
+
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "session" && changes[PENDING_WARNING_KEY]?.newValue !== undefined) {
+    void consumePendingWarning();
+  }
+});
+
 async function main(): Promise<void> {
   await initI18n();
   applyStaticText();
   renderLangMenu();
   renderAccount(await getAuthState());
   await render();
+  void consumePendingWarning();
   // Refresh from the backend in the background when signed in.
   requestSync();
 }
