@@ -5,7 +5,7 @@ export const fa: Record<MessageKey, string> = {
   noActivePage: "صفحهٔ فعالی وجود ندارد.",
   notesOnPage: "{count} یادداشت در این صفحه",
   manageAllNotes: "مدیریت همهٔ یادداشت‌ها →",
-  cantAddNote: "امکان افزودن یادداشت در این صفحه وجود ندارد.",
+  cantAddNote: "Chrome افزودن یادداشت در این صفحه را مجاز نمی‌داند (مثل صفحه‌های سیستمی یا وب‌استور).",
   notesUsage: "{count} / {limit} یادداشت استفاده‌شده",
   noteLimitReached: "به سقف یادداشت‌ها رسیدید ({limit}). برای افزودن یادداشت جدید، یکی را حذف کنید.",
   language: "زبان",

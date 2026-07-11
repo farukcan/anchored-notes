@@ -5,7 +5,7 @@ export const zh: Record<MessageKey, string> = {
   noActivePage: "没有活动页面。",
   notesOnPage: "此页面有 {count} 条笔记",
   manageAllNotes: "管理所有笔记 →",
-  cantAddNote: "无法在此页面添加笔记。",
+  cantAddNote: "Chrome 不允许在此页面添加笔记（例如系统页面或网上应用店）。",
   notesUsage: "已使用 {count} / {limit} 条笔记",
   noteLimitReached: "已达到笔记上限（{limit}）。请删除一条笔记后再添加新笔记。",
   language: "语言",

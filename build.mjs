@@ -19,6 +19,8 @@ await build({
   target: "chrome110",
   outdir: OUT,
   minify: true,
+  // Local/dev builds get maps; store packages pass --no-sourcemap (see package.mjs).
+  sourcemap: !process.argv.includes("--no-sourcemap"),
   loader: { ".css": "text" },
   logLevel: "info"
 });

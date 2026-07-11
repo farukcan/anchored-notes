@@ -6,6 +6,7 @@ import { login, onAuthChanged } from "./auth.js";
 import { ensureEncryptionReady } from "./encryption.js";
 import { sync } from "./sync.js";
 import { initI18n, onLangChanged, t } from "./i18n.js";
+import { injectContentScript } from "./inject.js";
 
 const SYNC_ALARM = "anchored-notes-sync";
 
@@ -26,8 +27,30 @@ async function createContextMenu(): Promise<void> {
   buildContextMenu();
 }
 
-chrome.runtime.onInstalled.addListener(() => {
+// Declarative content scripts only load into tabs navigated after install, so
+// tabs open from before this install/update have no content script and can't
+// receive notes. Inject the bundle into every open http(s) tab so notes work
+// (and existing notes render) without the user having to reload. Per-tab errors
+// (discarded or restricted tabs) are swallowed.
+async function injectIntoOpenTabs(): Promise<void> {
+  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
+  await Promise.all(
+    tabs.map(async (tab) => {
+      if (tab.id === undefined) return;
+      try {
+        await injectContentScript(tab.id);
+      } catch {
+        // Restricted (e.g. Web Store) or discarded tab: nothing to do.
+      }
+    })
+  );
+}
+
+chrome.runtime.onInstalled.addListener((details) => {
   void createContextMenu();
+  if (details.reason === "install" || details.reason === "update") {
+    void injectIntoOpenTabs();
+  }
 });
 
 chrome.runtime.onStartup.addListener(() => {
@@ -43,11 +66,30 @@ onLangChanged(() => buildContextMenu());
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (tab?.id === undefined) return;
+  const tabId = tab.id;
   const message: Message = { type: "CREATE_NOTE", content: info.selectionText ?? "" };
-  chrome.tabs.sendMessage(tab.id, message).catch((err: unknown) => {
-    console.warn("[anchored-notes] Could not send CREATE_NOTE:", err);
-  });
+  // On an old tab (no content script), the first send fails; inject the bundle
+  // then retry. If injection also fails, the page is genuinely restricted — the
+  // page can't host an in-page toast, so surface a system notification instead
+  // so the failure is noticed rather than mistaken for a broken extension.
+  chrome.tabs.sendMessage(tabId, message).catch(() =>
+    injectContentScript(tabId)
+      .then(() => chrome.tabs.sendMessage(tabId, message))
+      .catch((err: unknown) => {
+        console.warn("[anchored-notes] Could not send CREATE_NOTE:", err);
+        notifyCantAddNote();
+      })
+  );
 });
+
+function notifyCantAddNote(): void {
+  chrome.notifications.create({
+    type: "basic",
+    iconUrl: chrome.runtime.getURL("icons/icon-128.png"),
+    title: chrome.i18n.getMessage("extName"),
+    message: t("cantAddNote", null)
+  });
+}
 
 chrome.tabs.onRemoved.addListener((tabId) => {
   void deleteTabNotes(tabId);

@@ -5,7 +5,7 @@ export const ru: Record<MessageKey, string> = {
   noActivePage: "Нет активной страницы.",
   notesOnPage: "{count} заметок на этой странице",
   manageAllNotes: "Управление всеми заметками →",
-  cantAddNote: "На этой странице нельзя добавить заметку.",
+  cantAddNote: "Chrome не разрешает заметки на этой странице (например, системные страницы или Web Store).",
   notesUsage: "Использовано {count} / {limit} заметок",
   noteLimitReached: "Достигнут лимит заметок ({limit}). Удалите заметку, чтобы добавить новую.",
   language: "Язык",

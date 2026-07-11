@@ -58,10 +58,13 @@ Store draft item id: `dnmmgfkolmlieeempmfjghddbcehijgc`
     `chrome.storage.local`.
   - `alarms` — a periodic alarm (every 5 min) triggers background sync with the
     backend.
+  - `scripting` — programmatically inject `content.js` into tabs that were open
+    before install/update (declarative content scripts miss those) and on
+    popup/context-menu retry when the content script is not yet present.
 - [x] Single-purpose statement: "sticky notes anchored to pages/sites/tabs".
 - Where to paste (dashboard **Privacy** tab, not the package upload step):
   - Single purpose → "Single purpose" field.
-  - The 6 API permissions → each gets its own "Permission justification" box
+  - The 7 API permissions → each gets its own "Permission justification" box
     (auto-listed from the manifest).
   - `<all_urls>` → the separate "Host permission justification" box.
   - Privacy policy URL (item 1) + data-usage disclosures also live here.

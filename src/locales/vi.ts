@@ -5,7 +5,7 @@ export const vi: Record<MessageKey, string> = {
   noActivePage: "Không có trang đang hoạt động.",
   notesOnPage: "{count} ghi chú trên trang này",
   manageAllNotes: "Quản lý tất cả ghi chú →",
-  cantAddNote: "Không thể thêm ghi chú trên trang này.",
+  cantAddNote: "Chrome không cho phép ghi chú trên trang này (ví dụ: trang hệ thống hoặc Cửa hàng web).",
   notesUsage: "Đã dùng {count} / {limit} ghi chú",
   noteLimitReached: "Đã đạt giới hạn ghi chú ({limit}). Xóa một ghi chú để thêm ghi chú mới.",
   language: "Ngôn ngữ",

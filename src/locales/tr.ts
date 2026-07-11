@@ -9,7 +9,7 @@ export const tr: Record<MessageKey, string> = {
   noActivePage: "Aktif sayfa yok.",
   notesOnPage: "Bu sayfada {count} not",
   manageAllNotes: "Tüm notları yönet →",
-  cantAddNote: "Bu sayfaya not eklenemez.",
+  cantAddNote: "Chrome bu sayfada not eklenmesine izin vermiyor (ör. sistem sayfaları veya Web Mağazası).",
   notesUsage: "{count} / {limit} not kullanıldı",
   noteLimitReached: "Not limitine ulaşıldı ({limit}). Yeni not eklemek için bir notu silin.",
   language: "Dil",

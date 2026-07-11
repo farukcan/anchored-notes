@@ -5,7 +5,7 @@ export const de: Record<MessageKey, string> = {
   noActivePage: "Keine aktive Seite.",
   notesOnPage: "{count} Notiz(en) auf dieser Seite",
   manageAllNotes: "Alle Notizen verwalten →",
-  cantAddNote: "Auf dieser Seite kann keine Notiz hinzugefügt werden.",
+  cantAddNote: "Chrome erlaubt auf dieser Seite keine Notizen (z. B. Systemseiten oder der Web Store).",
   notesUsage: "{count} / {limit} Notizen verwendet",
   noteLimitReached: "Notizlimit erreicht ({limit}). Lösche eine Notiz, um eine neue hinzuzufügen.",
   language: "Sprache",

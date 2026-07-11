@@ -5,7 +5,7 @@ export const ar: Record<MessageKey, string> = {
   noActivePage: "لا توجد صفحة نشطة.",
   notesOnPage: "{count} ملاحظة على هذه الصفحة",
   manageAllNotes: "إدارة جميع الملاحظات →",
-  cantAddNote: "لا يمكن إضافة ملاحظة في هذه الصفحة.",
+  cantAddNote: "لا يسمح Chrome بإضافة ملاحظات في هذه الصفحة (مثل صفحات النظام أو متجر الويب).",
   notesUsage: "{count} / {limit} ملاحظة مستخدمة",
   noteLimitReached: "تم بلوغ حد الملاحظات ({limit}). احذف ملاحظة لإضافة ملاحظة جديدة.",
   language: "اللغة",

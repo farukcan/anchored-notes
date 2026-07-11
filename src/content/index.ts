@@ -21,6 +21,7 @@ import { formatLimit, getCurrentLimit } from "../limits.js";
 import { getAuthState, onAuthChanged } from "../auth.js";
 import { connectRealtime } from "../realtime.js";
 import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
+import { playErrorBeep } from "../sound.js";
 
 const HOST_ID = "anchored-notes-host";
 
@@ -405,6 +406,7 @@ function showToast(shadow: ShadowRoot, text: string): void {
   toast.className = "an-toast";
   toast.textContent = text;
   shadow.appendChild(toast);
+  playErrorBeep();
   setTimeout(() => toast.remove(), 4000);
 }
 
@@ -419,11 +421,6 @@ async function createNoteWithinLimit(content: string): Promise<void> {
   }
   await saveNote(newNote(content));
 }
-
-// Registered synchronously so a context-menu click during init isn't dropped.
-chrome.runtime.onMessage.addListener((message: Message) => {
-  if (message.type === "CREATE_NOTE") void createNoteWithinLimit(message.content);
-});
 
 // Resolve the active language before first paint, then start. At document_start
 // the <html> element may not exist yet; wait for it.
@@ -442,4 +439,35 @@ async function bootstrap(): Promise<void> {
   observer.observe(document, { childList: true });
 }
 
-void bootstrap();
+// Re-injection (popup/context-menu retry, bulk-inject on install) can run this
+// bundle again in a tab that already has it. Key the guard by extension version
+// so an update can re-bootstrap after orphaned scripts; same-version re-runs
+// skip to avoid duplicate CREATE_NOTE listeners. mountHost already dedupes the
+// shadow host by id. Programmatic inject clears the guard first (see inject.ts).
+type InjectionGuard = {
+  version: string;
+  onMessage: (message: Message) => void;
+};
+
+const INJECTION_MARKER = "__anchoredNotesInjected";
+const injectionMarker = window as Window & { [INJECTION_MARKER]?: InjectionGuard | boolean };
+const version = chrome.runtime.getManifest().version;
+const prev = injectionMarker[INJECTION_MARKER];
+const alreadyInjected = typeof prev === "object" && prev.version === version;
+
+if (!alreadyInjected) {
+  if (typeof prev === "object" && typeof prev.onMessage === "function") {
+    try {
+      chrome.runtime.onMessage.removeListener(prev.onMessage);
+    } catch {
+      // Orphaned extension context after update/reload.
+    }
+  }
+  // Registered synchronously so a context-menu click during init isn't dropped.
+  function onMessage(message: Message): void {
+    if (message.type === "CREATE_NOTE") void createNoteWithinLimit(message.content);
+  }
+  chrome.runtime.onMessage.addListener(onMessage);
+  injectionMarker[INJECTION_MARKER] = { version, onMessage };
+  void bootstrap();
+}

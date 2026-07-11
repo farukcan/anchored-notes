@@ -6,7 +6,9 @@ import { cpSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 const { version } = JSON.parse(readFileSync("package.json", "utf8"));
 const zip = `anchored-notes-${version}.zip`;
 
-execSync("node mkicons.mjs && node mklocales.mjs && node build.mjs", { stdio: "inherit" });
+execSync("node mkicons.mjs && node mklocales.mjs && node build.mjs --no-sourcemap", {
+  stdio: "inherit"
+});
 
 // The manifest `key` only pins the unpacked dev build to the store extension
 // id; the uploaded package must not carry it (CWS owns the published key).

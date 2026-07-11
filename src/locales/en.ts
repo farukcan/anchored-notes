@@ -7,7 +7,7 @@ export const en = {
   noActivePage: "No active page.",
   notesOnPage: "{count} note(s) on this page",
   manageAllNotes: "Manage all notes →",
-  cantAddNote: "Can't add a note on this page.",
+  cantAddNote: "Chrome doesn't allow notes on this page (e.g. system pages or the Web Store).",
   notesUsage: "{count} / {limit} notes used",
   noteLimitReached: "Note limit reached ({limit}). Delete a note to add a new one.",
   language: "Language",

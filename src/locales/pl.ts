@@ -5,7 +5,7 @@ export const pl: Record<MessageKey, string> = {
   noActivePage: "Brak aktywnej strony.",
   notesOnPage: "{count} notatek na tej stronie",
   manageAllNotes: "Zarządzaj wszystkimi notatkami →",
-  cantAddNote: "Nie można dodać notatki na tej stronie.",
+  cantAddNote: "Chrome nie zezwala na notatki na tej stronie (np. strony systemowe lub Web Store).",
   notesUsage: "{count} / {limit} notatek użytych",
   noteLimitReached: "Osiągnięto limit notatek ({limit}). Usuń notatkę, aby dodać nową.",
   language: "Język",

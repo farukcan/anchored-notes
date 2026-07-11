@@ -9,6 +9,8 @@ import type { LoginResponse } from "../types.js";
 import { getAuthState, logout, onAuthChanged, startUpgrade, type AuthState } from "../auth.js";
 import { getEncStatus, onEncStatusChanged } from "../encryption.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
+import { injectContentScript } from "../inject.js";
+import { playErrorBeep } from "../sound.js";
 
 // Sync runs only in the background worker (single context) to avoid races on
 // the shared notes key; the popup just asks it to run.
@@ -18,6 +20,22 @@ function requestSync(): void {
 
 function openOptionsPage(): void {
   chrome.runtime.openOptionsPage();
+}
+
+// Animated red error toast + beep, so a failure (e.g. a restricted page) is
+// clearly noticed rather than mistaken for a broken extension.
+let toastTimer: ReturnType<typeof setTimeout> | undefined;
+function showToast(text: string): void {
+  const toast = document.getElementById("toast") as HTMLDivElement;
+  toast.textContent = text;
+  toast.hidden = true;
+  void toast.offsetWidth; // reflow so the CSS animation restarts on repeat calls
+  toast.hidden = false;
+  playErrorBeep();
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.hidden = true;
+  }, 4000);
 }
 
 async function activeTab(): Promise<chrome.tabs.Tab | undefined> {
@@ -225,8 +243,15 @@ document.getElementById("add")?.addEventListener("click", async () => {
     await chrome.tabs.sendMessage(tab.id, message);
     window.close();
   } catch {
-    const count = document.getElementById("count") as HTMLDivElement;
-    count.textContent = t("cantAddNote", null);
+    // Old tab (no content script): inject the bundle then retry. If injection
+    // also fails, the page is genuinely restricted (chrome://, Web Store, ...).
+    try {
+      await injectContentScript(tab.id);
+      await chrome.tabs.sendMessage(tab.id, message);
+      window.close();
+    } catch {
+      showToast(t("cantAddNote", null));
+    }
   }
 });
 

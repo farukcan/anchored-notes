@@ -204,6 +204,9 @@ npm run typecheck
 npm run package    # builds, then zips dist/ into anchored-notes-<version>.zip
 ```
 
+Pushes to `main` also run `.github/workflows/package.yml`, which packages the
+extension and uploads `anchored-notes-<version>.zip` as a workflow artifact.
+
 Then load `dist/` via `chrome://extensions` → Developer mode → **Load unpacked**.
 
 The store-facing extension name and description are localized through

@@ -5,7 +5,7 @@ export const ja: Record<MessageKey, string> = {
   noActivePage: "アクティブなページがありません。",
   notesOnPage: "このページに {count} 件のメモ",
   manageAllNotes: "すべてのメモを管理 →",
-  cantAddNote: "このページにはメモを追加できません。",
+  cantAddNote: "Chrome ではこのページにメモを追加できません（システムページやウェブストアなど）。",
   notesUsage: "{count} / {limit} 件のメモを使用中",
   noteLimitReached: "メモの上限に達しました（{limit}）。新しいメモを追加するには、メモを削除してください。",
   language: "言語",

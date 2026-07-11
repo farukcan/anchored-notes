@@ -146,6 +146,36 @@
       li .hidden-icon { font-size: 11px; opacity: 0.6; }
       .text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
       a { display: inline-block; margin-top: 8px; color: #1a73e8; text-decoration: none; font-size: 12px; }
+      .toast {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: 12px;
+        padding: 10px 12px;
+        background: #c0392b;
+        color: #fff;
+        font-size: 12px;
+        font-weight: 600;
+        line-height: 1.35;
+        border-radius: 6px;
+        box-shadow: 0 6px 18px rgba(192, 57, 43, 0.5);
+        text-align: center;
+        z-index: 100;
+        animation: toast-in 0.3s cubic-bezier(0.18, 0.9, 0.32, 1.3),
+          toast-shake 0.42s 0.3s ease-in-out;
+      }
+      .toast[hidden] { display: none; }
+      @keyframes toast-in {
+        from { transform: translateY(20px) scale(0.92); opacity: 0; }
+        to { transform: translateY(0) scale(1); opacity: 1; }
+      }
+      @keyframes toast-shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+      }
     </style>
   </head>
   <body>
@@ -164,6 +194,7 @@
     <div class="count" id="count"></div>
     <ul id="list"></ul>
     <a id="options" href="#"></a>
+    <div id="toast" class="toast" hidden></div>
     <script src="popup.js"></script>
   </body>
 </html>

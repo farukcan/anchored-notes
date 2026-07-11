@@ -5,7 +5,7 @@ export const nl: Record<MessageKey, string> = {
   noActivePage: "Geen actieve pagina.",
   notesOnPage: "{count} notitie(s) op deze pagina",
   manageAllNotes: "Alle notities beheren →",
-  cantAddNote: "Kan geen notitie toevoegen op deze pagina.",
+  cantAddNote: "Chrome staat geen notities toe op deze pagina (bijv. systeempagina's of de Web Store).",
   notesUsage: "{count} / {limit} notities gebruikt",
   noteLimitReached: "Notitielimiet bereikt ({limit}). Verwijder een notitie om een nieuwe toe te voegen.",
   language: "Taal",
