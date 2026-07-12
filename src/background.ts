@@ -6,8 +6,9 @@ import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js"
 import { login, onAuthChanged } from "./auth.js";
 import { ensureEncryptionReady } from "./encryption.js";
 import { sync } from "./sync.js";
-import { initI18n, onLangChanged, t } from "./i18n.js";
+import { getLang, initI18n, onLangChanged, t } from "./i18n.js";
 import { injectContentScript } from "./inject.js";
+import { BACKEND_URL } from "./config.js";
 
 const SYNC_ALARM = "anchored-notes-sync";
 
@@ -49,10 +50,26 @@ async function injectIntoOpenTabs(): Promise<void> {
 
 chrome.runtime.onInstalled.addListener((details) => {
   void createContextMenu();
+  // First install: open the backend welcome page in a new tab. It's a normal
+  // https page the content script matches, so the user can create their first
+  // note there right away — avoiding the trap where the first note attempts land
+  // on restricted pages (Web Store, New Tab) and look like the extension is broken.
+  // Not on "update" so auto-updates don't spam a tab.
+  if (details.reason === "install") {
+    void openWelcomeTab();
+  }
   if (details.reason === "install" || details.reason === "update") {
     void injectIntoOpenTabs();
   }
 });
+
+// Open the welcome page localized to the user's chosen language. The page
+// falls back to the browser language when no ?lang is given, but passing it
+// keeps the onboarding page in the same language as the extension UI.
+async function openWelcomeTab(): Promise<void> {
+  await initI18n();
+  await chrome.tabs.create({ url: `${BACKEND_URL}/welcome?lang=${getLang()}` });
+}
 
 chrome.runtime.onStartup.addListener(() => {
   void createContextMenu();

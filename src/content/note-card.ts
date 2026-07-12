@@ -87,6 +87,12 @@ export function createNoteCard(
     ...(deps.pageTitle ? { pageTitle: deps.pageTitle } : {}),
   };
   let contentTimer: number | undefined;
+  // Once the card is destroyed (e.g. the note was deleted), its editor is torn
+  // down asynchronously and may emit one last markdownUpdated event. Without
+  // this guard that trailing change would schedule a save and re-create the
+  // just-deleted note, which then gets deleted again by sync — an endless
+  // delete/resurrect loop. The flag neutralizes any save after destroy.
+  let destroyed = false;
 
   const el = document.createElement("div");
   el.className = `note color-${note.color}`;
@@ -207,6 +213,7 @@ export function createNoteCard(
   function mount(): void {
     if (editor) return;
     editor = createMarkdownEditor(body, el, note.content, (markdown) => {
+      if (destroyed) return; // trailing change from teardown: never resave
       latestContent = markdown;
       if (markdown === note.content) return; // ignore the initial value echo
       window.clearTimeout(contentTimer);
@@ -214,6 +221,7 @@ export function createNoteCard(
         // Clear the handle so update()'s "save pending" guard reflects reality;
         // otherwise a stale id would block all future external content updates.
         contentTimer = undefined;
+        if (destroyed) return;
         patch({ content: markdown });
       }, SAVE_DEBOUNCE_MS);
     });
@@ -365,6 +373,7 @@ export function createNoteCard(
   }
 
   function destroy(): void {
+    destroyed = true;
     window.clearTimeout(contentTimer);
     window.clearTimeout(clampTimer);
     editor?.destroy();
