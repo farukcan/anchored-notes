@@ -93,5 +93,6 @@ export const en = {
   tableDeleteRow: "Delete row",
   tableDeleteTable: "Delete table",
   // background context menu
-  addNoteHere: "Add Note Here"
+  addNoteHere: "Add Note Here",
+  addSelectionToNote: "Add selection to the note"
 } as const;

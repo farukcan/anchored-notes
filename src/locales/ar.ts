@@ -83,5 +83,6 @@ export const ar: Record<MessageKey, string> = {
   tableAddRow: "إضافة صف",
   tableDeleteRow: "حذف صف",
   tableDeleteTable: "حذف الجدول",
-  addNoteHere: "إضافة ملاحظة هنا"
+  addNoteHere: "إضافة ملاحظة هنا",
+  addSelectionToNote: "إضافة التحديد إلى الملاحظة"
 };

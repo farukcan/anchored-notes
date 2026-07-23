@@ -83,5 +83,6 @@ export const vi: Record<MessageKey, string> = {
   tableAddRow: "Thêm hàng",
   tableDeleteRow: "Xóa hàng",
   tableDeleteTable: "Xóa bảng",
-  addNoteHere: "Thêm ghi chú tại đây"
+  addNoteHere: "Thêm ghi chú tại đây",
+  addSelectionToNote: "Thêm phần chọn vào ghi chú"
 };

@@ -83,5 +83,6 @@ export const ko: Record<MessageKey, string> = {
   tableAddRow: "행 추가",
   tableDeleteRow: "행 삭제",
   tableDeleteTable: "표 삭제",
-  addNoteHere: "여기에 메모 추가"
+  addNoteHere: "여기에 메모 추가",
+  addSelectionToNote: "선택 내용을 메모에 추가"
 };

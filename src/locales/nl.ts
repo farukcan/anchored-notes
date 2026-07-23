@@ -83,5 +83,6 @@ export const nl: Record<MessageKey, string> = {
   tableAddRow: "Rij toevoegen",
   tableDeleteRow: "Rij verwijderen",
   tableDeleteTable: "Tabel verwijderen",
-  addNoteHere: "Hier notitie toevoegen"
+  addNoteHere: "Hier notitie toevoegen",
+  addSelectionToNote: "Selectie aan notitie toevoegen"
 };

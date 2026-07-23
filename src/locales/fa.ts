@@ -83,5 +83,6 @@ export const fa: Record<MessageKey, string> = {
   tableAddRow: "افزودن سطر",
   tableDeleteRow: "حذف سطر",
   tableDeleteTable: "حذف جدول",
-  addNoteHere: "افزودن یادداشت اینجا"
+  addNoteHere: "افزودن یادداشت اینجا",
+  addSelectionToNote: "افزودن انتخاب به یادداشت"
 };

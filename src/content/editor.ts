@@ -17,7 +17,8 @@ import { tableToolbarPlugin } from "./table-toolbar.js";
 export interface MarkdownEditorHandle {
   destroy: () => void;
   // Replace the whole document, e.g. when a newer version arrives from sync.
-  replace: (markdown: string) => void;
+  // When scrollToEnd is set, move the caret to the end and scroll it into view.
+  replace: (markdown: string, opts?: { scrollToEnd?: boolean }) => void;
 }
 
 // Render GFM task list items (list_item with a non-null `checked` attribute) as
@@ -146,6 +147,20 @@ export function createMarkdownEditor(
 
   return {
     destroy: () => void ready.then(() => editor?.destroy()),
-    replace: (markdown: string) => void ready.then(() => editor?.action(replaceAll(markdown)))
+    replace: (markdown: string, opts?: { scrollToEnd?: boolean }) =>
+      void ready.then(() => {
+        if (!editor) return;
+        editor.action(replaceAll(markdown));
+        if (!opts?.scrollToEnd) return;
+        editor.action((ctx) => {
+          const view = ctx.get(editorViewCtx);
+          const sel = TextSelection.atEnd(view.state.doc);
+          view.dispatch(view.state.tr.setSelection(sel).scrollIntoView());
+          const scroller = view.dom.closest(".note-body");
+          if (scroller instanceof HTMLElement) {
+            scroller.scrollTop = scroller.scrollHeight;
+          }
+        });
+      }),
   };
 }

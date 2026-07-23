@@ -56,11 +56,22 @@ function shortLabel(text: string, max: number): string {
 }
 const SAVE_DEBOUNCE_MS = 400;
 
+/** Format plain text as a markdown blockquote (one `>` prefix per line). */
+export function toBlockquote(text: string): string {
+  return text
+    .trim()
+    .split(/\r?\n/)
+    .map((line) => `> ${line}`)
+    .join("\n");
+}
+
 export interface NoteCardDeps {
   save: (note: Note) => void;
   remove: (id: string) => void;
   bringToFront: () => number;
   anchorKeyForScope: (scope: AnchorScope) => string;
+  /** Called when the user focuses or interacts with this card (not on blur). */
+  onFocus?: (noteId: string) => void;
   siteName?: string;
   pageTitle?: string;
 }
@@ -73,6 +84,8 @@ export interface NoteCardHandle {
   setScopeLabels: (labels: Partial<ScopeLabels>) => void;
   relocalize: () => void;
   clamp: () => void;
+  /** Append selection as a markdown blockquote; flushes pending editor saves. */
+  appendBlockquote: (text: string) => void;
   destroy: () => void;
 }
 
@@ -206,6 +219,7 @@ export function createNoteCard(
   let editorFocused = false;
   body.addEventListener("focusin", () => {
     editorFocused = true;
+    deps.onFocus?.(note.id);
   });
   body.addEventListener("focusout", () => {
     editorFocused = false;
@@ -225,6 +239,30 @@ export function createNoteCard(
         patch({ content: markdown });
       }, SAVE_DEBOUNCE_MS);
     });
+  }
+
+  function flushPendingContent(): void {
+    if (contentTimer === undefined) return;
+    window.clearTimeout(contentTimer);
+    contentTimer = undefined;
+    if (destroyed) return;
+    if (latestContent !== note.content) patch({ content: latestContent });
+  }
+
+  function appendBlockquote(text: string): void {
+    if (destroyed) return;
+    const trimmed = text.trim();
+    if (!trimmed) return;
+    flushPendingContent();
+    const quote = toBlockquote(trimmed);
+    const next =
+      note.content.trim().length === 0
+        ? quote
+        : `${note.content.trimEnd()}\n\n${quote}`;
+    latestContent = next;
+    editor?.replace(next, { scrollToEnd: true });
+    patch({ content: next });
+    el.style.zIndex = String(deps.bringToFront());
   }
 
   // --- color palette toggle ---
@@ -262,6 +300,7 @@ export function createNoteCard(
   // --- bring to front on interaction ---
   el.addEventListener("pointerdown", () => {
     el.style.zIndex = String(deps.bringToFront());
+    deps.onFocus?.(note.id);
   });
 
   // --- keep keyboard input inside the note ---
@@ -379,5 +418,15 @@ export function createNoteCard(
     editor?.destroy();
   }
 
-  return { el, noteId: note.id, mount, update, setScopeLabels, relocalize, clamp, destroy };
+  return {
+    el,
+    noteId: note.id,
+    mount,
+    update,
+    setScopeLabels,
+    relocalize,
+    clamp,
+    appendBlockquote,
+    destroy,
+  };
 }

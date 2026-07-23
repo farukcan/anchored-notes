@@ -38,7 +38,7 @@ flowchart LR
     CS[content script\nshadow-DOM cards]
   end
   POP[popup] -->|CREATE_NOTE| CS
-  BG[background\nservice worker] -->|CREATE_NOTE\nfrom context menu| CS
+  BG[background\nservice worker] -->|CREATE_NOTE / APPEND_SELECTION\nfrom context menu| CS
   CS -->|GET_TAB_ID| BG
   CS <-->|notes| ST[(chrome.storage.local)]
   POP --> ST
@@ -227,7 +227,8 @@ re-evaluate without a full reload.
 ## Usage
 
 - Right-click a page → **Add Note Here**, or click the toolbar icon → **Add note
-  to this page**.
+  to this page**. With text selected and a note focused, right-click → **Add
+  selection to the note** to append the selection as a markdown blockquote.
 - Drag by the header, resize from the bottom-right corner, pick a color with the
   🎨 button, change the anchor scope with the dropdown. The ⋮ button opens an
   options menu to **Hide** or **Delete** the note.

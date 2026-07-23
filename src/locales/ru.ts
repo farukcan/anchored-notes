@@ -83,5 +83,6 @@ export const ru: Record<MessageKey, string> = {
   tableAddRow: "Добавить строку",
   tableDeleteRow: "Удалить строку",
   tableDeleteTable: "Удалить таблицу",
-  addNoteHere: "Добавить заметку здесь"
+  addNoteHere: "Добавить заметку здесь",
+  addSelectionToNote: "Добавить выделение в заметку"
 };

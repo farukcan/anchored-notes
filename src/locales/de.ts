@@ -83,5 +83,6 @@ export const de: Record<MessageKey, string> = {
   tableAddRow: "Zeile hinzufügen",
   tableDeleteRow: "Zeile löschen",
   tableDeleteTable: "Tabelle löschen",
-  addNoteHere: "Hier Notiz hinzufügen"
+  addNoteHere: "Hier Notiz hinzufügen",
+  addSelectionToNote: "Auswahl zur Notiz hinzufügen"
 };

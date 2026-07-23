@@ -29,6 +29,8 @@ export interface PageContext {
 export type Message =
   | { type: "GET_TAB_ID" }
   | { type: "CREATE_NOTE"; content: string }
+  | { type: "APPEND_SELECTION"; content: string }
+  | { type: "SET_APPEND_TARGET"; hasTarget: boolean }
   | { type: "SYNC" }
   | { type: "LOGIN" };
 

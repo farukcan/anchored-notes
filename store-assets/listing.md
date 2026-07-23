@@ -59,7 +59,7 @@ Anchored Notes lets users attach persistent sticky notes to web pages, anchored 
 | `scripting` | Programmatically injects our bundled content script (`content.js`) into tabs that were already open before the extension was installed or updated. Declarative content scripts only load into pages navigated after install, so pre-existing tabs cannot receive notes until manually reloaded — making the extension look broken on first use. We inject on install/update into open http(s) tabs, and on demand (with retry) when the user clicks "Add note" via the popup or right-click. We only inject our own static `files: ["content.js"]`; never remote or dynamically generated code. |
 | `host_permissions` (`<all_urls>`) | The core feature is attaching notes to any web page the user visits, so the content script and note rendering must run on all sites the user chooses to annotate. |
 | `activeTab` | Lets the popup act on the current tab (read its URL to match notes, inject/retry the content script on user action) without a broad grant when a narrower one suffices. |
-| `contextMenus` | Adds an "Add note here" right-click menu item to create a note on the current page. |
+| `contextMenus` | Adds right-click menu items: "Add note here" to create a note, and "Add selection to the note" to append selected text as a blockquote to the last focused note. |
 | `storage` | Stores the user's notes, language choice and settings locally (`chrome.storage.local`) and transient UI state (`chrome.storage.session`). |
 | `identity` | Optional Google sign-in (OAuth) to sync notes across devices; used only when the user chooses to sign in. |
 | `alarms` | Schedules a periodic background sync for signed-in users to pull note changes made on other devices. |

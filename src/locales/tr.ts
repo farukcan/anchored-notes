@@ -95,5 +95,6 @@ export const tr: Record<MessageKey, string> = {
   tableDeleteRow: "Satır sil",
   tableDeleteTable: "Tabloyu sil",
   // background context menu
-  addNoteHere: "Buraya Not Ekle"
+  addNoteHere: "Buraya Not Ekle",
+  addSelectionToNote: "Seçimi nota ekle"
 };

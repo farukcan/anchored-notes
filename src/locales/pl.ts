@@ -83,5 +83,6 @@ export const pl: Record<MessageKey, string> = {
   tableAddRow: "Dodaj wiersz",
   tableDeleteRow: "Usuń wiersz",
   tableDeleteTable: "Usuń tabelę",
-  addNoteHere: "Dodaj notatkę tutaj"
+  addNoteHere: "Dodaj notatkę tutaj",
+  addSelectionToNote: "Dodaj zaznaczenie do notatki"
 };

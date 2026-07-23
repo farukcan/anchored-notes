@@ -13,6 +13,25 @@ import { BACKEND_URL } from "./config.js";
 const SYNC_ALARM = "anchored-notes-sync";
 
 const MENU_ID = "anchored-notes-add";
+const APPEND_MENU_ID = "anchored-notes-append-selection";
+
+// Per-tab: whether the page has a visible note the append item can target.
+// The context menu is global, so visibility follows the active tab's flag.
+const appendTargetByTab = new Map<number, boolean>();
+let activeTabId: number | undefined;
+
+function syncAppendMenuVisibility(): void {
+  // Default to visible when unknown (e.g. SW just woke). Hide only when the
+  // content script has explicitly reported that this tab has no notes.
+  // Do not use contextMenus.onShown — it is undefined in some Chrome builds
+  // and crashes service-worker registration.
+  const known =
+    activeTabId !== undefined ? appendTargetByTab.get(activeTabId) : undefined;
+  const visible = known !== false;
+  chrome.contextMenus.update(APPEND_MENU_ID, { visible }, () => {
+    void chrome.runtime.lastError;
+  });
+}
 
 function buildContextMenu(): void {
   chrome.contextMenus.removeAll(() => {
@@ -21,7 +40,30 @@ function buildContextMenu(): void {
       title: t("addNoteHere", null),
       contexts: ["page", "selection", "link", "image"],
     });
+    chrome.contextMenus.create(
+      {
+        id: APPEND_MENU_ID,
+        title: t("addSelectionToNote", null),
+        contexts: ["selection"],
+      },
+      () => syncAppendMenuVisibility(),
+    );
   });
+}
+
+function sendToTab(tabId: number, message: Message): void {
+  // Old tab (no content script): the first send fails; inject the bundle then
+  // retry. If injection also fails, the page is genuinely restricted (e.g. a PDF
+  // viewer). By then the gesture is stale, so only badge + pending flag are used
+  // (the popup shows the toast when the user clicks the icon).
+  chrome.tabs.sendMessage(tabId, message).catch(() =>
+    injectContentScript(tabId)
+      .then(() => chrome.tabs.sendMessage(tabId, message))
+      .catch((err: unknown) => {
+        console.warn("[anchored-notes] Could not send", message.type, ":", err);
+        warnCantAddNote(tabId, false);
+      }),
+  );
 }
 
 async function createContextMenu(): Promise<void> {
@@ -112,19 +154,36 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
     return;
   }
 
-  const message: Message = { type: "CREATE_NOTE", content: info.selectionText ?? "" };
-  // Old tab (no content script): the first send fails; inject the bundle then
-  // retry. If injection also fails, the page is genuinely restricted (e.g. a PDF
-  // viewer). By then the gesture is stale, so only badge + pending flag are used
-  // (the popup shows the toast when the user clicks the icon).
-  chrome.tabs.sendMessage(tabId, message).catch(() =>
-    injectContentScript(tabId)
-      .then(() => chrome.tabs.sendMessage(tabId, message))
-      .catch((err: unknown) => {
-        console.warn("[anchored-notes] Could not send CREATE_NOTE:", err);
-        warnCantAddNote(tabId, false);
-      })
-  );
+  if (info.menuItemId === APPEND_MENU_ID) {
+    sendToTab(tabId, {
+      type: "APPEND_SELECTION",
+      content: info.selectionText ?? "",
+    });
+    return;
+  }
+
+  if (info.menuItemId === MENU_ID) {
+    sendToTab(tabId, { type: "CREATE_NOTE", content: info.selectionText ?? "" });
+  }
+});
+
+chrome.tabs.onActivated.addListener((info) => {
+  activeTabId = info.tabId;
+  syncAppendMenuVisibility();
+});
+
+chrome.tabs.onRemoved.addListener((tabId) => {
+  appendTargetByTab.delete(tabId);
+  if (activeTabId === tabId) activeTabId = undefined;
+  syncAppendMenuVisibility();
+  void deleteTabNotes(tabId);
+});
+
+// Seed activeTabId so the first SET_APPEND_TARGET from a content script can
+// update visibility before any onActivated event.
+void chrome.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+  activeTabId = tabs[0]?.id;
+  syncAppendMenuVisibility();
 });
 
 // The page can host neither the content script nor an in-page toast, so warn via
@@ -142,10 +201,6 @@ function warnCantAddNote(tabId: number, canOpenPopup: boolean): void {
   }
   void chrome.storage.session.set({ [PENDING_WARNING_KEY]: tabId });
 }
-
-chrome.tabs.onRemoved.addListener((tabId) => {
-  void deleteTabNotes(tabId);
-});
 
 // Sync triggers. sync() is a no-op for anonymous users, so these are safe to
 // always register. Local note edits are debounced; a periodic alarm pulls
@@ -181,6 +236,14 @@ chrome.runtime.onMessage.addListener(
       const response: GetTabIdResponse = { tabId: sender.tab?.id ?? -1 };
       sendResponse(response);
       return true;
+    }
+    if (message.type === "SET_APPEND_TARGET") {
+      const tabId = sender.tab?.id;
+      if (tabId !== undefined) {
+        appendTargetByTab.set(tabId, message.hasTarget);
+        if (tabId === activeTabId) syncAppendMenuVisibility();
+      }
+      return undefined;
     }
     if (message.type === "SYNC") {
       void sync();

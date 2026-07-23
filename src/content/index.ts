@@ -20,7 +20,7 @@ import { initI18n, onLangChanged, t } from "../i18n.js";
 import { formatLimit, getCurrentLimit } from "../limits.js";
 import { getAuthState, onAuthChanged } from "../auth.js";
 import { connectRealtime } from "../realtime.js";
-import { COLORS, createNoteCard, type NoteCardHandle } from "./note-card.js";
+import { COLORS, createNoteCard, toBlockquote, type NoteCardHandle } from "./note-card.js";
 import { playErrorBeep } from "../sound.js";
 
 const HOST_ID = "anchored-notes-host";
@@ -30,6 +30,12 @@ let zCounter = 2147483000;
 let cachedSiteName = shortDomainFromHostname(location.hostname);
 let cachedPageTitle: string | undefined;
 const cards = new Map<string, NoteCardHandle>();
+/** Last note the user focused/interacted with on this page; cleared when gone. */
+let lastFocusedNoteId: string | undefined;
+/** Oldest → newest focus order; used to pass the append target to a prior note. */
+const focusHistory: string[] = [];
+/** Set when a note is created so reconcile focuses it once the card mounts. */
+let pendingFocusNoteId: string | undefined;
 
 function siteLabelFromPage(): string {
   return shortDomainFromHostname(location.hostname);
@@ -46,6 +52,66 @@ function cardDeps(): typeof deps & { siteName: string; pageTitle?: string } {
     siteName: cachedSiteName,
     ...(cachedPageTitle ? { pageTitle: cachedPageTitle } : {})
   };
+}
+
+function reportAppendTarget(): void {
+  // Show the append menu whenever any note is visible on this page — not only
+  // after an explicit focus (FR: hide only when there is no note).
+  const hasTarget = cards.size > 0;
+  const message: Message = { type: "SET_APPEND_TARGET", hasTarget };
+  void chrome.runtime.sendMessage(message).catch(() => undefined);
+}
+
+function setLastFocusedNote(noteId: string): void {
+  lastFocusedNoteId = noteId;
+  const i = focusHistory.indexOf(noteId);
+  if (i !== -1) focusHistory.splice(i, 1);
+  focusHistory.push(noteId);
+  // Always report: after a service-worker restart the in-memory per-tab map is
+  // empty and the menu stays hidden until a fresh SET_APPEND_TARGET arrives.
+  // Re-focusing the same note must still restore visibility.
+  reportAppendTarget();
+}
+
+/** Drop a note from history; if it was the append target, pass to the prior visible one. */
+function forgetNoteFocus(noteId: string): void {
+  const i = focusHistory.indexOf(noteId);
+  if (i !== -1) focusHistory.splice(i, 1);
+  if (lastFocusedNoteId === noteId) lastFocusedNoteId = undefined;
+  ensureAppendTarget();
+}
+
+/** Prefer last focused, then focus history, then any remaining visible card. */
+function resolveAppendTarget(): NoteCardHandle | undefined {
+  if (lastFocusedNoteId !== undefined) {
+    const focused = cards.get(lastFocusedNoteId);
+    if (focused) return focused;
+  }
+  for (let i = focusHistory.length - 1; i >= 0; i--) {
+    const handle = cards.get(focusHistory[i]!);
+    if (handle) return handle;
+  }
+  return cards.values().next().value;
+}
+
+/** Keep lastFocused on a mounted card, preferring the most recent focus history entry. */
+function ensureAppendTarget(): void {
+  if (lastFocusedNoteId !== undefined && cards.has(lastFocusedNoteId)) {
+    reportAppendTarget();
+    return;
+  }
+  while (focusHistory.length > 0) {
+    const prev = focusHistory[focusHistory.length - 1]!;
+    if (cards.has(prev)) {
+      lastFocusedNoteId = prev;
+      reportAppendTarget();
+      return;
+    }
+    focusHistory.pop();
+  }
+  const anyId = cards.keys().next().value as string | undefined;
+  lastFocusedNoteId = anyId;
+  reportAppendTarget();
 }
 
 function syncScopeLabelsToCards(): void {
@@ -88,7 +154,8 @@ const deps = {
   save: (note: Note): void => void saveNote(note),
   remove: (id: string): void => void deleteNote(id),
   bringToFront: (): number => ++zCounter,
-  anchorKeyForScope
+  anchorKeyForScope,
+  onFocus: setLastFocusedNote
 };
 
 async function resolveSiteName(): Promise<void> {
@@ -136,6 +203,7 @@ function reconcile(shadow: ShadowRoot, notes: Note[]): void {
       handle.destroy();
       handle.el.remove();
       cards.delete(id);
+      forgetNoteFocus(id);
     }
   }
 
@@ -149,6 +217,13 @@ function reconcile(shadow: ShadowRoot, notes: Note[]): void {
       shadow.appendChild(handle.el);
       handle.mount();
     }
+  }
+
+  if (pendingFocusNoteId !== undefined && cards.has(pendingFocusNoteId)) {
+    setLastFocusedNote(pendingFocusNoteId);
+    pendingFocusNoteId = undefined;
+  } else {
+    ensureAppendTarget();
   }
 
   for (const handle of cards.values()) handle.clamp();
@@ -365,6 +440,10 @@ function init(): void {
 
   onNotesChanged((next) => reconcile(shadow, Object.values(next)));
 
+  // Right-click wakes the service worker and refreshes append-menu visibility
+  // before the menu is committed (best-effort; unknown state defaults to shown).
+  document.addEventListener("contextmenu", () => reportAppendTarget(), true);
+
   // Connect realtime when signed in and this tab is visible; reconnect/disconnect
   // as visibility or auth state changes.
   refreshRealtime();
@@ -419,7 +498,29 @@ async function createNoteWithinLimit(content: string): Promise<void> {
     showToast(mountHost(), t("noteLimitReached", { limit: formatLimit(limit) }));
     return;
   }
-  await saveNote(newNote(content));
+  const note = newNote(content);
+  pendingFocusNoteId = note.id;
+  await saveNote(note);
+}
+
+/** Append selection as a blockquote to the last focused note, or create one. */
+async function appendSelectionToNote(content: string): Promise<void> {
+  const trimmed = content.trim();
+  if (!trimmed) return;
+  // Inject+retry can deliver APPEND_SELECTION before the first reconcile; hydrate
+  // from storage so existing notes are not skipped in favor of a spurious create.
+  if (cards.size === 0) {
+    const map = await getNotesMap();
+    reconcile(mountHost(), Object.values(map));
+  }
+  const target = resolveAppendTarget();
+  if (target) {
+    target.appendBlockquote(trimmed);
+    setLastFocusedNote(target.noteId);
+    return;
+  }
+  // No visible note (menu should normally stay hidden); fall back to a new note.
+  await createNoteWithinLimit(toBlockquote(trimmed));
 }
 
 // Resolve the active language before first paint, then start. At document_start
@@ -446,7 +547,7 @@ async function bootstrap(): Promise<void> {
 // shadow host by id. Programmatic inject clears the guard first (see inject.ts).
 type InjectionGuard = {
   version: string;
-  onMessage: (message: Message) => void;
+  onMessage: (message: Message) => boolean | undefined;
 };
 
 const INJECTION_MARKER = "__anchoredNotesInjected";
@@ -464,8 +565,16 @@ if (!alreadyInjected) {
     }
   }
   // Registered synchronously so a context-menu click during init isn't dropped.
-  function onMessage(message: Message): void {
-    if (message.type === "CREATE_NOTE") void createNoteWithinLimit(message.content);
+  function onMessage(message: Message): boolean | undefined {
+    if (message.type === "CREATE_NOTE") {
+      void createNoteWithinLimit(message.content);
+      return undefined;
+    }
+    if (message.type === "APPEND_SELECTION") {
+      void appendSelectionToNote(message.content);
+      return undefined;
+    }
+    return undefined;
   }
   chrome.runtime.onMessage.addListener(onMessage);
   injectionMarker[INJECTION_MARKER] = { version, onMessage };

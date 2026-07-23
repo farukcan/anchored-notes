@@ -83,5 +83,6 @@ export const ja: Record<MessageKey, string> = {
   tableAddRow: "行を追加",
   tableDeleteRow: "行を削除",
   tableDeleteTable: "表を削除",
-  addNoteHere: "ここにメモを追加"
+  addNoteHere: "ここにメモを追加",
+  addSelectionToNote: "選択範囲をメモに追加"
 };

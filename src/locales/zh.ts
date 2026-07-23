@@ -83,5 +83,6 @@ export const zh: Record<MessageKey, string> = {
   tableAddRow: "添加行",
   tableDeleteRow: "删除行",
   tableDeleteTable: "删除表格",
-  addNoteHere: "在此添加笔记"
+  addNoteHere: "在此添加笔记",
+  addSelectionToNote: "将所选内容添加到笔记"
 };

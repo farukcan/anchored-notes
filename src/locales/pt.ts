@@ -83,5 +83,6 @@ export const pt: Record<MessageKey, string> = {
   tableAddRow: "Adicionar linha",
   tableDeleteRow: "Eliminar linha",
   tableDeleteTable: "Eliminar tabela",
-  addNoteHere: "Adicionar nota aqui"
+  addNoteHere: "Adicionar nota aqui",
+  addSelectionToNote: "Adicionar seleção à nota"
 };

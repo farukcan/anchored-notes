@@ -83,5 +83,6 @@ export const es: Record<MessageKey, string> = {
   tableAddRow: "Añadir fila",
   tableDeleteRow: "Eliminar fila",
   tableDeleteTable: "Eliminar tabla",
-  addNoteHere: "Añadir nota aquí"
+  addNoteHere: "Añadir nota aquí",
+  addSelectionToNote: "Añadir selección a la nota"
 };
