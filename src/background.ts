@@ -9,6 +9,7 @@ import { sync } from "./sync.js";
 import { getLang, initI18n, onLangChanged, t } from "./i18n.js";
 import { injectContentScript } from "./inject.js";
 import { BACKEND_URL } from "./config.js";
+import { track } from "./umami.js";
 
 const SYNC_ALARM = "anchored-notes-sync";
 
@@ -163,7 +164,11 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
   }
 
   if (info.menuItemId === MENU_ID) {
-    sendToTab(tabId, { type: "CREATE_NOTE", content: info.selectionText ?? "" });
+    sendToTab(tabId, {
+      type: "CREATE_NOTE",
+      content: info.selectionText ?? "",
+      source: "context_menu",
+    });
   }
 });
 
@@ -253,12 +258,18 @@ chrome.runtime.onMessage.addListener(
       // Run the OAuth flow here, not in the popup: opening the auth window makes
       // the popup lose focus and close, which would kill an in-popup flow before
       // the token exchange completes.
-      login()
-        .then(() => sendResponse({ ok: true } satisfies LoginResponse))
-        .catch((err: unknown) => {
+      void (async () => {
+        await track("sign_in_started");
+        try {
+          await login();
+          await track("sign_in_succeeded");
+          sendResponse({ ok: true } satisfies LoginResponse);
+        } catch (err: unknown) {
           console.error("[anchored-notes] login failed:", err);
+          await track("sign_in_failed");
           sendResponse({ ok: false, error: String(err) } satisfies LoginResponse);
-        });
+        }
+      })();
       return true; // keep the message channel open for the async response
     }
     return undefined;

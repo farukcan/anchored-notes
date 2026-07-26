@@ -12,6 +12,7 @@ import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i
 import { injectContentScript } from "../inject.js";
 import { playErrorBeep } from "../sound.js";
 import { PENDING_WARNING_KEY } from "../types.js";
+import { track, trackEncPasswordRequiredShown } from "../umami.js";
 
 // Sync runs only in the background worker (single context) to avoid races on
 // the shared notes key; the popup just asks it to run.
@@ -19,7 +20,8 @@ function requestSync(): void {
   void chrome.runtime.sendMessage({ type: "SYNC" } satisfies Message);
 }
 
-function openOptionsPage(): void {
+function openOptionsPage(from: "manage_all_notes" | "account_email" | "enc_warning"): void {
+  void track("popup_open_options", { source: "popup", from });
   chrome.runtime.openOptionsPage();
 }
 
@@ -71,6 +73,7 @@ async function chooseLang(lang: Lang): Promise<void> {
   (document.getElementById("lang-menu") as HTMLDivElement).hidden = true;
   if (lang === getLang()) return;
   await setLang(lang);
+  void track("lang_changed", { source: "popup", lang });
   applyStaticText();
   renderLangMenu();
   await render();
@@ -106,6 +109,7 @@ function renderUsageCta(auth: AuthState | null): void {
 
 async function handleUpgrade(button: HTMLButtonElement): Promise<void> {
   button.disabled = true;
+  void track("upgrade_clicked", { source: "popup" });
   try {
     await startUpgrade();
   } catch {
@@ -140,7 +144,7 @@ function renderAccount(auth: AuthState | null): void {
   email.className = "account-email";
   email.type = "button";
   email.textContent = auth.email;
-  email.addEventListener("click", openOptionsPage);
+  email.addEventListener("click", () => openOptionsPage("account_email"));
 
   const badge = document.createElement("span");
   badge.className = `plan-badge plan-${auth.plan}`;
@@ -150,7 +154,10 @@ function renderAccount(auth: AuthState | null): void {
   signOut.className = "account-signout";
   signOut.type = "button";
   signOut.textContent = t("accountSignOut", null);
-  signOut.addEventListener("click", () => void logout());
+  signOut.addEventListener("click", () => {
+    void track("sign_out", { source: "popup" });
+    void logout();
+  });
 
   account.append(email, badge, signOut);
 }
@@ -186,11 +193,12 @@ async function renderEncWarning(auth: AuthState | null): Promise<void> {
   const box = document.getElementById("enc-warning") as HTMLDivElement;
   box.replaceChildren();
   if (!required) return;
+  void trackEncPasswordRequiredShown();
   const btn = document.createElement("button");
   btn.className = "enc-warning-btn";
   btn.type = "button";
   btn.textContent = t("encPasswordRequired", null);
-  btn.addEventListener("click", openOptionsPage);
+  btn.addEventListener("click", () => openOptionsPage("enc_warning"));
   box.appendChild(btn);
 }
 
@@ -229,6 +237,7 @@ async function render(): Promise<void> {
       li.title = t("showHiddenNote", null);
       li.addEventListener("click", async () => {
         await saveNote({ ...note, hidden: false, updatedAt: Date.now() });
+        void track("note_restored", { source: "popup" });
         await render();
       });
     }
@@ -239,7 +248,7 @@ async function render(): Promise<void> {
 document.getElementById("add")?.addEventListener("click", async () => {
   const tab = await activeTab();
   if (tab?.id === undefined) return;
-  const message: Message = { type: "CREATE_NOTE", content: "" };
+  const message: Message = { type: "CREATE_NOTE", content: "", source: "popup" };
   try {
     await chrome.tabs.sendMessage(tab.id, message);
     window.close();
@@ -252,13 +261,14 @@ document.getElementById("add")?.addEventListener("click", async () => {
       window.close();
     } catch {
       showToast(t("cantAddNote", null));
+      void track("popup_restricted_page_warning", { source: "popup" });
     }
   }
 });
 
 document.getElementById("options")?.addEventListener("click", (e) => {
   e.preventDefault();
-  openOptionsPage();
+  openOptionsPage("manage_all_notes");
 });
 
 document.getElementById("lang-btn")?.addEventListener("click", () => {
@@ -295,6 +305,7 @@ async function consumePendingWarning(): Promise<void> {
   }
   await chrome.storage.session.remove(PENDING_WARNING_KEY);
   showToast(t("cantAddNote", null));
+  void track("popup_restricted_page_warning", { source: "popup" });
   void chrome.action.setBadgeText({ tabId, text: "" });
 }
 
@@ -311,6 +322,7 @@ async function main(): Promise<void> {
   renderAccount(await getAuthState());
   await render();
   void consumePendingWarning();
+  void track("popup_opened");
   // Refresh from the backend in the background when signed in.
   requestSync();
 }

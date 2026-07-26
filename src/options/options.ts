@@ -13,6 +13,7 @@ import { formatLimit, getCurrentLimit } from "../limits.js";
 import { deleteAccount, getAuthState, logout, onAuthChanged, openBilling, startUpgrade, type AuthState } from "../auth.js";
 import { getEncStatus, getReadyKey, onEncStatusChanged, setCustomPassword, unlockWithPassword } from "../encryption.js";
 import { getLang, initI18n, LANG_META, LANGS, onLangChanged, setLang, t, type Lang } from "../i18n.js";
+import { track, trackEncPasswordRequiredShown } from "../umami.js";
 
 const SWATCH: Record<string, string> = {
   yellow: "#fcee5f",
@@ -159,6 +160,7 @@ async function chooseLang(lang: Lang): Promise<void> {
   (document.getElementById("lang-menu") as HTMLDivElement).hidden = true;
   if (lang === getLang()) return;
   await setLang(lang);
+  void track("lang_changed", { source: "options", lang });
   refreshLocalizedUi();
 }
 
@@ -215,7 +217,10 @@ function renderAccount(auth: AuthState | null): void {
   signOut.className = "account-signout";
   signOut.type = "button";
   signOut.textContent = t("accountSignOut", null);
-  signOut.addEventListener("click", () => void logout());
+  signOut.addEventListener("click", () => {
+    void track("sign_out", { source: "options" });
+    void logout();
+  });
 
   const del = document.createElement("button");
   del.className = "account-delete";
@@ -273,10 +278,12 @@ async function renderEncryption(auth: AuthState | null): Promise<void> {
       try {
         if (await unlockWithPassword(input.value)) {
           // onEncStatusChanged re-renders this block as "ready".
+          void track("enc_unlocked", { source: "options" });
           requestSync();
           return;
         }
         error.textContent = t("encWrongPassword", null);
+        void track("enc_unlock_failed", { source: "options" });
       } catch (err) {
         console.error("[anchored-notes] unlock failed:", err);
         error.textContent = t("encChangeFailed", null);
@@ -290,6 +297,7 @@ async function renderEncryption(auth: AuthState | null): Promise<void> {
     });
 
     box.append(label, input, unlock, error);
+    void trackEncPasswordRequiredShown();
     return;
   }
 
@@ -329,6 +337,7 @@ async function handleSetPassword(button: HTMLButtonElement): Promise<void> {
   button.disabled = true;
   try {
     await setCustomPassword(password);
+    void track("enc_password_set", { source: "options" });
     requestSync();
   } catch (err) {
     console.error("[anchored-notes] set encryption password failed:", err);
@@ -345,8 +354,13 @@ async function handleSetPassword(button: HTMLButtonElement): Promise<void> {
 async function handleBilling(button: HTMLButtonElement, auth: AuthState): Promise<void> {
   button.disabled = true;
   try {
-    if (auth.plan === "pro") await openBilling();
-    else await startUpgrade();
+    if (auth.plan === "pro") {
+      void track("billing_opened", { source: "options" });
+      await openBilling();
+    } else {
+      void track("upgrade_clicked", { source: "options" });
+      await startUpgrade();
+    }
   } catch {
     window.alert(t("accountBillingFailed", null));
   } finally {
@@ -383,6 +397,7 @@ async function handleDeleteAccount(button: HTMLButtonElement, auth: AuthState): 
     window.alert(t("accountDeleteFailed", null));
     return;
   }
+  void track("account_deleted", { source: "options" });
   // Account is gone server-side; clear local notes (failure here isn't a delete
   // failure, so it must not surface the delete-failed alert).
   await wipeLocalNotes();
@@ -420,7 +435,10 @@ async function render(): Promise<void> {
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.textContent = note.anchorKey;
-      link.addEventListener("click", (e) => e.stopPropagation());
+      link.addEventListener("click", (e) => {
+        e.stopPropagation();
+        void track("options_anchor_opened", { source: "options" });
+      });
       tdAnchor.appendChild(link);
     } else {
       tdAnchor.textContent = note.anchorKey || "—";
@@ -436,6 +454,7 @@ async function render(): Promise<void> {
       e.stopPropagation();
       if (note.content.trim() && !window.confirm(t("deleteConfirm", null))) return;
       void deleteNote(note.id);
+      void track("note_deleted", { source: "options" });
     });
     tdActions.appendChild(del);
 
@@ -460,6 +479,7 @@ async function render(): Promise<void> {
         expanded.add(note.id);
         detail.hidden = false;
         mountReadonlyMarkdownPreview(content, note.id, note.content);
+        void track("options_note_previewed", { source: "options" });
       }
     });
 
@@ -477,6 +497,7 @@ function exportNotes(): void {
     a.download = `anchored-notes-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
+    void track("notes_exported", { source: "options", count: notes.length });
   });
 }
 
@@ -511,6 +532,7 @@ async function importNotes(file: File): Promise<void> {
   }
   if (!window.confirm(t("importConfirm", { count: parsed.length }))) return;
   await replaceAllNotes(parsed);
+  void track("notes_imported", { source: "options", count: parsed.length });
 }
 
 function applyStaticText(): void {
@@ -528,8 +550,13 @@ function applyStaticText(): void {
   (document.getElementById("empty") as HTMLDivElement).textContent = t("noNotesYet", null);
 }
 
+let searchTracked = false;
 document.getElementById("search")?.addEventListener("input", (e) => {
   query = (e.target as HTMLInputElement).value;
+  if (!searchTracked && query.trim().length > 0) {
+    searchTracked = true;
+    void track("options_search_used", { source: "options" });
+  }
   void render();
 });
 
@@ -580,6 +607,7 @@ async function main(): Promise<void> {
   renderAccount(currentAuth);
   await renderEncryption(currentAuth);
   await render();
+  void track("options_opened");
   // Refresh from the backend in the background when signed in.
   requestSync();
 }

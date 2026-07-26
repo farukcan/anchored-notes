@@ -15,19 +15,22 @@ import {
 import type { Command } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
 import { t, type MessageKey } from "../i18n.js";
+import { track } from "../umami.js";
 
 interface ToolbarButton {
   label: string;
   titleKey: MessageKey;
+  /** Distinct Umami event name for this toolbar action. */
+  event: string;
   command: Command;
 }
 
 const BUTTONS: ToolbarButton[] = [
-  { label: "+Col", titleKey: "tableAddColumn", command: addColumnAfter },
-  { label: "−Col", titleKey: "tableDeleteColumn", command: deleteColumn },
-  { label: "+Row", titleKey: "tableAddRow", command: addRowAfter },
-  { label: "−Row", titleKey: "tableDeleteRow", command: deleteRow },
-  { label: "✕", titleKey: "tableDeleteTable", command: deleteTable }
+  { label: "+Col", titleKey: "tableAddColumn", event: "table_add_column", command: addColumnAfter },
+  { label: "−Col", titleKey: "tableDeleteColumn", event: "table_delete_column", command: deleteColumn },
+  { label: "+Row", titleKey: "tableAddRow", event: "table_add_row", command: addRowAfter },
+  { label: "−Row", titleKey: "tableDeleteRow", event: "table_delete_row", command: deleteRow },
+  { label: "✕", titleKey: "tableDeleteTable", event: "table_delete_table", command: deleteTable }
 ];
 
 export function tableToolbarPlugin(rootEl: HTMLElement): ReturnType<typeof $prose> {
@@ -49,6 +52,7 @@ export function tableToolbarPlugin(rootEl: HTMLElement): ReturnType<typeof $pros
             e.preventDefault(); // keep the table cell selection in the editor
             view.focus();
             btn.command(view.state, view.dispatch);
+            void track(btn.event, { source: "card" });
           });
           toolbar.appendChild(el);
         }

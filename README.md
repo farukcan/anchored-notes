@@ -194,6 +194,24 @@ compare-and-swap on `expectedEncCheck` (409 = changed on another device).
 > [anchored-notes-backend](../anchored-notes-backend) for the full API
 > reference and the backend's internals.
 
+### Analytics (Umami)
+
+Product usage is measured with Umami's HTTP collect API (`src/umami.ts`) — no
+third-party script tag, so it stays compatible with extension CSP / Chrome
+policies. Set `UMAMI_URL` and `UMAMI_WEBSITE_ID` in `src/config.ts` (either empty
+disables tracking). Every event includes `anonymousIdentifier` (a locally
+generated UUID stored under `anonymousIdentifier` in `chrome.storage.local` —
+never email or other account PII), `noteCount`, `plan`, and a `ts` timestamp;
+note content and page URLs are never sent.
+
+| Priority | Events |
+| -------- | ------ |
+| MVP | `note_created`, `note_deleted`, `note_scope_changed`, `note_edited` (first edit per 30 min session window), `selection_appended`, `sign_in_started` / `sign_in_succeeded` / `sign_in_failed`, `upgrade_clicked`, `note_limit_hit`, `popup_opened` |
+| Medium | `note_hidden`, `note_restored`, `note_color_changed`, `notes_exported`, `notes_imported`, `enc_password_set`, `enc_unlocked`, `enc_unlock_failed`, `enc_password_required_shown` (once per browser session), plus one event per slash command (`slash_text`, `slash_heading1`, …) and table toolbar action (`table_add_column`, …) |
+| Navigation & account | `popup_open_options` (`from`: `manage_all_notes` \| `account_email` \| `enc_warning`), `options_opened`, `sign_out`, `billing_opened`, `account_deleted`, `lang_changed`, `options_search_used` (once per options page load when query becomes non-empty), `options_note_previewed`, `options_anchor_opened`, `badge_opened`, `popup_restricted_page_warning` |
+
+`note_created.source` is `popup`, `context_menu`, or `append_fallback`.
+
 ## Develop
 
 ```bash

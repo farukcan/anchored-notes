@@ -4,6 +4,7 @@
 import type { AnchorScope, Note, NoteColor } from "../types.js";
 import { formatRelativeTime } from "../relative-time.js";
 import { t, type MessageKey } from "../i18n.js";
+import { track, trackNoteEdited } from "../umami.js";
 import { createMarkdownEditor, type MarkdownEditorHandle } from "./editor.js";
 
 export const COLORS: NoteColor[] = [
@@ -189,6 +190,7 @@ export function createNoteCard(
       patch({ color: c });
       el.className = `note color-${c}`;
       palette.classList.remove("open");
+      void track("note_color_changed", { source: "card", color: c });
     });
     palette.appendChild(sw);
   }
@@ -237,6 +239,7 @@ export function createNoteCard(
         contentTimer = undefined;
         if (destroyed) return;
         patch({ content: markdown });
+        void trackNoteEdited({ source: "card" });
       }, SAVE_DEBOUNCE_MS);
     });
   }
@@ -246,7 +249,10 @@ export function createNoteCard(
     window.clearTimeout(contentTimer);
     contentTimer = undefined;
     if (destroyed) return;
-    if (latestContent !== note.content) patch({ content: latestContent });
+    if (latestContent !== note.content) {
+      patch({ content: latestContent });
+      void trackNoteEdited({ source: "card" });
+    }
   }
 
   function appendBlockquote(text: string): void {
@@ -282,12 +288,14 @@ export function createNoteCard(
     const next = scope.value as AnchorScope;
     patch({ scope: next, anchorKey: deps.anchorKeyForScope(next) });
     tabNotice.hidden = next !== "tab";
+    void track("note_scope_changed", { source: "card", scope: next });
   });
 
   // --- hide (collapse into the bottom-right badge) ---
   hideItem.addEventListener("click", () => {
     menu.classList.remove("open");
     patch({ hidden: true });
+    void track("note_hidden", { source: "card" });
   });
 
   // --- delete ---
@@ -295,6 +303,7 @@ export function createNoteCard(
     menu.classList.remove("open");
     if (latestContent.trim() && !window.confirm(t("deleteConfirm", null))) return;
     deps.remove(note.id);
+    void track("note_deleted", { source: "card" });
   });
 
   // --- bring to front on interaction ---

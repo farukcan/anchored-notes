@@ -26,9 +26,11 @@ export interface PageContext {
 }
 
 // Message protocol between contexts.
+export type NoteCreateSource = "popup" | "context_menu";
+
 export type Message =
   | { type: "GET_TAB_ID" }
-  | { type: "CREATE_NOTE"; content: string }
+  | { type: "CREATE_NOTE"; content: string; source: NoteCreateSource }
   | { type: "APPEND_SELECTION"; content: string }
   | { type: "SET_APPEND_TARGET"; hasTarget: boolean }
   | { type: "SYNC" }

@@ -6,6 +6,11 @@
 // anchored-notes-backend base URL (deployed).
 export const BACKEND_URL = "https://anchored-notes.puhulab.com";
 
+// Umami collect endpoint + website id. Leave either empty to disable analytics.
+// Example URL: "https://analytics.example.com/api/send"
+export const UMAMI_URL = "https://umami.puhulab.com/api/send";
+export const UMAMI_WEBSITE_ID = "3a67c84d-2810-4b8a-9032-958f391640de";
+
 // Public client configuration served by the backend.
 export interface RuntimeConfig {
   pbUrl: string;

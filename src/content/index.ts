@@ -22,6 +22,7 @@ import { getAuthState, onAuthChanged } from "../auth.js";
 import { connectRealtime } from "../realtime.js";
 import { COLORS, createNoteCard, toBlockquote, type NoteCardHandle } from "./note-card.js";
 import { playErrorBeep } from "../sound.js";
+import { track, type TrackSource } from "../umami.js";
 
 const HOST_ID = "anchored-notes-host";
 
@@ -317,7 +318,9 @@ function ensureBadge(shadow: ShadowRoot): BadgeParts {
       root.removeAttribute("data-an-dragged");
       return;
     }
+    const opening = !list.classList.contains("open");
     list.classList.toggle("open");
+    if (opening) void track("badge_opened", { source: "badge" satisfies TrackSource });
   });
 
   const container = document.createElement("div");
@@ -357,6 +360,7 @@ function updateBadge(shadow: ShadowRoot, hidden: Note[]): void {
     item.addEventListener("click", () => {
       parts.list.classList.remove("open");
       void saveNote({ ...note, hidden: false, updatedAt: Date.now() });
+      void track("note_restored", { source: "badge" satisfies TrackSource });
     });
     parts.list.appendChild(item);
   }
@@ -491,16 +495,21 @@ function showToast(shadow: ShadowRoot, text: string): void {
 
 // Enforce the note quota at the single creation point. Both the popup and the
 // context menu reach note creation through this CREATE_NOTE message.
-async function createNoteWithinLimit(content: string): Promise<void> {
+async function createNoteWithinLimit(
+  content: string,
+  source: TrackSource,
+): Promise<void> {
   const map = await getNotesMap();
   const limit = await getCurrentLimit();
   if (Object.keys(map).length >= limit) {
     showToast(mountHost(), t("noteLimitReached", { limit: formatLimit(limit) }));
+    void track("note_limit_hit", { source, limit });
     return;
   }
   const note = newNote(content);
   pendingFocusNoteId = note.id;
   await saveNote(note);
+  void track("note_created", { source, scope: note.scope });
 }
 
 /** Append selection as a blockquote to the last focused note, or create one. */
@@ -517,10 +526,11 @@ async function appendSelectionToNote(content: string): Promise<void> {
   if (target) {
     target.appendBlockquote(trimmed);
     setLastFocusedNote(target.noteId);
+    void track("selection_appended", { source: "context_menu" satisfies TrackSource });
     return;
   }
   // No visible note (menu should normally stay hidden); fall back to a new note.
-  await createNoteWithinLimit(toBlockquote(trimmed));
+  await createNoteWithinLimit(toBlockquote(trimmed), "append_fallback");
 }
 
 // Resolve the active language before first paint, then start. At document_start
@@ -567,7 +577,7 @@ if (!alreadyInjected) {
   // Registered synchronously so a context-menu click during init isn't dropped.
   function onMessage(message: Message): boolean | undefined {
     if (message.type === "CREATE_NOTE") {
-      void createNoteWithinLimit(message.content);
+      void createNoteWithinLimit(message.content, message.source);
       return undefined;
     }
     if (message.type === "APPEND_SELECTION") {

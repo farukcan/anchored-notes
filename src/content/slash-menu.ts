@@ -20,10 +20,13 @@ import type { EditorState, PluginSpec } from "@milkdown/prose/state";
 import type { EditorView } from "@milkdown/prose/view";
 import type { Ctx } from "@milkdown/ctx";
 import { t, type MessageKey } from "../i18n.js";
+import { track } from "../umami.js";
 
 interface SlashItem {
   labelKey: MessageKey;
   icon: string;
+  /** Distinct Umami event name for this slash command. */
+  event: string;
   run: (ctx: Ctx) => void;
 }
 
@@ -65,17 +68,17 @@ function turnIntoText(ctx: Ctx): void {
 }
 
 const ITEMS: SlashItem[] = [
-  { labelKey: "slashText", icon: "¶", run: turnIntoText },
-  { labelKey: "slashHeading1", icon: "H1", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 1) },
-  { labelKey: "slashHeading2", icon: "H2", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 2) },
-  { labelKey: "slashHeading3", icon: "H3", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 3) },
-  { labelKey: "slashBulletList", icon: "•", run: (ctx) => ctx.get(commandsCtx).call(wrapInBulletListCommand.key) },
-  { labelKey: "slashOrderedList", icon: "1.", run: (ctx) => ctx.get(commandsCtx).call(wrapInOrderedListCommand.key) },
-  { labelKey: "slashTaskList", icon: "☑", run: wrapInTaskList },
-  { labelKey: "slashQuote", icon: "❝", run: (ctx) => ctx.get(commandsCtx).call(wrapInBlockquoteCommand.key) },
-  { labelKey: "slashCode", icon: "</>", run: (ctx) => ctx.get(commandsCtx).call(createCodeBlockCommand.key) },
-  { labelKey: "slashTable", icon: "▦", run: (ctx) => ctx.get(commandsCtx).call(insertTableCommand.key) },
-  { labelKey: "slashDivider", icon: "―", run: (ctx) => ctx.get(commandsCtx).call(insertHrCommand.key) }
+  { labelKey: "slashText", icon: "¶", event: "slash_text", run: turnIntoText },
+  { labelKey: "slashHeading1", icon: "H1", event: "slash_heading1", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 1) },
+  { labelKey: "slashHeading2", icon: "H2", event: "slash_heading2", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 2) },
+  { labelKey: "slashHeading3", icon: "H3", event: "slash_heading3", run: (ctx) => ctx.get(commandsCtx).call(wrapInHeadingCommand.key, 3) },
+  { labelKey: "slashBulletList", icon: "•", event: "slash_bullet_list", run: (ctx) => ctx.get(commandsCtx).call(wrapInBulletListCommand.key) },
+  { labelKey: "slashOrderedList", icon: "1.", event: "slash_ordered_list", run: (ctx) => ctx.get(commandsCtx).call(wrapInOrderedListCommand.key) },
+  { labelKey: "slashTaskList", icon: "☑", event: "slash_task_list", run: wrapInTaskList },
+  { labelKey: "slashQuote", icon: "❝", event: "slash_quote", run: (ctx) => ctx.get(commandsCtx).call(wrapInBlockquoteCommand.key) },
+  { labelKey: "slashCode", icon: "</>", event: "slash_code", run: (ctx) => ctx.get(commandsCtx).call(createCodeBlockCommand.key) },
+  { labelKey: "slashTable", icon: "▦", event: "slash_table", run: (ctx) => ctx.get(commandsCtx).call(insertTableCommand.key) },
+  { labelKey: "slashDivider", icon: "―", event: "slash_divider", run: (ctx) => ctx.get(commandsCtx).call(insertHrCommand.key) }
 ];
 
 // Text of the current paragraph up to the cursor, used to detect "/query".
@@ -150,6 +153,7 @@ export function createSlashMenu(rootEl: HTMLElement): SlashMenu {
     }
     v.focus();
     if (ctxRef) item.run(ctxRef);
+    void track(item.event, { source: "card" });
     provider.hide();
     selected = 0;
   }
