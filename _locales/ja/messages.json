@@ -1,8 +1,8 @@
 {
   "extName": {
-    "message": "アンカーノート"
+    "message": "Anchored Notes: ウェブページに貼れる付箋メモ｜Markdown対応・同期"
   },
   "extDesc": {
-    "message": "ページ、サイト、タブ、または全体に固定できる付箋を残せます。"
+    "message": "Anchored Notes（アンカーノート）はウェブページに付箋メモを貼れる拡張機能。ページ・サイト・タブ・全ページに固定でき、Markdown対応、暗号化同期。"
   }
 }

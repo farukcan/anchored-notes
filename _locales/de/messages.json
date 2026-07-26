@@ -1,8 +1,8 @@
 {
   "extName": {
-    "message": "Verankerte Notizen"
+    "message": "Anchored Notes: Haftnotizen für Webseiten — Markdown, Sync & verschlüsselt"
   },
   "extDesc": {
-    "message": "Hinterlasse Haftnotizen, verankert an einer Seite, Website, einem Tab oder global."
+    "message": "Haftnotizen verankert an Seite, Website, Tab oder global. Markdown-Editor und verschlüsselte Synchronisation zwischen Geräten."
   }
 }

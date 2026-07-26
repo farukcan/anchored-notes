@@ -1,8 +1,8 @@
 {
   "extName": {
-    "message": "锚定便签"
+    "message": "Anchored Notes: 网页便签·便利贴笔记 — Markdown、同步与加密"
   },
   "extDesc": {
-    "message": "在页面、网站、标签页或全局留下锚定的便签。"
+    "message": "Anchored Notes（锚定便签）让你在网页上添加便利贴笔记：可固定到页面、网站、标签页或全局，支持 Markdown、多设备加密同步。"
   }
 }

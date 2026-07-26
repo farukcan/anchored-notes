@@ -1,8 +1,8 @@
 {
   "extName": {
-    "message": "Sabitlenmiş Notlar"
+    "message": "Anchored Notes: Web Sayfalarına Yapışkan Notlar — Markdown, Senkronizasyon"
   },
   "extDesc": {
-    "message": "Bir sayfaya, siteye, sekmeye veya her yere sabitlenen yapışkan notlar bırakın."
+    "message": "Bir sayfaya, siteye, sekmeye veya her yere sabitlenen yapışkan notlar bırakın. Markdown editörü ve şifreli senkronizasyon."
   }
 }
