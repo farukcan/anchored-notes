@@ -1,0 +1,154 @@
+<!doctype html>
+<!-- Stage: someone's profile on a professional network — the case for a private
+     reminder attached to a page you did not write and cannot annotate. Copy comes
+     from video/copy/stages.ts. The site carries no name or wordmark and the person
+     is invented: the page says what kind of site it is through its layout alone.
+
+     Stage contract (every stage must honour it):
+       - 1280x800 viewport, no scrollbars, no page-level animation
+       - no <link rel="manifest">: the browser would fetch it for real; the
+         content script's lookup falls back to /manifest.json, which the stub
+         answers with the configured site name
+       - shell.js first, then the extension bundle it hosts
+       - the page background repeated on <html>, so a focus step blurring <body>
+         cannot lighten the window's border
+       - all motion comes from the Remotion driver, never from the page -->
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="utf-8">
+<title>{{prName}}</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="{{fontHref}}" rel="stylesheet">
+<style>
+  :root {
+    --page: #eef1f4;
+    --card: #ffffff;
+    --ink: #1b2027;
+    --ink-soft: #626d7a;
+    --rule: #dfe4ea;
+    --accent: #1f5fa8;
+    --font-head: {{fontHead}};
+    --font-body: {{fontBody}};
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* Frames are rendered out of wall-clock order, so any page-driven motion would
+     land on an arbitrary point of its timeline. The driver owns all movement. */
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  html { background: var(--page); }
+  body {
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .top {
+    display: flex; align-items: center; gap: 26px;
+    height: 56px; padding: 0 40px;
+    background: var(--card); border-bottom: 1px solid var(--rule);
+  }
+  /* The site has no name and no wordmark — only the kind of thing it is. A made
+     up brand reads as noise, and a real one would be an imitation. */
+  .brand {
+    width: 30px; height: 30px; border-radius: 8px; flex: none;
+    background: var(--accent); position: relative; overflow: hidden;
+  }
+  .brand::before {
+    content: ""; position: absolute; left: 50%; top: 6px;
+    width: 10px; height: 10px; margin-left: -5px;
+    border-radius: 50%; background: #fff;
+  }
+  .brand::after {
+    content: ""; position: absolute; left: 50%; bottom: 4px;
+    width: 19px; height: 10px; margin-left: -9.5px;
+    border-radius: 10px 10px 0 0; background: #fff;
+  }
+  nav { display: flex; gap: 24px; font-size: 14px; color: var(--ink-soft); }
+  nav b { color: var(--ink); font-weight: 500; border-bottom: 2px solid var(--accent); padding-bottom: 17px; }
+  .search {
+    margin-inline-start: auto; width: 260px; height: 32px;
+    border: 1px solid var(--rule); border-radius: 4px; background: #f4f6f8;
+    display: flex; align-items: center; padding: 0 12px;
+    color: var(--ink-soft); font-size: 13.5px;
+  }
+
+  .wrap { width: 740px; margin: 0 auto; padding: 26px 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--rule);
+    border-radius: 8px; margin-bottom: 16px;
+  }
+  .banner {
+    height: 128px; border-radius: 7px 7px 0 0;
+    background: linear-gradient(115deg, #24506f 0%, #3f7d8c 55%, #94a86b 100%);
+  }
+  .head { padding: 0 30px 24px; position: relative; }
+  .avatar {
+    width: 116px; height: 116px; border-radius: 50%;
+    border: 5px solid var(--card); margin-top: -58px;
+    background: radial-gradient(circle at 34% 30%, #d8a878, #8a5b3c);
+  }
+  h1 {
+    font-family: var(--font-head); font-size: 30px; font-weight: 560;
+    margin: 12px 0 4px; letter-spacing: -0.01em;
+  }
+  .headline { font-size: 16px; color: #303a45; }
+  .loc { font-size: 13.5px; color: var(--ink-soft); margin-top: 6px; }
+  .acts { display: flex; gap: 10px; margin-top: 18px; }
+  .btn {
+    height: 34px; padding: 0 20px; border-radius: 17px;
+    display: flex; align-items: center; font-size: 14px; font-weight: 500;
+  }
+  .primary { background: var(--accent); color: #fff; }
+  .ghost { border: 1px solid var(--accent); color: var(--accent); }
+
+  .sec { padding: 22px 30px; }
+  .sec h2 {
+    font-family: var(--font-head); font-size: 19px; font-weight: 560;
+    margin-bottom: 10px;
+  }
+  .sec p { font-size: 15px; color: #384250; max-width: 620px; }
+  .job { display: flex; gap: 14px; margin-top: 16px; }
+  .logo { width: 42px; height: 42px; border-radius: 6px; flex: none; background: #d5dde4; }
+  .job:nth-of-type(2) .logo { background: #e0d8cc; }
+  .job b { font-weight: 500; font-size: 15.5px; display: block; }
+  .job span { color: var(--ink-soft); font-size: 13.5px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"></div>
+    <nav><span>{{prNav1}}</span><b>{{prNav2}}</b><span>{{prNav3}}</span></nav>
+    <div class="search">{{prSearch}}</div>
+  </div>
+  <div class="wrap">
+    <div class="card">
+      <div class="banner"></div>
+      <div class="head">
+        <div class="avatar"></div>
+        <h1>{{prName}}</h1>
+        <div class="headline">{{prHeadline}}</div>
+        <div class="loc">{{prLocation}}</div>
+        <div class="acts">
+          <div class="btn primary">{{prConnect}}</div>
+          <div class="btn ghost">{{prMessage}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="card sec">
+      <h2>{{prAboutHead}}</h2>
+      <p>{{prAbout}}</p>
+    </div>
+    <div class="card sec">
+      <h2>{{prExpHead}}</h2>
+      <div class="job"><div class="logo"></div><div><b>{{prExp1}}</b><span>{{prExp1org}}</span></div></div>
+      <div class="job"><div class="logo"></div><div><b>{{prExp2}}</b><span>{{prExp2org}}</span></div></div>
+    </div>
+  </div>
+  <script src="../shell.js"></script>
+  <script src="../content.js"></script>
+</body>
+</html>

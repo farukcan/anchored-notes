@@ -1,0 +1,193 @@
+<!doctype html>
+<!-- Stage: a video player page — the case for a note that has to sit beside
+     something you are watching rather than something you are reading. Copy comes
+     from video/copy/stages.ts. The site carries no name or wordmark: an invented
+     brand reads as noise, and a real one would be an imitation, so the page says
+     what kind of site it is through its layout alone.
+
+     Stage contract (every stage must honour it):
+       - 1280x800 viewport, no scrollbars, no page-level animation
+       - no <link rel="manifest">: the browser would fetch it for real; the
+         content script's lookup falls back to /manifest.json, which the stub
+         answers with the configured site name
+       - shell.js first, then the extension bundle it hosts
+       - the page background repeated on <html>, so a focus step blurring <body>
+         cannot lighten the window's border
+       - all motion comes from the Remotion driver, never from the page -->
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="utf-8">
+<title>{{vwTitle}}</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="{{fontHref}}" rel="stylesheet">
+<style>
+  :root {
+    --shell: #14161a;
+    --panel: #1c1f25;
+    --ink: #f2f0ec;
+    --ink-soft: #9ba2ad;
+    --rule: #2b2f37;
+    --accent: #e0533d;
+    --font-head: {{fontHead}};
+    --font-body: {{fontBody}};
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* Frames are rendered out of wall-clock order, so any page-driven motion would
+     land on an arbitrary point of its timeline. The driver owns all movement. */
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  html { background: var(--shell); }
+  body {
+    background: var(--shell);
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .top {
+    display: flex; align-items: center; gap: 28px;
+    padding: 0 28px; height: 58px;
+    border-bottom: 1px solid var(--rule);
+  }
+  /* The site has no name and no wordmark — only the kind of thing it is. A made
+     up brand reads as noise, and a real one would be an imitation. */
+  .brand {
+    width: 30px; height: 30px; border-radius: 50%; flex: none;
+    background: var(--accent); position: relative;
+  }
+  .brand::after {
+    content: ""; position: absolute; left: 53%; top: 50%;
+    transform: translate(-50%, -50%);
+    width: 0; height: 0; border: 6px solid transparent; border-left-color: #fff;
+  }
+  nav { display: flex; gap: 24px; font-size: 14px; color: var(--ink-soft); }
+  nav b { color: var(--ink); font-weight: 500; }
+  .search {
+    margin-inline-start: auto; width: 300px; height: 34px;
+    border: 1px solid var(--rule); border-radius: 17px;
+    background: #101216; color: var(--ink-soft);
+    display: flex; align-items: center; padding: 0 15px; font-size: 13.5px;
+  }
+  .cols { display: grid; grid-template-columns: 1fr 322px; gap: 26px; padding: 22px 28px; }
+
+  .player {
+    height: 396px; border-radius: 10px; position: relative; overflow: hidden;
+    background:
+      radial-gradient(90% 70% at 25% 15%, #6d5637 0%, transparent 60%),
+      radial-gradient(80% 80% at 80% 85%, #2a3c46 0%, transparent 60%),
+      linear-gradient(165deg, #33302b 0%, #16181c 100%);
+  }
+  /* A bowl and a cutting board, suggested rather than drawn — enough to read as
+     a cooking shot at any zoom without becoming the subject of the frame. */
+  .board {
+    position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%);
+    width: 340px; height: 150px; border-radius: 8px;
+    background: linear-gradient(170deg, #b98a54, #7d5730);
+    box-shadow: 0 24px 50px #0007;
+  }
+  .bowl {
+    position: absolute; left: 50%; top: 52%; transform: translate(-50%, -50%);
+    width: 138px; height: 138px; border-radius: 50%;
+    background: radial-gradient(circle at 38% 32%, #2f3a3f, #12171a 70%);
+    box-shadow: inset 0 6px 18px #0009, 0 12px 26px #0006;
+  }
+  .bowl::after {
+    content: ""; position: absolute; inset: 26px;
+    border-radius: 50%;
+    background: repeating-linear-gradient(58deg, #d9c9a3 0 3px, #bda87c 3px 6px);
+    opacity: 0.92;
+  }
+  .scrim {
+    position: absolute; inset: auto 0 0 0; height: 96px;
+    background: linear-gradient(180deg, transparent, #000000cc);
+  }
+  .bar { position: absolute; left: 16px; right: 16px; bottom: 40px; }
+  .track { height: 4px; border-radius: 2px; background: #ffffff38; position: relative; }
+  .track i { position: absolute; inset: 0 auto 0 0; width: 49%; border-radius: 2px; background: var(--accent); }
+  .track u {
+    position: absolute; top: 50%; left: 49%; width: 13px; height: 13px;
+    margin: -6.5px 0 0 -6.5px; border-radius: 50%; background: var(--accent);
+  }
+  .controls {
+    position: absolute; left: 16px; right: 16px; bottom: 12px;
+    display: flex; align-items: center; gap: 14px;
+    color: #e9e6e0; font-size: 13px;
+  }
+  .pause { display: flex; gap: 4px; }
+  .pause i { width: 4px; height: 15px; background: #e9e6e0; border-radius: 1px; display: block; }
+  .next { width: 0; height: 0; border: 7px solid transparent; border-inline-start-color: #e9e6e0; }
+
+  h1 {
+    font-family: var(--font-head);
+    font-size: 27px; font-weight: 560; line-height: 1.22;
+    margin: 18px 0 10px; letter-spacing: -0.01em;
+  }
+  .meta { color: var(--ink-soft); font-size: 13.5px; }
+  .channel {
+    display: flex; align-items: center; gap: 11px;
+    margin: 16px 0 14px; padding-bottom: 16px; border-bottom: 1px solid var(--rule);
+  }
+  .avatar {
+    width: 38px; height: 38px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 32% 30%, #e0a05c, #8d4a28);
+  }
+  .channel b { font-weight: 500; font-size: 15px; display: block; }
+  .channel span { color: var(--ink-soft); font-size: 13px; }
+  .desc { color: #cdd2d9; font-size: 14.5px; max-width: 620px; }
+
+  .side h2 {
+    font-family: var(--font-head); font-size: 15px; font-weight: 560;
+    color: var(--ink-soft); margin-bottom: 12px; letter-spacing: 0.03em;
+  }
+  .up { display: flex; gap: 11px; margin-bottom: 14px; }
+  .thumb {
+    width: 118px; height: 68px; border-radius: 6px; flex: none;
+    background: linear-gradient(150deg, #47535c, #202429);
+  }
+  .up:nth-child(3) .thumb { background: linear-gradient(150deg, #6a5236, #23201c); }
+  .up:nth-child(4) .thumb { background: linear-gradient(150deg, #3f5a4c, #1c2422); }
+  .up b { font-weight: 400; font-size: 13.5px; line-height: 1.35; display: block; }
+  .up span { color: var(--ink-soft); font-size: 12px; }
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="brand"></div>
+    <nav><b>{{vwNav1}}</b><span>{{vwNav2}}</span><span>{{vwNav3}}</span></nav>
+    <div class="search">{{vwSearch}}</div>
+  </div>
+  <div class="cols">
+    <div>
+      <div class="player">
+        <div class="board"></div>
+        <div class="bowl"></div>
+        <div class="scrim"></div>
+        <div class="bar"><div class="track"><i></i><u></u></div></div>
+        <div class="controls">
+          <span class="pause"><i></i><i></i></span>
+          <span class="next"></span>
+          <span>{{vwTime}}</span>
+        </div>
+      </div>
+      <h1>{{vwTitle}}</h1>
+      <div class="meta">{{vwMeta}}</div>
+      <div class="channel">
+        <div class="avatar"></div>
+        <div><b>{{vwChannel}}</b><span>{{vwSubs}}</span></div>
+      </div>
+      <div class="desc">{{vwDesc}}</div>
+    </div>
+    <div class="side">
+      <h2>{{vwUpHead}}</h2>
+      <div class="up"><div class="thumb"></div><div><b>{{vwUp1}}</b><span>{{vwUp1m}}</span></div></div>
+      <div class="up"><div class="thumb"></div><div><b>{{vwUp2}}</b><span>{{vwUp2m}}</span></div></div>
+      <div class="up"><div class="thumb"></div><div><b>{{vwUp3}}</b><span>{{vwUp3m}}</span></div></div>
+    </div>
+  </div>
+  <script src="../shell.js"></script>
+  <script src="../content.js"></script>
+</body>
+</html>

@@ -1,0 +1,38 @@
+{
+  "name": "anchored-notes-video",
+  "private": true,
+  "type": "module",
+  "description": "Programmatic marketing videos driven by the real extension running inside Remotion",
+  "scripts": {
+    "shell": "node build-shell.mjs",
+    "studio": "node build-shell.mjs && remotion studio",
+    "render": "node build-shell.mjs && node render.mjs",
+    "check-video": "tsx scripts/check-video.ts",
+    "sfx-check": "tsx scripts/sfx-check.ts",
+    "audio-preflight": "tsx scripts/audio-preflight.ts",
+    "render-validation": "tsx scripts/render-validation.ts",
+    "voiceover": "tsx scripts/voiceover.ts",
+    "sfx-fetch": "tsx scripts/sfx-fetch.ts",
+    "sfx-manifest": "tsx scripts/sfx-manifest.ts",
+    "test": "node build-shell.mjs && node --test shell/stub.check.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@elevenlabs/elevenlabs-js": "^2.65.0",
+    "@remotion/cli": "4.0.506",
+    "dotenv": "^17.4.2",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "remotion": "4.0.506",
+    "tsx": "^4.23.12",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.268",
+    "@types/node": "^25.9.3",
+    "@types/react": "^19.0.0",
+    "esbuild": "^0.21.5",
+    "puppeteer-core": "^25.3.0",
+    "typescript": "^5.4.5"
+  }
+}

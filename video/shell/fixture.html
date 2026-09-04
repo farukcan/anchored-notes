@@ -1,0 +1,25 @@
+<!doctype html>
+<!-- Minimal host page for shell/stub.test.mjs: just enough of a real page for
+     the content script to mount into. Stages are the production equivalent. -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Stub fixture</title>
+<link rel="icon" href="data:,">
+<!-- No <link rel="manifest">: the browser would fetch it for real and 404. The
+     content script's own lookup falls back to /manifest.json, which the stub
+     answers with the configured site name. -->
+<style>
+  body { font-family: Georgia, serif; margin: 0; padding: 48px; background: #f8f4ec; color: #211c15; }
+  h1 { font-size: 32px; }
+</style>
+</head>
+<body>
+  <article>
+    <h1>Fixture page</h1>
+    <p>A page for the content script to anchor notes to.</p>
+  </article>
+  <script src="shell.js"></script>
+  <script src="content.js"></script>
+</body>
+</html>

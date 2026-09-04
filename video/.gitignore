@@ -1,0 +1,8 @@
+node_modules/
+public/
+out/
+preview/
+build/
+.env
+voice/*.mp3.tmp
+scripts/silence-remover/.venv/

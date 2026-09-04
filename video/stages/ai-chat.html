@@ -1,0 +1,155 @@
+<!doctype html>
+<!-- Stage: a conversation with an AI assistant — the case for keeping the two
+     sentences worth keeping out of an answer you will never scroll back to.
+     Copy comes from video/copy/stages.ts. The assistant has no name and no
+     wordmark: an invented one reads as noise and a real one would be an
+     imitation, so the page says what kind of thing it is through its layout.
+
+     Passages the scenario can select carry an id. They are the only elements
+     the driver addresses by name, and the text inside them comes from the same
+     copy deck the note content does — one source, so the selection and the note
+     cannot drift apart.
+
+     Stage contract (every stage must honour it):
+       - 1280x800 viewport, no scrollbars, no page-level animation
+       - no <link rel="manifest">: the browser would fetch it for real; the
+         content script's lookup falls back to /manifest.json, which the stub
+         answers with the configured site name
+       - shell.js first, then the extension bundle it hosts
+       - the page background repeated on <html>, so a focus step blurring <body>
+         cannot lighten the window's border
+       - all motion comes from the Remotion driver, never from the page
+
+     No webfont: this is an application, not a publication, and a system stack
+     is both what such a product would really use and one less thing that has to
+     finish loading before a frame can be captured. -->
+<html lang="{{lang}}" dir="{{dir}}">
+<head>
+<meta charset="utf-8">
+<title>{{acTitle}}</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --page: #ffffff;
+    --rail: #f5f4f2;
+    --ink: #1d1c1a;
+    --ink-soft: #6d6a65;
+    --rule: #e6e4e0;
+    --accent: #3f6f5e;
+    --font-ui: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* Frames are rendered out of wall-clock order, so any page-driven motion would
+     land on an arbitrary point of its timeline. The driver owns all movement. */
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  /* A headless render has no focused document, and Chrome paints an unfocused
+     selection grey. Stating the active colour makes the highlight look the way
+     it does for someone actually dragging through the sentence. */
+  ::selection { background: #accef7; color: inherit; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  html { background: var(--page); }
+  body {
+    display: flex;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--font-ui);
+    font-size: 16px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .rail {
+    width: 244px; flex: none; height: 800px;
+    background: var(--rail); border-inline-end: 1px solid var(--rule);
+    padding: 16px 12px; display: flex; flex-direction: column; gap: 14px;
+  }
+  /* No name and no wordmark — only the kind of thing it is. */
+  .mark {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent); position: relative; margin: 4px 0 0 6px;
+  }
+  .mark::after {
+    content: ""; position: absolute; inset: 7px;
+    border-radius: 50%; border: 2px solid #fff; border-top-color: transparent;
+  }
+  .new {
+    display: flex; align-items: center; gap: 8px;
+    height: 38px; padding: 0 12px; border-radius: 10px;
+    border: 1px solid var(--rule); background: #fff;
+    font-size: 14px; font-weight: 500;
+  }
+  .new i { font-style: normal; color: var(--ink-soft); }
+  .hist { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+  .hist span {
+    padding: 8px 12px; border-radius: 8px;
+    font-size: 13.5px; color: var(--ink-soft);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .hist span.on { background: #e9e7e3; color: var(--ink); }
+
+  .thread { flex: 1; height: 800px; padding: 30px 64px 0; overflow: hidden; }
+  .turn { display: flex; gap: 14px; margin-bottom: 22px; }
+  .who {
+    width: 30px; height: 30px; border-radius: 50%; flex: none; margin-top: 2px;
+  }
+  .turn.me .who { background: #d8d4cd; }
+  .turn.ai .who { background: var(--accent); }
+  /* A narrow measure, which is both what a chat interface really uses and what
+     lets a phone-shaped frame hold a whole sentence: a line wider than the
+     vertical slice can never be fully in shot, so the selection would always be
+     half off-screen. */
+  .said { max-width: 440px; }
+  .turn.me .said { font-size: 16.5px; font-weight: 500; }
+  .said p { margin-bottom: 13px; font-size: 16px; color: #26251f; }
+  .said p:last-child { margin-bottom: 0; }
+  .said p.q { font-size: 16.5px; font-weight: 600; color: var(--ink); }
+
+  .composer {
+    position: absolute; inset-inline: 308px 64px; bottom: 26px;
+    height: 52px; border: 1px solid var(--rule); border-radius: 26px;
+    background: #fff; box-shadow: 0 6px 22px -12px #0003;
+    display: flex; align-items: center; padding: 0 22px;
+    color: var(--ink-soft); font-size: 15px;
+  }
+  .send {
+    margin-inline-start: auto; width: 30px; height: 30px; border-radius: 50%;
+    background: #e6e4e0;
+  }
+</style>
+</head>
+<body>
+  <div class="rail">
+    <div class="mark"></div>
+    <div class="new"><i>+</i>{{acNew}}</div>
+    <div class="hist">
+      <span class="on">{{acHist1}}</span>
+      <span>{{acHist2}}</span>
+      <span>{{acHist3}}</span>
+      <span>{{acHist4}}</span>
+    </div>
+  </div>
+
+  <div class="thread">
+    <div class="turn me">
+      <div class="who"></div>
+      <div class="said">{{acAsk}}</div>
+    </div>
+    <div class="turn ai">
+      <div class="who"></div>
+      <div class="said">
+        <p>{{acLead}}</p>
+        <p class="q" id="q1">{{acQuote1}}</p>
+        <p>{{acBody1}}</p>
+        <p class="q" id="q2">{{acQuote2}}</p>
+        <p>{{acBody2}}</p>
+        <p>{{acClose}}</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="composer">{{acInput}}<span class="send"></span></div>
+
+  <script src="../shell.js"></script>
+  <script src="../content.js"></script>
+</body>
+</html>

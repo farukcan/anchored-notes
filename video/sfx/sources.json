@@ -1,0 +1,2309 @@
+{
+  "feedback_bong_wav_215774": {
+    "file": "sfx/feedback/feedback_bong_wav_215774.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 215774,
+      "sourceUrl": "https://freesound.org/people/OtisJames/sounds/215774/",
+      "author": "OtisJames",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "bell",
+        "music",
+        "relaxed"
+      ],
+      "description": "calming bell notification",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "bong.wav",
+        "freesoundTags": [
+          "bell",
+          "music",
+          "relaxed"
+        ],
+        "freesoundQuery": "notification",
+        "durationSeconds": 1.55794,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "bell",
+        "calm",
+        "warm",
+        "notice"
+      ],
+      "use": "A calm bell for a neutral notice or a reflective beat.",
+      "avoid": "Fast or energetic sequences; it rings for over a second.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "feedback_computer_beep_2_220182": {
+    "file": "sfx/feedback/feedback_computer_beep_2_220182.mp3",
+    "role": "feedback",
+    "roleSource": "clap",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 220182,
+      "sourceUrl": "https://freesound.org/people/GameAudio/sounds/220182/",
+      "author": "GameAudio",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "bleep",
+        "button",
+        "click",
+        "event",
+        "fi",
+        "flourish",
+        "game",
+        "gui"
+      ],
+      "description": "Quick and staticky computer beep with acknowledgement feel -",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Computer Beep 2",
+        "freesoundTags": [
+          "bleep",
+          "button",
+          "click",
+          "event",
+          "fi",
+          "flourish",
+          "game",
+          "gui",
+          "sci",
+          "sfx",
+          "short"
+        ],
+        "freesoundQuery": "ui click",
+        "durationSeconds": 0.500023,
+        "acAnalysis": null,
+        "clapRoleCorrection": "reassigned from ui after CLAP audit"
+      }
+    },
+    "curated": {
+      "tags": [
+        "beep",
+        "digital",
+        "acknowledge",
+        "retro"
+      ],
+      "use": "A machine acknowledging input — terminal output, a system responding.",
+      "avoid": "Human or emotional moments; it is deliberately mechanical.",
+      "pairsWith": [
+        "ui_ui_click_839832"
+      ]
+    },
+    "needsReview": false
+  },
+  "feedback_denymachine_wav_411695": {
+    "file": "sfx/feedback/feedback_denymachine_wav_411695.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 411695,
+      "sourceUrl": "https://freesound.org/people/deoking/sounds/411695/",
+      "author": "deoking",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "Buzz",
+        "Negative",
+        "error",
+        "machine"
+      ],
+      "description": "Mixed in Audacity using recordings from Zoom H6 Record",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "DenyMachine.wav",
+        "freesoundTags": [
+          "Buzz",
+          "Negative",
+          "error",
+          "machine"
+        ],
+        "freesoundQuery": "error buzz",
+        "durationSeconds": 1.5,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "error",
+        "deny",
+        "machine",
+        "harsh"
+      ],
+      "use": "A harsher, longer denial for a serious failure or a hard stop.",
+      "avoid": "Minor mistakes; it is heavy enough to feel punitive.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "feedback_ding_station_annoucement_notific_651590": {
+    "file": "sfx/feedback/feedback_ding_station_annoucement_notific_651590.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 651590,
+      "sourceUrl": "https://freesound.org/people/JotrainG/sounds/651590/",
+      "author": "JotrainG",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "announcement",
+        "commuter",
+        "rail",
+        "railroad",
+        "railway",
+        "station",
+        "train",
+        "trains"
+      ],
+      "description": "Train Station Announcement Notification \"Ding\" Sound. Recorded in Queensland, Australia 2021.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Ding Station Annoucement Notification.wav",
+        "freesoundTags": [
+          "announcement",
+          "commuter",
+          "rail",
+          "railroad",
+          "railway",
+          "station",
+          "train",
+          "trains",
+          "transit",
+          "transport"
+        ],
+        "freesoundQuery": "notification",
+        "durationSeconds": 1.79946,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "ding",
+        "announcement",
+        "attention",
+        "public"
+      ],
+      "use": "An attention cue before an important statement, like a public announcement chime.",
+      "avoid": "Success confirmation — it announces rather than rewards.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "feedback_gasp_chimes_success_2_wav_541981": {
+    "file": "sfx/feedback/feedback_gasp_chimes_success_2_wav_541981.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 541981,
+      "sourceUrl": "https://freesound.org/people/Rob_Marion/sounds/541981/",
+      "author": "Rob_Marion",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "FX",
+        "Interact",
+        "Notification"
+      ],
+      "description": "Sound FX implying a successful interaction or moment - Variation 2.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "GASP_Chimes_Success_2.wav",
+        "freesoundTags": [
+          "FX",
+          "Interact",
+          "Notification"
+        ],
+        "freesoundQuery": "chime success",
+        "durationSeconds": 1.58825,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "chime",
+        "success",
+        "soft",
+        "interaction"
+      ],
+      "use": "A gentler success than the triple ping, for a small confirmation.",
+      "avoid": "Major payoffs — it is too soft to carry them.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "feedback_gasp_chimes_success_3_wav_541980": {
+    "file": "sfx/feedback/feedback_gasp_chimes_success_3_wav_541980.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 541980,
+      "sourceUrl": "https://freesound.org/people/Rob_Marion/sounds/541980/",
+      "author": "Rob_Marion",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "FX",
+        "Interact",
+        "Notification"
+      ],
+      "description": "Sound FX implying a successful interaction or moment - Variation 3.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "GASP_Chimes_Success_3.wav",
+        "freesoundTags": [
+          "FX",
+          "Interact",
+          "Notification"
+        ],
+        "freesoundQuery": "chime success",
+        "durationSeconds": 1.58825,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "chime",
+        "success",
+        "soft",
+        "variation"
+      ],
+      "use": "A second success variation, so two confirmations in a row do not sound identical.",
+      "avoid": "Isolated use where variation 2 already fits.",
+      "pairsWith": [
+        "feedback_gasp_chimes_success_2_wav_541981"
+      ]
+    },
+    "needsReview": false
+  },
+  "feedback_multimedia_sfx_error_01_wav_699923": {
+    "file": "sfx/feedback/feedback_multimedia_sfx_error_01_wav_699923.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 699923,
+      "sourceUrl": "https://freesound.org/people/8bitmyketison/sounds/699923/",
+      "author": "8bitmyketison",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "aggressive",
+        "buzz",
+        "buzzy",
+        "digital",
+        "electronic",
+        "electronics",
+        "error",
+        "fx"
+      ],
+      "description": "An aggressive buzz multimedia sound effect that could be used as an error noise.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Multimedia SFX - Error 01.wav",
+        "freesoundTags": [
+          "aggressive",
+          "buzz",
+          "buzzy",
+          "digital",
+          "electronic",
+          "electronics",
+          "error",
+          "fx",
+          "media",
+          "multimedia",
+          "one-shot",
+          "oneshot",
+          "sfx",
+          "sound",
+          "sound-design",
+          "sounddesign",
+          "sounds",
+          "synthesized"
+        ],
+        "freesoundQuery": "error buzz",
+        "durationSeconds": 0.161769,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "error",
+        "buzz",
+        "negative",
+        "short"
+      ],
+      "use": "A short negative buzz: a rejected value, a wrong answer, a failing step.",
+      "avoid": "Anything neutral — the sound is unambiguously an error.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "feedback_triple_ping_notification_sound_m_842513": {
+    "file": "sfx/feedback/feedback_triple_ping_notification_sound_m_842513.mp3",
+    "role": "feedback",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 842513,
+      "sourceUrl": "https://freesound.org/people/PiesHelpfulOven/sounds/842513/",
+      "author": "PiesHelpfulOven",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "5kHz",
+        "Chime",
+        "Clean",
+        "Crystal",
+        "Digital-Ping",
+        "FabFilter",
+        "High-Frequency",
+        "Mastered"
+      ],
+      "description": "A surgically engineered, high-visibility 3-note notification chime (E6 - G6 - C7). Designed specifically for mobile phone speakers and high-noise environments using advanced acoustic principles. Design Process: - Timbre: Built using FabFilter Twin 3 (Square/Saw harmonics) layered with a calibrated W",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Triple_Ping_Notification_Sound_Mobile_Optimized",
+        "freesoundTags": [
+          "5kHz",
+          "Chime",
+          "Clean",
+          "Crystal",
+          "Digital-Ping",
+          "FabFilter",
+          "High-Frequency",
+          "Mastered",
+          "Message-Alert",
+          "Minimalist",
+          "Mobile-Optimized",
+          "Notification",
+          "Sharp",
+          "Sinister-Precision",
+          "Success",
+          "Tech",
+          "Transparent",
+          "UI-Sound"
+        ],
+        "freesoundQuery": "chime success",
+        "durationSeconds": 0.96875,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "chime",
+        "success",
+        "bright",
+        "three-note"
+      ],
+      "use": "A positive result: a completed count, a correct answer, a finished process.",
+      "avoid": "Neutral or negative moments; the rising three-note figure is explicitly happy.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "impact_box_shatter_wav_678535": {
+    "file": "sfx/impact/impact_box_shatter_wav_678535.mp3",
+    "role": "impact",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 678535,
+      "sourceUrl": "https://freesound.org/people/PkBiggums/sounds/678535/",
+      "author": "PkBiggums",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "box",
+        "cardboard",
+        "impact",
+        "thud",
+        "thump"
+      ],
+      "description": "Composite sfx of a cardboard box being dropped from different heights and angels.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Box_Shatter.wav",
+        "freesoundTags": [
+          "box",
+          "cardboard",
+          "impact",
+          "thud",
+          "thump"
+        ],
+        "freesoundQuery": "impact thud",
+        "durationSeconds": 0.760896,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "shatter",
+        "break",
+        "debris",
+        "cardboard"
+      ],
+      "use": "Something breaking apart, collapsing, or being destroyed on screen.",
+      "avoid": "Clean, ordinary landings — the debris tail implies destruction.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "impact_hit_5_676465": {
+    "file": "sfx/impact/impact_hit_5_676465.mp3",
+    "role": "impact",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 676465,
+      "sourceUrl": "https://freesound.org/people/NearTheAtmoshphere/sounds/676465/",
+      "author": "NearTheAtmoshphere",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "bag",
+        "bang",
+        "collision",
+        "hit",
+        "impact",
+        "punch",
+        "punching",
+        "punching-bag"
+      ],
+      "description": "The sound of a hit by punching a sandbag Mic: Neumann TLM 103 Recorded on an API Legacy Plus Console Mono WAV File",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Hit 5",
+        "freesoundTags": [
+          "bag",
+          "bang",
+          "collision",
+          "hit",
+          "impact",
+          "punch",
+          "punching",
+          "punching-bag",
+          "sand-bag",
+          "sandbag",
+          "slam",
+          "smack",
+          "smash",
+          "strike",
+          "thud",
+          "thuds",
+          "thump"
+        ],
+        "freesoundQuery": "impact thud",
+        "durationSeconds": 0.34375,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "thud",
+        "dull",
+        "body",
+        "landing"
+      ],
+      "use": "An element landing hard after a spring — place it on the first overshoot.",
+      "avoid": "Metallic or digital surfaces; this is a soft, bodied thud.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "impact_percussion_hit_207863": {
+    "file": "sfx/impact/impact_percussion_hit_207863.mp3",
+    "role": "impact",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 207863,
+      "sourceUrl": "https://freesound.org/people/Stumber/sounds/207863/",
+      "author": "Stumber",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "drum",
+        "drums",
+        "hit",
+        "perc",
+        "percs",
+        "percussion",
+        "sample",
+        "shot"
+      ],
+      "description": "recorded percussion hit",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Percussion hit",
+        "freesoundTags": [
+          "drum",
+          "drums",
+          "hit",
+          "perc",
+          "percs",
+          "percussion",
+          "sample",
+          "shot"
+        ],
+        "freesoundQuery": "hit",
+        "durationSeconds": 0.488866,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "percussion",
+        "drum",
+        "accent",
+        "dry"
+      ],
+      "use": "A rhythmic accent on a beat: a number appearing, a list item snapping in.",
+      "avoid": "Physical collisions — it reads as music, not as an object hitting something.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "impact_slightmetallicthud_mp3_686282": {
+    "file": "sfx/impact/impact_slightmetallicthud_mp3_686282.mp3",
+    "role": "impact",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 686282,
+      "sourceUrl": "https://freesound.org/people/profoundsounds/sounds/686282/",
+      "author": "profoundsounds",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "goofy",
+        "impact",
+        "metal",
+        "metallic",
+        "silly",
+        "thud"
+      ],
+      "description": "A somewhat silly sounding metallic thud.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "slightmetallicthud.mp3",
+        "freesoundTags": [
+          "goofy",
+          "impact",
+          "metal",
+          "metallic",
+          "silly",
+          "thud"
+        ],
+        "freesoundQuery": "impact thud",
+        "durationSeconds": 0.588979,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "thud",
+        "metallic",
+        "light",
+        "landing"
+      ],
+      "use": "A card, panel, or badge dropping into place with a light metallic edge.",
+      "avoid": "Heavy, cinematic moments — it is too small and slightly comic.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "impact_sound_design_elements_impact_sfx_755054": {
+    "file": "sfx/impact/impact_sound_design_elements_impact_sfx_755054.mp3",
+    "role": "impact",
+    "roleSource": "clap",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 755054,
+      "sourceUrl": "https://freesound.org/people/AudioPapkin/sounds/755054/",
+      "author": "AudioPapkin",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "action",
+        "beat",
+        "blow",
+        "bold",
+        "boom",
+        "bump",
+        "cinematic",
+        "crash"
+      ],
+      "description": "Support me buy me coffee : <a href=\"https://buymeacoffee.com/audiopapkin\" rel=\"nofollow\">https://buymeacoffee.com/audiopapkin</a> Impact effect,is perfect for cinematic uses,video games. Effects recorded from the field. Recording gear-Tascam Portacapture x8 and Microphone - RØDE NTG5 Native Instrume",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Sound Design Elements Impact SFX PS 017",
+        "freesoundTags": [
+          "action",
+          "beat",
+          "blow",
+          "bold",
+          "boom",
+          "bump",
+          "cinematic",
+          "crash",
+          "dark",
+          "deafening",
+          "epic",
+          "explosion",
+          "game",
+          "gameplay",
+          "gong",
+          "hit",
+          "impact",
+          "kick",
+          "movie",
+          "punchy",
+          "pushy",
+          "stab",
+          "strike",
+          "swoosh",
+          "trailer",
+          "transition",
+          "video",
+          "war"
+        ],
+        "freesoundQuery": "swoosh transition",
+        "durationSeconds": 1.73333,
+        "acAnalysis": null,
+        "clapRoleCorrection": "reassigned from movement after CLAP audit"
+      }
+    },
+    "curated": {
+      "tags": [
+        "impact",
+        "cinematic",
+        "designed",
+        "wide"
+      ],
+      "use": "A designed cinematic hit on a major reveal or the final frame of a title.",
+      "avoid": "Repeated use; at nearly two seconds it takes over the mix.",
+      "pairsWith": [
+        "transition_riser_hit_sfx_097_754771"
+      ]
+    },
+    "needsReview": false
+  },
+  "impact_synth_kick_3_266764": {
+    "file": "sfx/impact/impact_synth_kick_3_266764.mp3",
+    "role": "impact",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 266764,
+      "sourceUrl": "https://freesound.org/people/Hard3eat/sounds/266764/",
+      "author": "Hard3eat",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "Bassdrum",
+        "Drum",
+        "Drums",
+        "EDM",
+        "Electric-Dance-Music",
+        "Hard",
+        "Hard3eat",
+        "Hit"
+      ],
+      "description": "Synthesised Kickdrum",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Synth Kick 3",
+        "freesoundTags": [
+          "Bassdrum",
+          "Drum",
+          "Drums",
+          "EDM",
+          "Electric-Dance-Music",
+          "Hard",
+          "Hard3eat",
+          "Hit",
+          "Kick",
+          "Kickdrum",
+          "Off-Shot-Records",
+          "Powerfull",
+          "Punch",
+          "Sample",
+          "Synth",
+          "Transient",
+          "dancecore",
+          "trance"
+        ],
+        "freesoundQuery": "hit",
+        "durationSeconds": 0.244626,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "kick",
+        "sub",
+        "electronic",
+        "punch"
+      ],
+      "use": "A low-end punch under a reveal or a hard cut, for electronic and tech material.",
+      "avoid": "Organic or physical events; it is unmistakably a synth drum.",
+      "pairsWith": [
+        "transition_fx_boom_816082"
+      ]
+    },
+    "needsReview": false
+  },
+  "movement_glass_slide_9_323421": {
+    "file": "sfx/movement/movement_glass_slide_9_323421.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 323421,
+      "sourceUrl": "https://freesound.org/people/WasabiWielder/sounds/323421/",
+      "author": "WasabiWielder",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "close",
+        "drawer",
+        "glass",
+        "glass-scrape",
+        "open",
+        "scrape",
+        "slide",
+        "wood"
+      ],
+      "description": "Me sliding a glass cup around on a wooden surface. Check out my pack if this particular slide doesn't suit you! Recorded on Zoom Q4 Mic",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Glass Slide 9",
+        "freesoundTags": [
+          "close",
+          "drawer",
+          "glass",
+          "glass-scrape",
+          "open",
+          "scrape",
+          "slide",
+          "wood",
+          "wood-scrape"
+        ],
+        "freesoundQuery": "slide",
+        "durationSeconds": 1.37205,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "slide",
+        "scrape",
+        "surface",
+        "texture"
+      ],
+      "use": "An element dragging along a surface, or a panel sliding out with friction.",
+      "avoid": "Free-floating motion in empty space — the scrape implies contact.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "movement_piece_slide_mp3_546118": {
+    "file": "sfx/movement/movement_piece_slide_mp3_546118.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 546118,
+      "sourceUrl": "https://freesound.org/people/el_boss/sounds/546118/",
+      "author": "el_boss",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "board",
+        "board-game",
+        "chess",
+        "chesspuzzle",
+        "click",
+        "piece",
+        "placement",
+        "slide"
+      ],
+      "description": "This is an SFX that we created for our Chess game. It indicates a chess piece sliding on a board.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Piece Slide.mp3",
+        "freesoundTags": [
+          "board",
+          "board-game",
+          "chess",
+          "chesspuzzle",
+          "click",
+          "piece",
+          "placement",
+          "slide",
+          "snap",
+          "wooden"
+        ],
+        "freesoundQuery": "slide",
+        "durationSeconds": 0.339708,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "slide",
+        "short",
+        "piece",
+        "board"
+      ],
+      "use": "A small element stepping or snapping to a new position on a grid or board.",
+      "avoid": "Long travels; the sound is over in a third of a second.",
+      "pairsWith": [
+        "ui_ui_click_839832"
+      ]
+    },
+    "needsReview": false
+  },
+  "movement_sci_fi_riser_synth_whoosh_760190": {
+    "file": "sfx/movement/movement_sci_fi_riser_synth_whoosh_760190.mp3",
+    "role": "movement",
+    "roleSource": "clap",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 760190,
+      "sourceUrl": "https://freesound.org/people/feastingfrog/sounds/760190/",
+      "author": "feastingfrog",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "alien",
+        "riser",
+        "sci-fi",
+        "whoosh"
+      ],
+      "description": "Not really sure how to describe this sound, made using a CC0 paper tear sfx — from a pack made by Jan Schupke —, processing that with phasereplicant and adding random effects.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Sci-fi riser synth whoosh",
+        "freesoundTags": [
+          "alien",
+          "riser",
+          "sci-fi",
+          "whoosh"
+        ],
+        "freesoundQuery": "riser",
+        "durationSeconds": 3.33333,
+        "acAnalysis": null,
+        "clapRoleCorrection": "reassigned from transition after CLAP audit"
+      }
+    },
+    "curated": {
+      "tags": [
+        "riser",
+        "whoosh",
+        "sci-fi",
+        "long"
+      ],
+      "use": "A long build into a reveal — a whoosh and a riser in one, for tech and sci-fi material.",
+      "avoid": "Short beats; at over three seconds it dominates a fast cut.",
+      "pairsWith": [
+        "transition_fx_boom_816082"
+      ]
+    },
+    "needsReview": false
+  },
+  "movement_short_woosh_04_wav_582895": {
+    "file": "sfx/movement/movement_short_woosh_04_wav_582895.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 582895,
+      "sourceUrl": "https://freesound.org/people/ironcross32/sounds/582895/",
+      "author": "ironcross32",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "abstract",
+        "filter",
+        "shoor",
+        "sound-effect",
+        "soundesign",
+        "sweep",
+        "whoosh"
+      ],
+      "description": "A whoosh, swipe, or wipe. It could also be an interface entry sound.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Short Woosh 04.wav",
+        "freesoundTags": [
+          "abstract",
+          "filter",
+          "shoor",
+          "sound-effect",
+          "soundesign",
+          "sweep",
+          "whoosh"
+        ],
+        "freesoundQuery": "whoosh short swipe",
+        "durationSeconds": 0.234104,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "whoosh",
+        "wipe",
+        "interface",
+        "short"
+      ],
+      "use": "An interface panel or card wiping across the frame.",
+      "avoid": "Physical or organic motion; this one is abstract and synthetic.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "movement_swinging_staff_whoosh_low_03_wav_422495": {
+    "file": "sfx/movement/movement_swinging_staff_whoosh_low_03_wav_422495.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 422495,
+      "sourceUrl": "https://freesound.org/people/Nightflame/sounds/422495/",
+      "author": "Nightflame",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "air",
+        "attack",
+        "bamboo",
+        "fwoosh",
+        "staff",
+        "stick",
+        "swing",
+        "swish"
+      ],
+      "description": "Swinging a bamboo stick through the air. Part of a pack of 20 high and low force sounds.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Swinging staff whoosh (low) 03.wav",
+        "freesoundTags": [
+          "air",
+          "attack",
+          "bamboo",
+          "fwoosh",
+          "staff",
+          "stick",
+          "swing",
+          "swish",
+          "swoosh",
+          "weapon",
+          "whip",
+          "whoosh",
+          "woosh"
+        ],
+        "freesoundQuery": "whoosh",
+        "durationSeconds": 0.292993,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "whoosh",
+        "low",
+        "heavy",
+        "swing"
+      ],
+      "use": "A heavy or large object swinging through frame; low-frequency weight.",
+      "avoid": "Light, delicate elements such as text or thin icons.",
+      "pairsWith": [
+        "impact_hit_5_676465"
+      ]
+    },
+    "needsReview": false
+  },
+  "movement_swishes_12_slower_strong_wav_614152": {
+    "file": "sfx/movement/movement_swishes_12_slower_strong_wav_614152.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 614152,
+      "sourceUrl": "https://freesound.org/people/videofueralle/sounds/614152/",
+      "author": "videofueralle",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "air",
+        "editing",
+        "foley",
+        "luft",
+        "sound",
+        "swish",
+        "swoosh",
+        "transition"
+      ],
+      "description": "I did some swishes myself using a spiral hose; I needed them for specific situations in video editing and the bamboo swishes I found here on freesound were too fast and strong. The flexible spiral hose made for some nice and slower swishes; Some of the 16 sounds build up a little, some are very fast",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Swishes_12_slower_strong.wav",
+        "freesoundTags": [
+          "air",
+          "editing",
+          "foley",
+          "luft",
+          "sound",
+          "swish",
+          "swoosh",
+          "transition",
+          "video",
+          "wisch",
+          "woosh"
+        ],
+        "freesoundQuery": "swoosh transition",
+        "durationSeconds": 1.17642,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "swish",
+        "slow",
+        "air",
+        "wide"
+      ],
+      "use": "A slower, wider pan or a camera move that takes about a second.",
+      "avoid": "Snappy pops and quick entries; its slow build lands late on them.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "movement_swishes_9_hill_curve_stronger_wa_614169": {
+    "file": "sfx/movement/movement_swishes_9_hill_curve_stronger_wa_614169.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 614169,
+      "sourceUrl": "https://freesound.org/people/videofueralle/sounds/614169/",
+      "author": "videofueralle",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "air",
+        "editing",
+        "foley",
+        "luft",
+        "sound",
+        "swish",
+        "swoosh",
+        "transition"
+      ],
+      "description": "I did some swishes myself using a spiral hose; I needed them for specific situations in video editing and the bamboo swishes I found here on freesound were too fast and strong. The flexible spiral hose made for some nice and slower swishes; Some of the 16 sounds build up a little, some are very fast",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Swishes_9_hill_curve_stronger.wav",
+        "freesoundTags": [
+          "air",
+          "editing",
+          "foley",
+          "luft",
+          "sound",
+          "swish",
+          "swoosh",
+          "transition",
+          "video",
+          "wisch",
+          "woosh"
+        ],
+        "freesoundQuery": "swoosh transition",
+        "durationSeconds": 1.2695,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "swish",
+        "strong",
+        "air",
+        "arc"
+      ],
+      "use": "A large element sweeping across the frame on a curved path, or a hard scene cut.",
+      "avoid": "Small UI motion — it is too big and too long for a single icon.",
+      "pairsWith": [
+        "impact_slightmetallicthud_mp3_686282"
+      ]
+    },
+    "needsReview": false
+  },
+  "movement_swoosh_v2_786514": {
+    "file": "sfx/movement/movement_swoosh_v2_786514.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 786514,
+      "sourceUrl": "https://freesound.org/people/migoreng1/sounds/786514/",
+      "author": "migoreng1",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "sfx",
+        "swoosh",
+        "synthesis",
+        "transition",
+        "whoosh"
+      ],
+      "description": "This swoosh sound is a short, descending-frequency effect designed to create a smooth and dynamic auditory cue. Built using a sine wave, ensuring a smooth, clean, and natural tonal quality without harsh or mechanical artifacts. Purpose and Feel: - The descending pitch creates a sense of completion, ",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "swoosh_v2",
+        "freesoundTags": [
+          "sfx",
+          "swoosh",
+          "synthesis",
+          "transition",
+          "whoosh"
+        ],
+        "freesoundQuery": "whoosh short swipe",
+        "durationSeconds": 0.3,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "swoosh",
+        "synthetic",
+        "descending",
+        "transition"
+      ],
+      "use": "A synthetic scene-to-scene transition, or an element settling as it leaves; the descending pitch reads as closure.",
+      "avoid": "Something entering or rising — the falling pitch fights upward motion.",
+      "pairsWith": [
+        "transition_fx_boom_816082"
+      ]
+    },
+    "needsReview": false
+  },
+  "movement_wooden_stick_swing_1_2_485277": {
+    "file": "sfx/movement/movement_wooden_stick_swing_1_2_485277.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 485277,
+      "sourceUrl": "https://freesound.org/people/Joao_Janz/sounds/485277/",
+      "author": "Joao_Janz",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "Boomy",
+        "Design",
+        "Fight",
+        "Foley",
+        "Heavy",
+        "Knife",
+        "Light",
+        "Punch"
+      ],
+      "description": "Recorded and processed at 24bit 48kHz using the Tascam DR-40 Linear PCM Recorder. Processing: Gain-staging and soft high and low frequency filtering. No EQ boost or cuts anywhere else. Also De-noised.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Wooden Stick Swing 1_2",
+        "freesoundTags": [
+          "Boomy",
+          "Design",
+          "Fight",
+          "Foley",
+          "Heavy",
+          "Knife",
+          "Light",
+          "Punch",
+          "Real",
+          "Recording",
+          "Slap",
+          "Sound",
+          "Swing",
+          "Swinging",
+          "Sword",
+          "Whoosh",
+          "Woosh"
+        ],
+        "freesoundQuery": "whoosh",
+        "durationSeconds": 0.709583,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "whoosh",
+        "dry",
+        "mid",
+        "swing"
+      ],
+      "use": "A mid-weight swing when the low whoosh is too heavy and the short one too thin.",
+      "avoid": "UI-scale motion and abstract digital transitions.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "movement_woosh_1_614084": {
+    "file": "sfx/movement/movement_woosh_1_614084.mp3",
+    "role": "movement",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 614084,
+      "sourceUrl": "https://freesound.org/people/mateusboga/sounds/614084/",
+      "author": "mateusboga",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "attack",
+        "fight",
+        "swhish",
+        "swing",
+        "swoosh",
+        "sword",
+        "swords",
+        "whoosh"
+      ],
+      "description": "Sound of a weapon being swung.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Woosh 1",
+        "freesoundTags": [
+          "attack",
+          "fight",
+          "swhish",
+          "swing",
+          "swoosh",
+          "sword",
+          "swords",
+          "whoosh",
+          "wind",
+          "woosh"
+        ],
+        "freesoundQuery": "whoosh",
+        "durationSeconds": 0.165442,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "whoosh",
+        "fast",
+        "short",
+        "entry"
+      ],
+      "use": "A fast element flying or sliding into frame; the sharpest, shortest whoosh in the library.",
+      "avoid": "Slow drifts, gentle fades, and anything that should feel calm.",
+      "pairsWith": [
+        "impact_hit_5_676465"
+      ]
+    },
+    "needsReview": false
+  },
+  "transition_basic_riser_one_806664": {
+    "file": "sfx/transition/transition_basic_riser_one_806664.mp3",
+    "role": "transition",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 806664,
+      "sourceUrl": "https://freesound.org/people/johnjohnfm/sounds/806664/",
+      "author": "johnjohnfm",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "abstract",
+        "cinematic",
+        "digital",
+        "effect",
+        "efx",
+        "film",
+        "films",
+        "fx"
+      ],
+      "description": "A basic riser for your music and cinematic needs. Engineered and produced by JOHN E. REYNOLDS for JOHNJOHNFM LLC.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "BASIC RISER ONE",
+        "freesoundTags": [
+          "abstract",
+          "cinematic",
+          "digital",
+          "effect",
+          "efx",
+          "film",
+          "films",
+          "fx",
+          "lfe",
+          "movie",
+          "movies",
+          "noise",
+          "riser",
+          "sci-fi",
+          "sfx",
+          "sound",
+          "sound-design",
+          "sound-effect",
+          "sounddesign",
+          "soundeffect",
+          "trailer",
+          "trailers",
+          "uplift",
+          "uplifter"
+        ],
+        "freesoundQuery": "riser",
+        "durationSeconds": 4,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "riser",
+        "build",
+        "long",
+        "cinematic"
+      ],
+      "use": "A four-second build into a major reveal; start it well before the payoff frame.",
+      "avoid": "Anything shorter than four seconds — it will be cut off mid-build.",
+      "pairsWith": [
+        "transition_fx_boom_816082"
+      ]
+    },
+    "needsReview": false
+  },
+  "transition_fx_boom_816082": {
+    "file": "sfx/transition/transition_fx_boom_816082.mp3",
+    "role": "transition",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 816082,
+      "sourceUrl": "https://freesound.org/people/FlavioConcini/sounds/816082/",
+      "author": "FlavioConcini",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "Bass",
+        "Clap",
+        "Dance",
+        "Drum",
+        "Drums",
+        "EDM",
+        "Electro",
+        "Free"
+      ],
+      "description": "Ableton Live. VST.Serum......Fx boom Free Music Slap House Dance EDM Loop Electro Clap Drums Kick Drum Snare Bass Dance Club Psytrance Drumroll Trance Sample .",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Fx boom",
+        "freesoundTags": [
+          "Bass",
+          "Clap",
+          "Dance",
+          "Drum",
+          "Drums",
+          "EDM",
+          "Electro",
+          "Free",
+          "Fx",
+          "House",
+          "Kick",
+          "Loop",
+          "Music",
+          "Slap",
+          "Snare",
+          "boom"
+        ],
+        "freesoundQuery": "boom",
+        "durationSeconds": 1.89494,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "boom",
+        "sub",
+        "reveal",
+        "electronic"
+      ],
+      "use": "The landing under a reveal: place it exactly on the frame the payoff appears.",
+      "avoid": "Small UI beats; the sub-bass is out of scale for them.",
+      "pairsWith": [
+        "transition_basic_riser_one_806664"
+      ]
+    },
+    "needsReview": false
+  },
+  "transition_impact_roll_535607": {
+    "file": "sfx/transition/transition_impact_roll_535607.mp3",
+    "role": "transition",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 535607,
+      "sourceUrl": "https://freesound.org/people/XHALE303/sounds/535607/",
+      "author": "XHALE303",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "boom",
+        "impact",
+        "roll",
+        "rolling",
+        "rolls"
+      ],
+      "description": "Impact roll.....451 Downloads 0 Likes come on guys you can do better 😑👍",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "IMPACT ROLL",
+        "freesoundTags": [
+          "boom",
+          "impact",
+          "roll",
+          "rolling",
+          "rolls"
+        ],
+        "freesoundQuery": "boom",
+        "durationSeconds": 3.22698,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "boom",
+        "roll",
+        "tail",
+        "cinematic"
+      ],
+      "use": "A boom with a rolling tail that carries into the next scene; good for act breaks.",
+      "avoid": "Tight cuts — the three-second tail bleeds over the following beat.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "transition_riser_hit_sfx_097_754771": {
+    "file": "sfx/transition/transition_riser_hit_sfx_097_754771.mp3",
+    "role": "transition",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 754771,
+      "sourceUrl": "https://freesound.org/people/AudioPapkin/sounds/754771/",
+      "author": "AudioPapkin",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "bass",
+        "boom",
+        "cinematic",
+        "deep",
+        "effect",
+        "epic",
+        "explosion",
+        "game"
+      ],
+      "description": "Support me buy me coffee : <a href=\"https://buymeacoffee.com/audiopapkin\" rel=\"nofollow\">https://buymeacoffee.com/audiopapkin</a> Riser Hit effect,is perfect for cinematic uses,video games. Effects recorded from the field. Recording gear-Tascam Portacapture x8 and Microphone - RØDE NTG5 Native Instr",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Riser Hit sfx 097",
+        "freesoundTags": [
+          "bass",
+          "boom",
+          "cinematic",
+          "deep",
+          "effect",
+          "epic",
+          "explosion",
+          "game",
+          "gameplay",
+          "hit",
+          "impact",
+          "implosion",
+          "indent",
+          "industrial",
+          "logo",
+          "metal",
+          "movement",
+          "reveal",
+          "riser",
+          "sound",
+          "stinger",
+          "sub",
+          "sweep",
+          "tension",
+          "thud",
+          "trailer",
+          "transition",
+          "video",
+          "whoosh"
+        ],
+        "freesoundQuery": "riser",
+        "durationSeconds": 2.52267,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "riser",
+        "hit",
+        "combined",
+        "cinematic"
+      ],
+      "use": "A riser and its landing hit in one file, when the reveal needs no separate boom.",
+      "avoid": "Pairing with another impact — the hit is already inside it.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_classic_click_671105": {
+    "file": "sfx/ui/ui_classic_click_671105.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 671105,
+      "sourceUrl": "https://freesound.org/people/adh.dreaming/sounds/671105/",
+      "author": "adh.dreaming",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "button",
+        "click",
+        "drum",
+        "drums",
+        "game",
+        "gui",
+        "interact",
+        "interface"
+      ],
+      "description": "Clicking on something never felt so satisfying.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Classic Click",
+        "freesoundTags": [
+          "button",
+          "click",
+          "drum",
+          "drums",
+          "game",
+          "gui",
+          "interact",
+          "interface",
+          "menu",
+          "mouse",
+          "perc",
+          "percs",
+          "percussion",
+          "press",
+          "ui",
+          "use"
+        ],
+        "freesoundQuery": "ui click",
+        "durationSeconds": 0.0922222,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "click",
+        "crisp",
+        "tiny",
+        "select"
+      ],
+      "use": "The tightest click in the library — rapid successive items where anything longer would smear.",
+      "avoid": "Moments that need weight; at 0.09s it is nearly subliminal.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_click_basic_220197": {
+    "file": "sfx/ui/ui_click_basic_220197.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 220197,
+      "sourceUrl": "https://freesound.org/people/GameAudio/sounds/220197/",
+      "author": "GameAudio",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "button",
+        "click",
+        "game",
+        "interface",
+        "menu",
+        "select"
+      ],
+      "description": "You basic click sound",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Click - Basic",
+        "freesoundTags": [
+          "button",
+          "click",
+          "game",
+          "interface",
+          "menu",
+          "select"
+        ],
+        "freesoundQuery": "ui click",
+        "durationSeconds": 0.499955,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "click",
+        "game",
+        "interface",
+        "soft"
+      ],
+      "use": "A softer, rounder click for a slower interface beat.",
+      "avoid": "Fast repeats — its half-second tail overlaps the next one.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_clock_bonmark_tick_wav_509714": {
+    "file": "sfx/ui/ui_clock_bonmark_tick_wav_509714.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 509714,
+      "sourceUrl": "https://freesound.org/people/zmastafa102/sounds/509714/",
+      "author": "zmastafa102",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "clock",
+        "sound",
+        "tick"
+      ],
+      "description": "clock sound",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Clock Bonmark Tick.wav",
+        "freesoundTags": [
+          "clock",
+          "sound",
+          "tick"
+        ],
+        "freesoundQuery": "tick",
+        "durationSeconds": 0.185986,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "tick",
+        "clock",
+        "time",
+        "counter"
+      ],
+      "use": "A counter incrementing or time passing; the natural tick for a number animation.",
+      "avoid": "Selection and confirmation — it reads as time, not as input.",
+      "pairsWith": [
+        "feedback_triple_ping_notification_sound_m_842513"
+      ]
+    },
+    "needsReview": false
+  },
+  "ui_computer_keyboard_single_key_typ_380144": {
+    "file": "sfx/ui/ui_computer_keyboard_single_key_typ_380144.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 380144,
+      "sourceUrl": "https://freesound.org/people/yottasounds/sounds/380144/",
+      "author": "yottasounds",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "keystroke",
+        "typewriter",
+        "typing"
+      ],
+      "description": "Computer keyboard typing sound individual keystroke sound #6 - spacebar sound",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Computer Keyboard - single key - type 6 - space bar.wav",
+        "freesoundTags": [
+          "keystroke",
+          "typewriter",
+          "typing"
+        ],
+        "freesoundQuery": "typewriter key",
+        "durationSeconds": 0.237333,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "keystroke",
+        "typing",
+        "keyboard",
+        "space"
+      ],
+      "use": "Typewriter effects — the wider spacebar-like key, for word boundaries.",
+      "avoid": "Non-textual animation; it is unmistakably a keyboard.",
+      "pairsWith": [
+        "ui_computer_keyboard_single_key_typ_380145"
+      ]
+    },
+    "needsReview": false
+  },
+  "ui_computer_keyboard_single_key_typ_380145": {
+    "file": "sfx/ui/ui_computer_keyboard_single_key_typ_380145.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 380145,
+      "sourceUrl": "https://freesound.org/people/yottasounds/sounds/380145/",
+      "author": "yottasounds",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "keystroke",
+        "typewriter",
+        "typing"
+      ],
+      "description": "Computer keyboard typing sound individual keystroke sound #5 - shift key sound",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Computer Keyboard - single key - type 5 - shift.wav",
+        "freesoundTags": [
+          "keystroke",
+          "typewriter",
+          "typing"
+        ],
+        "freesoundQuery": "typewriter key",
+        "durationSeconds": 0.114667,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "keystroke",
+        "typing",
+        "keyboard",
+        "short"
+      ],
+      "use": "The per-character keystroke in a typewriter effect; place one every 2-3 characters.",
+      "avoid": "Anything other than text appearing.",
+      "pairsWith": [
+        "ui_computer_keyboard_single_key_typ_380144"
+      ]
+    },
+    "needsReview": false
+  },
+  "ui_metal_tick_3_185609": {
+    "file": "sfx/ui/ui_metal_tick_3_185609.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 185609,
+      "sourceUrl": "https://freesound.org/people/kubawolanin/sounds/185609/",
+      "author": "kubawolanin",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "chirp",
+        "cut",
+        "metal",
+        "metalic",
+        "noise",
+        "one",
+        "shot",
+        "tick"
+      ],
+      "description": "One shot sample of cutting. Made with ventilation cap.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "Metal tick 3",
+        "freesoundTags": [
+          "chirp",
+          "cut",
+          "metal",
+          "metalic",
+          "noise",
+          "one",
+          "shot",
+          "tick"
+        ],
+        "freesoundQuery": "tick",
+        "durationSeconds": 0.115215,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "tick",
+        "metallic",
+        "sharp",
+        "step"
+      ],
+      "use": "A sharp step in a sequence: a progress marker or a diagram node lighting up.",
+      "avoid": "Soft or organic material; the metallic edge is prominent.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_mouth_pop4_wav_323738": {
+    "file": "sfx/ui/ui_mouth_pop4_wav_323738.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 323738,
+      "sourceUrl": "https://freesound.org/people/Reitanna/sounds/323738/",
+      "author": "Reitanna",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "mouth",
+        "pop",
+        "sound"
+      ],
+      "description": "using my mouth to make a pop sound",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "mouth pop4.wav",
+        "freesoundTags": [
+          "mouth",
+          "pop",
+          "sound"
+        ],
+        "freesoundQuery": "pop",
+        "durationSeconds": 0.0812698,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "pop",
+        "organic",
+        "playful",
+        "tiny"
+      ],
+      "use": "A playful pop for light, informal material.",
+      "avoid": "Corporate or technical videos — its mouth origin is audible.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_pop_sfx_neutral_776016": {
+    "file": "sfx/ui/ui_pop_sfx_neutral_776016.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 776016,
+      "sourceUrl": "https://freesound.org/people/ethernel0/sounds/776016/",
+      "author": "ethernel0",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "appear",
+        "pop",
+        "popup",
+        "transition"
+      ],
+      "description": "manually recorded and cleaned up in ableton (EQ used)",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "POP SFX Neutral",
+        "freesoundTags": [
+          "appear",
+          "pop",
+          "popup",
+          "transition"
+        ],
+        "freesoundQuery": "pop",
+        "durationSeconds": 0.5,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "pop",
+        "appear",
+        "neutral",
+        "popup"
+      ],
+      "use": "A card, badge, or tooltip popping into existence at scale 0 → 1.",
+      "avoid": "Motion that travels; a pop implies appearing in place.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_ppop_wav_527522": {
+    "file": "sfx/ui/ui_ppop_wav_527522.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 527522,
+      "sourceUrl": "https://freesound.org/people/Narjara/sounds/527522/",
+      "author": "Narjara",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "bottle",
+        "bubble",
+        "cork",
+        "popping",
+        "pops"
+      ],
+      "description": "\"Pop\" sound, like a popping bubble or a cork popping out of a bottle, made with my finger and mouth.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "ppop.wav",
+        "freesoundTags": [
+          "bottle",
+          "bubble",
+          "cork",
+          "popping",
+          "pops"
+        ],
+        "freesoundQuery": "pop",
+        "durationSeconds": 0.0829025,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "pop",
+        "bubble",
+        "tiny",
+        "bright"
+      ],
+      "use": "A tiny bright pop for small icons or bullet points appearing in sequence.",
+      "avoid": "Large elements; the sound is far smaller than they look.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_tang1_wav_138096": {
+    "file": "sfx/ui/ui_tang1_wav_138096.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 138096,
+      "sourceUrl": "https://freesound.org/people/escortmarius/sounds/138096/",
+      "author": "escortmarius",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "clap",
+        "click",
+        "snap",
+        "stripping-pliers",
+        "tick"
+      ],
+      "description": "sound of a stripping plier squize(for electric wire)recorded with my phone",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "tang1.wav",
+        "freesoundTags": [
+          "clap",
+          "click",
+          "snap",
+          "stripping-pliers",
+          "tick"
+        ],
+        "freesoundQuery": "tick",
+        "durationSeconds": 0.123832,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "snap",
+        "click",
+        "mechanical",
+        "tool"
+      ],
+      "use": "A mechanical snap for something locking into place.",
+      "avoid": "Digital interface beats; the sound is clearly a physical tool.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_ui_click_839832": {
+    "file": "sfx/ui/ui_ui_click_839832.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 839832,
+      "sourceUrl": "https://freesound.org/people/TommyListens/sounds/839832/",
+      "author": "TommyListens",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "Button",
+        "Click",
+        "Select",
+        "UI"
+      ],
+      "description": "Created for the video game DystOcean, I made all sounds with my mouth + mixing. Credit would be cool, but not necessary^^ Would also be interested in where they end up DystOcean Link: <a href=\"https://tom-grzembke.itch.io/dystocean\" rel=\"nofollow\">https://tom-grzembke.itch.io/dystocean</a>",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "UI Click",
+        "freesoundTags": [
+          "Button",
+          "Click",
+          "Select",
+          "UI"
+        ],
+        "freesoundQuery": "ui click",
+        "durationSeconds": 0.061678,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "click",
+        "ui",
+        "short",
+        "select"
+      ],
+      "use": "The default click: a list item, a button, or a selection appearing.",
+      "avoid": "Physical mechanisms; this is a clean interface click.",
+      "pairsWith": []
+    },
+    "needsReview": false
+  },
+  "ui_uihover1_wav_488381": {
+    "file": "sfx/ui/ui_uihover1_wav_488381.mp3",
+    "role": "ui",
+    "roleSource": "freesound_query",
+    "origin": {
+      "kind": "freesound",
+      "sourceId": 488381,
+      "sourceUrl": "https://freesound.org/people/wobesound/sounds/488381/",
+      "author": "wobesound",
+      "license": "CC0",
+      "attribution": null,
+      "addedAt": "2026-07-31"
+    },
+    "semantics": {
+      "provider": "freesound",
+      "tags": [
+        "Click",
+        "Hover",
+        "UI",
+        "videogame"
+      ],
+      "description": "Sound played when hovering over an UI element in a videogame. Made for a cancelled student game. Created from other CC0 sounds from Freesound but edited &amp; mixed together.",
+      "confidence": null,
+      "raw": {
+        "freesoundName": "UIHover1.wav",
+        "freesoundTags": [
+          "Click",
+          "Hover",
+          "UI",
+          "videogame"
+        ],
+        "freesoundQuery": "ui click",
+        "durationSeconds": 0.319875,
+        "acAnalysis": null
+      }
+    },
+    "curated": {
+      "tags": [
+        "hover",
+        "highlight",
+        "subtle",
+        "ui"
+      ],
+      "use": "An element gaining focus or being highlighted without being selected.",
+      "avoid": "Confirmations; it is deliberately weightless.",
+      "pairsWith": [
+        "ui_ui_click_839832"
+      ]
+    },
+    "needsReview": false
+  }
+}

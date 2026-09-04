@@ -1,0 +1,142 @@
+// Assembles video/public/ — everything a stubbed frame loads at render time.
+//
+//   shell.js            the chrome stub (bundled from shell/entry.ts)
+//   content.js          the real extension content script, copied from dist/
+//   popup.js/.html      the real popup, copied from dist/
+//   icons/              badge + popup artwork
+//   stages/<s>.<l>.html marketing backdrops, one per stage × language
+//
+// Prerequisite: `npm run build` at the repo root (this copies dist/, it does not
+// build it — the whole point is that the video shows the shipped bundle).
+import { build } from "esbuild";
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+import { LANGS, templateVars, renderTemplate } from "../store-assets/gen/i18n.mjs";
+import { STAGE_COPY } from "./copy/stages.ts";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const ROOT = resolve(HERE, "..");
+const DIST = join(ROOT, "dist");
+const PUBLIC = join(HERE, "public");
+
+if (!existsSync(join(DIST, "content.js"))) {
+  throw new Error(`dist/content.js missing — run \`npm run build\` in ${ROOT} first`);
+}
+
+rmSync(PUBLIC, { recursive: true, force: true });
+mkdirSync(PUBLIC, { recursive: true });
+
+await build({
+  entryPoints: [join(HERE, "shell/entry.ts")],
+  bundle: true,
+  format: "iife",
+  target: "chrome110",
+  outfile: join(PUBLIC, "shell.js"),
+  logLevel: "info"
+});
+
+// Sourcemaps come along when present: the bundles carry a //# sourceMappingURL
+// comment, and a missing map is a 404 in every render's console.
+for (const file of ["content.js", "content.js.map", "popup.js", "popup.js.map"]) {
+  if (existsSync(join(DIST, file))) cpSync(join(DIST, file), join(PUBLIC, file));
+}
+
+// The popup is shipped HTML, so the stub has to be spliced in ahead of its
+// bundle — popup.js reaches for chrome.* the moment it runs. Stages declare
+// shell.js themselves; this page cannot, so the build does it.
+const POPUP_ENTRY = '<script src="popup.js"></script>';
+const popupHtml = readFileSync(join(DIST, "popup.html"), "utf8");
+if (!popupHtml.includes(POPUP_ENTRY)) {
+  throw new Error(`popup.html no longer contains ${POPUP_ENTRY} — update the shell injection`);
+}
+writeFileSync(
+  join(PUBLIC, "popup.html"),
+  popupHtml.replace(POPUP_ENTRY, `<script src="shell.js"></script>\n    ${POPUP_ENTRY}`)
+);
+cpSync(join(DIST, "icons"), join(PUBLIC, "icons"), { recursive: true });
+cpSync(join(HERE, "shell/fixture.html"), join(PUBLIC, "fixture.html"));
+
+// Stages are `{{placeholder}}` templates sharing the store-asset copy deck, so a
+// video and the store screenshots always describe the product the same way.
+const stagesDir = join(HERE, "stages");
+const stageOut = join(PUBLIC, "stages");
+mkdirSync(stageOut, { recursive: true });
+
+const stages = existsSync(stagesDir)
+  ? readdirSync(stagesDir).filter((f) => f.endsWith(".html"))
+  : [];
+
+let written = 0;
+for (const file of stages) {
+  const template = readFileSync(join(stagesDir, file), "utf8");
+  const name = file.replace(/\.html$/, "");
+  // A stage with its own deck is built only for the languages that deck names.
+  // Without one it lives entirely on the store-asset copy, which covers them all.
+  const deck = STAGE_COPY[name];
+  for (const code of deck ? Object.keys(deck) : Object.keys(LANGS)) {
+    const vars = { ...templateVars(code), ...(deck ? deck[code] : {}) };
+    writeFileSync(join(stageOut, `${name}.${code}.html`), renderTemplate(template, vars));
+    written += 1;
+  }
+}
+
+// The sound library and the voiceover renders are committed sources, because
+// neither is reproducible from code: the library is measured audio and the
+// narration comes back from a service that never returns the same bytes twice.
+// public/ is where Remotion serves them from, so they are copied, not moved.
+cpSync(join(HERE, "sfx"), join(PUBLIC, "sfx"), { recursive: true });
+
+const voiceDir = join(HERE, "voice");
+const voiceOut = join(PUBLIC, "voice");
+mkdirSync(voiceOut, { recursive: true });
+
+const timelines = existsSync(voiceDir)
+  ? readdirSync(voiceDir).filter((f) => f.endsWith(".json"))
+  : [];
+
+for (const file of timelines) {
+  cpSync(join(voiceDir, file), join(voiceOut, file));
+  const audio = file.replace(/\.json$/, ".mp3");
+  if (!existsSync(join(voiceDir, audio))) {
+    throw new Error(`voice/${file} has no ${audio} beside it — re-run \`npm run voiceover\``);
+  }
+  cpSync(join(voiceDir, audio), join(voiceOut, audio));
+}
+
+// The composition is bundled for a browser, which cannot look in a directory,
+// and Remotion needs a video's duration before it renders a frame — so the
+// timelines are indexed into a module rather than discovered at runtime.
+const imports = timelines.map((file, index) => {
+  const id = file.replace(/\.json$/, "");
+  return { id, binding: `t${index}`, file };
+});
+
+writeFileSync(
+  join(HERE, "voice/index.ts"),
+  [
+    "// GENERATED by build-shell.mjs — do not edit.",
+    "//",
+    "// A static index of the voiceover timelines on disk. It has to be generated",
+    "// rather than read at runtime: the composition is bundled for a browser, which",
+    "// cannot look in a directory, and Remotion needs the video's duration before it",
+    "// renders a single frame.",
+    "//",
+    "// Committed, because the timelines themselves are: text-to-speech is not",
+    "// reproducible, so the audio and its measurements are inputs to a render rather",
+    "// than outputs of one.",
+    "",
+    'import type { VoiceTimeline } from "../src/voice";',
+    ...imports.map((entry) => `import ${entry.binding} from "./${entry.file}";`),
+    "",
+    "export const VOICE_TIMELINES: Record<string, VoiceTimeline> = {",
+    ...imports.map((entry) => `  "${entry.id}": ${entry.binding} as VoiceTimeline,`),
+    "};",
+    ""
+  ].join("\n")
+);
+
+console.log(
+  `public/ ready — shell.js, extension bundles, ${written} stage page(s) from ${stages.length} stage(s), ` +
+    `sfx library, ${timelines.length} voice timeline(s)`
+);
