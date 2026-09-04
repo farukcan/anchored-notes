@@ -419,7 +419,11 @@ async function applyRealtimeState(): Promise<void> {
   const auth = await getAuthState();
   const shouldRun = auth !== null && document.visibilityState === "visible";
   if (shouldRun && !disconnectRealtime) {
-    disconnectRealtime = connectRealtime(triggerRealtimeSync);
+    disconnectRealtime = connectRealtime(triggerRealtimeSync, () => {
+      // Dead session: release the handle so a later auth change or visibility
+      // flip reconnects instead of seeing a connected-looking dead one.
+      disconnectRealtime = null;
+    });
     // Catch up on changes missed while this tab was hidden/disconnected.
     triggerRealtimeSync();
   } else if (!shouldRun && disconnectRealtime) {

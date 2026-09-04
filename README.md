@@ -96,6 +96,22 @@ Client modules:
   account and all synced notes, then signs out and wipes local notes
   (`wipeLocalNotes`). The options page exposes sign-in, sign-out and a
   type-your-email-to-confirm **Delete account** action.
+  PocketBase tokens expire (~7 days), so two mechanisms keep an actively used
+  device signed in across that boundary: `refreshIfExpiringSoon` runs on the
+  5-minute sync alarm (`src/background.ts`) and proactively renews the token
+  once it's within 30 minutes of its `exp` claim, and `authFetch` — the
+  authenticated-fetch helper every backend call goes through (sync, encryption
+  endpoints, account deletion, billing) — refreshes once and retries on a 401.
+  The realtime subscribe POST (`src/realtime.ts`) talks to PocketBase directly
+  rather than through `authFetch`, and applies the same refresh-once-and-retry
+  rule itself; when it does give up it reports the closure so the content
+  script drops its handle and reconnects on the next auth change instead of
+  holding a dead one. Only a 401 that survives that retry is treated as a genuinely
+  dead session. A refresh replaces the token and nothing else: `plan` and
+  `email` stay under the stored state's control (`sync` is the authority on
+  plan changes), so a refresh can never downgrade a pro account. A device left
+  offline past `exp` can't be rescued by either path and is signed out on its
+  next sync.
 - **Sync** — `src/sync.ts` runs only in the background worker (single context, no
   cross-context races). It pushes local non-`tab` notes plus tombstoned deletions
   (`deletedNoteIds` in `src/storage.ts`) and merges the response into local
@@ -142,6 +158,7 @@ Client modules:
 |--------|----------|---------|
 | GET | `…/api/collections/users/auth-methods` | get the Google provider `authURL`, `state`, `codeVerifier` |
 | POST | `…/api/collections/users/auth-with-oauth2` | exchange `{ provider, code, codeVerifier, redirectUrl }` → `{ token, record }` |
+| POST | `…/api/collections/users/auth-refresh` | `Authorization: Bearer <token>` → fresh `{ token, record }`; only `token` is adopted (see `refreshAuthToken`) |
 
 The extension's OAuth `redirectUrl` is `chrome.identity.getRedirectURL()`
 (`https://<extension-id>.chromiumapp.org/`) and must be registered in the Google
