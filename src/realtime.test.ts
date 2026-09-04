@@ -73,7 +73,7 @@ beforeEach(() => {
 });
 
 test("realtime subscribes with the stored token and stays open", async () => {
-  setFetchHandler(() => new Response("", { status: 204 }));
+  setFetchHandler(() => new Response(null, { status: 204 }));
 
   const { source, disconnect, closures } = await handshake();
 
@@ -90,7 +90,7 @@ test("realtime refreshes once and retries the subscription on a 401", async () =
       return Response.json({ token: "new", record: { email: "a@b.c", plan: "pro" } });
     }
     return new Headers(init?.headers).get("Authorization") === "new"
-      ? new Response("", { status: 204 })
+      ? new Response(null, { status: 204 })
       : new Response("", { status: 401 });
   });
 
