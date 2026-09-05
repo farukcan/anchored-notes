@@ -96,6 +96,53 @@ Client modules:
   account and all synced notes, then signs out and wipes local notes
   (`wipeLocalNotes`). The options page exposes sign-in, sign-out and a
   type-your-email-to-confirm **Delete account** action.
+  PocketBase tokens expire (~7 days), so two mechanisms keep an actively used
+  device signed in across that boundary: `refreshIfExpiringSoon` runs on the
+  5-minute sync alarm (`src/background.ts`) and proactively renews the token
+  once it's within 30 minutes of its `exp` claim, and `authFetch` — the
+  authenticated-fetch helper every backend call goes through (sync, encryption
+  endpoints, account deletion, billing) — refreshes once and retries on a 401.
+  The realtime subscribe POST (`src/realtime.ts`) talks to PocketBase directly
+  rather than through `authFetch`, and applies the same refresh-once-and-retry
+  rule itself; when it does give up it reports the closure so the content
+  script drops its handle and reconnects on the next auth change instead of
+  holding a dead one — never for a connection the caller already disconnected,
+  which would clear the handle on the newer connection that replaced it. A
+  refresh replaces the token and nothing else: `plan` and `email` stay under
+  the stored state's control (`sync` is the authority on plan changes), so a
+  refresh can never downgrade a pro account. A device left offline past `exp`
+  can't be rescued by either path and is signed out on its next sync.
+
+  `refreshAuthToken` reports one of three outcomes, because signing a device
+  out is only correct for one of them:
+
+  ```mermaid
+  flowchart TD
+    A[POST auth-refresh] --> B{outcome}
+    B -->|"401/403 — PocketBase refused"| C["rejected<br/>session is over"]
+    B -->|"unreachable, 5xx, or the stored<br/>account changed underneath"| D["unavailable<br/>verdict unknown"]
+    B -->|"200, or another context<br/>already renewed this account"| E["refreshed<br/>live token"]
+    C --> F["authFetch hands the 401 back<br/>→ sync logs out"]
+    D --> G["authFetch raises<br/>AuthRefreshUnavailableError<br/>realtime keeps its connection"]
+    E --> H["retry the request<br/>with that token"]
+  ```
+
+  The `unavailable` branch is what keeps a PocketBase outage from reading as a
+  dead session: the backend and PocketBase are separate hosts, so a 401 from
+  one while the other is unreachable proves nothing, and surfacing it as a 401
+  would have `sync` call `logout()` and wipe the device's encryption key. It
+  also covers a sign-out or account switch landing mid-refresh — reporting
+  `rejected` there would sign the *new* account out over the old account's
+  request. The token obtained for an account that is no longer stored is
+  always discarded, so a refresh can never attach one account's token to
+  another's state.
+
+  `refreshed` deliberately includes the case where a parallel context won the
+  race: every context (background worker, popup, each content script) is its
+  own realm with its own in-flight slot, so a token expiring with several tabs
+  open produces concurrent refreshes. The loser adopts the winner's stored
+  token instead of discarding a live session, which is what lets its request
+  (or realtime handshake) retry rather than be read as signed out.
 - **Sync** — `src/sync.ts` runs only in the background worker (single context, no
   cross-context races). It pushes local non-`tab` notes plus tombstoned deletions
   (`deletedNoteIds` in `src/storage.ts`) and merges the response into local
@@ -142,6 +189,7 @@ Client modules:
 |--------|----------|---------|
 | GET | `…/api/collections/users/auth-methods` | get the Google provider `authURL`, `state`, `codeVerifier` |
 | POST | `…/api/collections/users/auth-with-oauth2` | exchange `{ provider, code, codeVerifier, redirectUrl }` → `{ token, record }` |
+| POST | `…/api/collections/users/auth-refresh` | `Authorization: Bearer <token>` → fresh `{ token, record }`; only `token` is adopted (see `refreshAuthToken`) |
 
 The extension's OAuth `redirectUrl` is `chrome.identity.getRedirectURL()`
 (`https://<extension-id>.chromiumapp.org/`) and must be registered in the Google

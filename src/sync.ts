@@ -4,8 +4,7 @@
 // are session-only and excluded. Notes the backend rejects (over the plan
 // limit) are kept locally so the user never loses data.
 
-import { getAuthState, logout, updatePlan, type Plan } from "./auth.js";
-import { BACKEND_URL } from "./config.js";
+import { authFetch, getAuthState, logout, updatePlan, type Plan } from "./auth.js";
 import { decryptContent, encryptContent, isEncrypted } from "./crypto.js";
 import {
   ensureEncryptionReady,
@@ -112,15 +111,15 @@ export async function sync(): Promise<void> {
 
     const upserts = await Promise.all(syncable.map((n) => toDTO(n, key)));
 
-    const res = await fetch(`${BACKEND_URL}/api/notes/sync`, {
+    const res = await authFetch("/api/notes/sync", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${auth.token}`,
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ upserts, deletes, encCheck: keyState.encCheck }),
     });
 
+    // authFetch already retried once after a token refresh, and raises rather
+    // than returning a 401 it couldn't get a verdict on, so a 401 here means
+    // PocketBase confirmed the session is invalid.
     if (res.status === 401) {
       await logout();
       return;

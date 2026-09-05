@@ -9,7 +9,7 @@
     "locales": "node mklocales.mjs",
     "typecheck": "tsc --noEmit",
     "build": "node mkicons.mjs && node mklocales.mjs && node build.mjs",
-    "test": "node --test",
+    "test": "node --import ./resolve-ts-hooks.mjs --test",
     "package": "node package.mjs"
   },
   "devDependencies": {
