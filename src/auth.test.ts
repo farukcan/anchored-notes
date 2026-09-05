@@ -16,6 +16,7 @@ import {
   type FetchCall,
 } from "./testing.ts";
 import {
+  AuthRefreshUnavailableError,
   authFetch,
   onAuthChanged,
   refreshAuthToken,
@@ -83,7 +84,7 @@ test("authFetch refreshes once on a 401 and retries with the fresh token", async
   assert.equal(storedAuth()?.token, "new");
 });
 
-test("authFetch returns the original 401 and does not retry when the refresh fails", async () => {
+test("authFetch returns the original 401 when PocketBase refuses the refresh too", async () => {
   signIn({ token: "dead", email: "a@b.c", plan: "pro" });
   setFetchHandler(() => new Response("", { status: 401 }));
 
@@ -145,7 +146,10 @@ test("a refresh replaces the token without touching the stored plan", async () =
 
   const refreshed = await refreshAuthToken();
 
-  assert.deepEqual(refreshed, { token: "new", email: "a@b.c", plan: "pro" });
+  assert.deepEqual(refreshed, {
+    status: "refreshed",
+    state: { token: "new", email: "a@b.c", plan: "pro" },
+  });
   assert.deepEqual(storedAuth(), { token: "new", email: "a@b.c", plan: "pro" });
 });
 
@@ -156,7 +160,9 @@ test("a refresh does not resurrect an account signed out while it was in flight"
     return Response.json({ token: "new", record: { email: "a@b.c", plan: "pro" } });
   });
 
-  assert.equal(await refreshAuthToken(), null);
+  // Not "rejected": nobody's session was refused, there is simply no account
+  // left to refresh, and a caller must not read that as a dead session.
+  assert.deepEqual(await refreshAuthToken(), { status: "unavailable" });
   assert.equal(storedAuth(), undefined);
 });
 
@@ -169,16 +175,55 @@ test("a refresh does not adopt a different account signed in while it was in fli
     return Response.json({ token: "new", record: { email: "a@b.c", plan: "pro" } });
   });
 
-  assert.equal(await refreshAuthToken(), null);
+  // "unavailable", never "rejected": reporting a dead session here would sign
+  // the second account out over the first account's refresh.
+  assert.deepEqual(await refreshAuthToken(), { status: "unavailable" });
   assert.deepEqual(storedAuth(), { token: "second", email: "second@b.c", plan: "free" });
 });
 
-test("a failed refresh leaves the stored token alone", async () => {
+test("a refresh PocketBase couldn't serve is unavailable and leaves the token alone", async () => {
   signIn({ token: "old", email: "a@b.c", plan: "free" });
   setFetchHandler(() => new Response("", { status: 500 }));
 
-  assert.equal(await refreshAuthToken(), null);
+  assert.deepEqual(await refreshAuthToken(), { status: "unavailable" });
   assert.equal(storedAuth()?.token, "old");
+});
+
+test("an unreachable PocketBase is unavailable, not a rejected session", async () => {
+  signIn({ token: "old", email: "a@b.c", plan: "pro" });
+  setFetchHandler(() => Promise.reject(new Error("net::ERR_INTERNET_DISCONNECTED")));
+
+  assert.deepEqual(await refreshAuthToken(), { status: "unavailable" });
+  assert.equal(storedAuth()?.token, "old");
+});
+
+test("PocketBase refusing the token is a rejected session", async () => {
+  for (const status of [401, 403]) {
+    resetFakes();
+    signIn({ token: "dead", email: "a@b.c", plan: "pro" });
+    setFetchHandler(() => new Response("", { status }));
+
+    assert.deepEqual(await refreshAuthToken(), { status: "rejected" });
+    assert.equal(storedAuth()?.token, "dead");
+  }
+});
+
+test("a refresh adopts the token another context obtained for the same account", async () => {
+  signIn({ token: "old", email: "a@b.c", plan: "pro" });
+  setFetchHandler(() => {
+    // The background alarm renews the same account while this request is out.
+    signIn({ token: "fromOtherContext", email: "a@b.c", plan: "pro" });
+    return Response.json({ token: "mine", record: { email: "a@b.c", plan: "pro" } });
+  });
+
+  // The winner's token is live, so the loser reports success with it rather
+  // than discarding a working session — and does not write a second token.
+  assert.deepEqual(await refreshAuthToken(), {
+    status: "refreshed",
+    state: { token: "fromOtherContext", email: "a@b.c", plan: "pro" },
+  });
+  assert.equal(storedAuth()?.token, "fromOtherContext");
+  assert.equal(refreshCalls().length, 1);
 });
 
 test("concurrent refreshes share one auth-refresh request", async () => {
@@ -193,6 +238,63 @@ test("concurrent refreshes share one auth-refresh request", async () => {
   // The in-flight slot clears afterwards, so a later refresh really refreshes.
   await refreshAuthToken();
   assert.equal(refreshCalls().length, 2);
+});
+
+test("authFetch retries with the token another context obtained for the same account", async () => {
+  signIn({ token: "old", email: "a@b.c", plan: "pro" });
+  setFetchHandler((url, init) => {
+    if (url === REFRESH_URL) {
+      signIn({ token: "good", email: "a@b.c", plan: "pro" });
+      return Response.json({ token: "mine", record: { email: "a@b.c", plan: "pro" } });
+    }
+    return new Headers(init?.headers).get("Authorization") === "Bearer good"
+      ? new Response("ok", { status: 200 })
+      : new Response("expired", { status: 401 });
+  });
+
+  // Losing the refresh race must not cost the caller its retry: sync() reads a
+  // surviving 401 as a dead session and would sign this live account out.
+  const res = await authFetch("/api/notes/sync", { method: "POST", body: "{}" });
+
+  assert.equal(res.status, 200);
+  assert.deepEqual(backendCalls().map(authHeaderOf), ["Bearer old", "Bearer good"]);
+  assert.equal(storedAuth()?.token, "good");
+});
+
+test("authFetch raises instead of surfacing a 401 it could not get a verdict on", async () => {
+  signIn({ token: "old", email: "a@b.c", plan: "pro" });
+  setFetchHandler((url) => {
+    // The backend answers, PocketBase doesn't: a transient outage must not
+    // reach sync() as a 401, which it would answer with logout() + key wipe.
+    if (url === REFRESH_URL) return Promise.reject(new Error("offline"));
+    return new Response("expired", { status: 401 });
+  });
+
+  await assert.rejects(
+    () => authFetch("/api/notes/sync", { method: "POST", body: "{}" }),
+    AuthRefreshUnavailableError
+  );
+  assert.equal(backendCalls().length, 1);
+  assert.deepEqual(storedAuth(), { token: "old", email: "a@b.c", plan: "pro" });
+});
+
+test("authFetch raises rather than reporting a 401 for an account that changed underneath", async () => {
+  signIn({ token: "old", email: "a@b.c", plan: "pro" });
+  setFetchHandler((url) => {
+    if (url === REFRESH_URL) {
+      signIn({ token: "second", email: "second@b.c", plan: "free" });
+      return Response.json({ token: "mine", record: { email: "a@b.c", plan: "pro" } });
+    }
+    return new Response("expired", { status: 401 });
+  });
+
+  // Handing back the 401 would have sync() sign the second account out over
+  // the first account's request.
+  await assert.rejects(
+    () => authFetch("/api/notes/sync", { method: "POST", body: "{}" }),
+    AuthRefreshUnavailableError
+  );
+  assert.deepEqual(storedAuth(), { token: "second", email: "second@b.c", plan: "free" });
 });
 
 test("refreshIfExpiringSoon renews a token inside the 30-minute margin", async () => {

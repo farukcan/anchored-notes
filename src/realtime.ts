@@ -12,7 +12,8 @@
 //
 // This POST goes straight to PocketBase (not the backend authFetch wraps), so
 // it applies the same rule itself: a 401 may just be an expired token, so
-// refresh once and retry before giving up on the session.
+// refresh once and retry before giving up on the session — and only give up
+// when the refresh actually establishes that the session is over.
 
 import { getRuntimeConfig } from "./config.js";
 import { getAuthState, refreshAuthToken } from "./auth.js";
@@ -53,9 +54,20 @@ export function connectRealtime(onChange: () => void, onClosed: () => void): () 
       if (res.status === 401) {
         // The token expired since this context last read it: renew it and try
         // again with the fresh one, exactly like authFetch does.
-        const refreshed = await refreshAuthToken();
+        const refresh = await refreshAuthToken();
         if (closed) return;
-        if (refreshed) res = await postSubscription(realtimeUrl, clientId, refreshed.token);
+        if (refresh.status === "unavailable") {
+          // Nothing was established: PocketBase was unreachable, or the stored
+          // account changed underneath. Leave the EventSource open so its next
+          // PB_CONNECT retries the handshake, rather than tearing down a
+          // session that is probably alive; the periodic background sync
+          // covers the gap in the meantime.
+          console.warn("[anchored-notes] realtime subscribe: token refresh unavailable");
+          return;
+        }
+        if (refresh.status === "refreshed") {
+          res = await postSubscription(realtimeUrl, clientId, refresh.state.token);
+        }
       }
       // The caller can disconnect across either await. This connection is then
       // already dead, and reporting its closure would clear a handle that now

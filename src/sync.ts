@@ -117,8 +117,9 @@ export async function sync(): Promise<void> {
       body: JSON.stringify({ upserts, deletes, encCheck: keyState.encCheck }),
     });
 
-    // authFetch already retried once after a token refresh; a 401 here means
-    // the session is genuinely invalid.
+    // authFetch already retried once after a token refresh, and raises rather
+    // than returning a 401 it couldn't get a verdict on, so a 401 here means
+    // PocketBase confirmed the session is invalid.
     if (res.status === 401) {
       await logout();
       return;

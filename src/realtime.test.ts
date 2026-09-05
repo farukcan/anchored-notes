@@ -157,7 +157,7 @@ test("realtime reports no closure for a connection the caller already disconnect
   assert.deepEqual(closures, []);
 });
 
-test("realtime gives up without retrying when the refresh itself fails", async () => {
+test("realtime gives up without retrying when PocketBase refuses the refresh", async () => {
   setFetchHandler(() => new Response("", { status: 401 }));
 
   const { source, closures } = await handshake();
@@ -165,4 +165,59 @@ test("realtime gives up without retrying when the refresh itself fails", async (
   assert.deepEqual(subscriptionCalls(), ["old"]);
   assert.equal(source.closed, true);
   assert.deepEqual(closures, [1]);
+});
+
+test("realtime retries with the token another context obtained for the same account", async () => {
+  setFetchHandler((url, init) => {
+    if (url === REFRESH_URL) {
+      // The background alarm renewed the same account first; this context lost
+      // the race and gets the winner's token rather than a dead end.
+      storageLocal["auth"] = { token: "good", email: "a@b.c", plan: "pro" };
+      return Response.json({ token: "mine", record: { email: "a@b.c", plan: "pro" } });
+    }
+    return new Headers(init?.headers).get("Authorization") === "good"
+      ? new Response(null, { status: 204 })
+      : new Response("", { status: 401 });
+  });
+
+  const { source, disconnect, closures } = await handshake();
+
+  assert.deepEqual(subscriptionCalls(), ["old", "good"]);
+  assert.equal(source.closed, false);
+  assert.deepEqual(closures, []);
+  disconnect();
+});
+
+test("realtime keeps the connection when the refresh could not be completed", async () => {
+  setFetchHandler((url) =>
+    url === REFRESH_URL
+      ? Promise.reject(new Error("net::ERR_INTERNET_DISCONNECTED"))
+      : new Response("", { status: 401 })
+  );
+
+  const { source, disconnect, closures } = await handshake();
+
+  // Nothing established the session is over, so the EventSource stays open and
+  // its next PB_CONNECT retries the handshake.
+  assert.deepEqual(subscriptionCalls(), ["old"]);
+  assert.equal(source.closed, false);
+  assert.deepEqual(closures, []);
+  disconnect();
+});
+
+test("realtime keeps the connection when the stored account changed underneath", async () => {
+  setFetchHandler((url) => {
+    if (url === REFRESH_URL) {
+      storageLocal["auth"] = { token: "second", email: "second@b.c", plan: "free" };
+      return Response.json({ token: "mine", record: { email: "a@b.c", plan: "pro" } });
+    }
+    return new Response("", { status: 401 });
+  });
+
+  const { source, disconnect, closures } = await handshake();
+
+  assert.deepEqual(subscriptionCalls(), ["old"]);
+  assert.equal(source.closed, false);
+  assert.deepEqual(closures, []);
+  disconnect();
 });
