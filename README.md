@@ -106,10 +106,14 @@ Client modules:
   rather than through `authFetch`, and applies the same refresh-once-and-retry
   rule itself; when it does give up it reports the closure so the content
   script drops its handle and reconnects on the next auth change instead of
-  holding a dead one. Only a 401 that survives that retry is treated as a genuinely
-  dead session. A refresh replaces the token and nothing else: `plan` and
-  `email` stay under the stored state's control (`sync` is the authority on
-  plan changes), so a refresh can never downgrade a pro account. A device left
+  holding a dead one — never for a connection the caller already disconnected,
+  which would clear the handle on the newer connection that replaced it. Only a
+  401 that survives that retry is treated as a genuinely dead session. A refresh
+  replaces the token and nothing else: `plan` and `email` stay under the stored
+  state's control (`sync` is the authority on plan changes), so a refresh can
+  never downgrade a pro account, and it is discarded outright if the stored
+  token changed while it was in flight (a sign-out or an account switch), so it
+  can never attach one account's token to another's state. A device left
   offline past `exp` can't be rescued by either path and is signed out on its
   next sync.
 - **Sync** — `src/sync.ts` runs only in the background worker (single context, no

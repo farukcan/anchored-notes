@@ -10,7 +10,12 @@ export interface FetchCall {
   init: RequestInit | undefined;
 }
 
-export type FetchHandler = (url: string, init: RequestInit | undefined) => Response;
+// Handlers may return a pending promise to hold a request in flight, so tests
+// can interleave other work with an unresolved call.
+export type FetchHandler = (
+  url: string,
+  init: RequestInit | undefined
+) => Response | Promise<Response>;
 
 // The runtime config every module fetches before talking to PocketBase.
 export const PB_URL = "https://pb.test";

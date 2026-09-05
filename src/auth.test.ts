@@ -160,6 +160,19 @@ test("a refresh does not resurrect an account signed out while it was in flight"
   assert.equal(storedAuth(), undefined);
 });
 
+test("a refresh does not adopt a different account signed in while it was in flight", async () => {
+  signIn({ token: "old", email: "a@b.c", plan: "pro" });
+  setFetchHandler(() => {
+    // The first account signs out and a second signs in mid-request. Writing
+    // this refresh's token now would attach account one's token to account two.
+    signIn({ token: "second", email: "second@b.c", plan: "free" });
+    return Response.json({ token: "new", record: { email: "a@b.c", plan: "pro" } });
+  });
+
+  assert.equal(await refreshAuthToken(), null);
+  assert.deepEqual(storedAuth(), { token: "second", email: "second@b.c", plan: "free" });
+});
+
 test("a failed refresh leaves the stored token alone", async () => {
   signIn({ token: "old", email: "a@b.c", plan: "free" });
   setFetchHandler(() => new Response("", { status: 500 }));

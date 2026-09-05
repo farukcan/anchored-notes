@@ -168,9 +168,14 @@ async function performRefresh(): Promise<AuthState | null> {
     // A refresh replaces the token and nothing else: plan/email stay under the
     // stored state's control (sync() is the authority on plan changes), so a
     // refresh response without a `plan` field can never silently downgrade a
-    // pro account. Re-reading also lets a logout mid-request win.
+    // pro account.
+    //
+    // Re-reading also lets whatever happened mid-request win. The stored token
+    // must still be the one this refresh was issued against: a logout clears it
+    // and an account switch replaces it, and in both cases writing our token
+    // onto the state stored now would attach it to the wrong account.
     const current = await getAuthState();
-    if (!current) return null;
+    if (!current || current.token !== auth.token) return null;
     const refreshed: AuthState = { ...current, token: data.token };
     await setAuthState(refreshed);
     return refreshed;

@@ -42,6 +42,20 @@ class FakeEventSource {
 
 Object.assign(globalThis, { EventSource: FakeEventSource });
 
+interface Deferred {
+  promise: Promise<Response>;
+  resolve: (res: Response) => void;
+}
+
+// A response the test resolves by hand, to hold a subscribe POST in flight.
+function deferredResponse(): Deferred {
+  let resolve!: (res: Response) => void;
+  const promise = new Promise<Response>((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
 function subscriptionCalls(): string[] {
   return fetchCalls
     .filter((c) => c.url === REALTIME_URL)
@@ -115,6 +129,32 @@ test("realtime gives up and reports closure when the refreshed token is rejected
   assert.equal(source.closed, true);
   // The caller drops its handle here, so a later auth change can reconnect.
   assert.deepEqual(closures, [1]);
+});
+
+test("realtime reports no closure for a connection the caller already disconnected", async () => {
+  const retry = deferredResponse();
+  let subscribeCount = 0;
+  setFetchHandler((url) => {
+    if (url === REFRESH_URL) {
+      return Response.json({ token: "new", record: { email: "a@b.c", plan: "pro" } });
+    }
+    subscribeCount++;
+    // The first POST looks like an expired token; the retry stays in flight so
+    // the caller can disconnect (tab hidden, auth change) underneath it.
+    return subscribeCount === 1 ? new Response("", { status: 401 }) : retry.promise;
+  });
+
+  const { source, disconnect, closures } = await handshake();
+  assert.deepEqual(subscriptionCalls(), ["old", "new"]);
+
+  disconnect();
+  retry.resolve(new Response("", { status: 401 }));
+  await flush();
+
+  // Reporting a closure here would clear the caller's handle on the connection
+  // it opened after this one, leaking a second EventSource.
+  assert.equal(source.closed, true);
+  assert.deepEqual(closures, []);
 });
 
 test("realtime gives up without retrying when the refresh itself fails", async () => {

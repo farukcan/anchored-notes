@@ -57,6 +57,10 @@ export function connectRealtime(onChange: () => void, onClosed: () => void): () 
         if (closed) return;
         if (refreshed) res = await postSubscription(realtimeUrl, clientId, refreshed.token);
       }
+      // The caller can disconnect across either await. This connection is then
+      // already dead, and reporting its closure would clear a handle that now
+      // points at a newer, live connection.
+      if (closed) return;
       if (!res.ok) {
         console.warn(`[anchored-notes] realtime subscribe failed: ${res.status}`);
         // A 401 that survives the refresh means the session is genuinely over:
