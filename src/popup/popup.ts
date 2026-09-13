@@ -223,7 +223,7 @@ async function render(): Promise<void> {
     const li = document.createElement("li");
     const text = document.createElement("span");
     text.className = "text";
-    text.textContent = note.content ? deriveTitle(note.content) : t("empty", null);
+    text.textContent = deriveTitle(note.content) || t("empty", null);
     const scope = document.createElement("span");
     scope.className = "scope";
     scope.textContent = note.scope;

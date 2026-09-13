@@ -403,6 +403,17 @@ async function handleDeleteAccount(button: HTMLButtonElement, auth: AuthState): 
   await wipeLocalNotes();
 }
 
+// anchorKey comes from sync/import as well as this device, so only link it
+// when it parses as a real http(s) URL (never e.g. `javascript:`).
+function httpUrl(value: string): string | undefined {
+  try {
+    const url = new URL(value);
+    return url.protocol === "http:" || url.protocol === "https:" ? url.href : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function render(): Promise<void> {
   const rows = document.getElementById("rows") as HTMLTableSectionElement;
   const empty = document.getElementById("empty") as HTMLDivElement;
@@ -422,16 +433,17 @@ async function render(): Promise<void> {
     const swatch = document.createElement("span");
     swatch.className = "swatch";
     swatch.style.background = SWATCH[note.color] ?? "#ccc";
-    tdNote.append(swatch, document.createTextNode(deriveTitle(note.content)));
+    tdNote.append(swatch, document.createTextNode(deriveTitle(note.content) || t("empty", null)));
 
     const tdScope = document.createElement("td");
     tdScope.textContent = note.scope;
 
     const tdAnchor = document.createElement("td");
     tdAnchor.className = "anchor";
-    if (note.anchorKey.startsWith("http")) {
+    const anchorUrl = httpUrl(note.anchorKey);
+    if (anchorUrl) {
       const link = document.createElement("a");
-      link.href = note.anchorKey;
+      link.href = anchorUrl;
       link.target = "_blank";
       link.rel = "noopener noreferrer";
       link.textContent = note.anchorKey;
@@ -514,18 +526,26 @@ function isValidNote(value: unknown): value is Note {
     typeof n.scope === "string" &&
     SCOPES.has(n.scope) &&
     typeof n.anchorKey === "string" &&
-    typeof n.x === "number" &&
-    typeof n.y === "number" &&
-    typeof n.w === "number" &&
-    typeof n.h === "number" &&
-    typeof n.createdAt === "number" &&
-    typeof n.updatedAt === "number"
+    Number.isFinite(n.x) &&
+    Number.isFinite(n.y) &&
+    Number.isFinite(n.w) &&
+    Number.isFinite(n.h) &&
+    (n.hidden === undefined || typeof n.hidden === "boolean") &&
+    Number.isFinite(n.createdAt) &&
+    Number.isFinite(n.updatedAt)
   );
 }
 
+// Replace every local note with the file's. replaceAllNotes tombstones the
+// notes a signed-in import drops, so "replace" holds across the next sync.
 async function importNotes(file: File): Promise<void> {
-  const text = await file.text();
-  const parsed: unknown = JSON.parse(text);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await file.text());
+  } catch {
+    window.alert(t("invalidNotesFile", null));
+    return;
+  }
   if (!Array.isArray(parsed) || !parsed.every(isValidNote)) {
     window.alert(t("invalidNotesFile", null));
     return;
