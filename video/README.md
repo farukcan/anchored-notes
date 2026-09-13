@@ -15,8 +15,83 @@ node render.mjs               # every scenario × language × format → out/
 ```
 
 `npm run studio` opens Remotion Studio for scrubbing while you build a scenario;
-`npm test` runs the chrome-stub smoke test; `node preview.mjs article ar` renders
-a stage to PNG without booting Remotion.
+`npm test` runs the chrome-stub smoke test and the Drive-upload helper tests;
+`node preview.mjs article ar` renders a stage to PNG without booting Remotion.
+
+## Upload to Google Drive
+
+Manual publish of one already-rendered cut. The CLI does not open a browser
+OAuth window; it uses Application Default Credentials with the `drive.file`
+scope, the same contract as RemotionLab.
+
+**jobId** is the cut, not an opaque token:
+
+| CLI | Local file | Drive folder |
+| --- | --- | --- |
+| `kyoto-basics/en/16-9` | `out/kyoto-basics/en/16-9.mp4` | `Youtube/<channel>/kyoto-basics-en-16-9/` |
+| `kyoto-basics-en-16-9` | same | same |
+
+The slash form matches `out/<scenario>/<lang>/<format>.mp4`. The dashed form is
+the Remotion composition id. Both are accepted; Drive uses the dashed name
+because folder titles cannot be a path.
+
+Sidecar (required, next to the mp4):
+
+```
+out/<scenario>/<lang>/<format>.upload-metadata.json
+```
+
+```json
+{
+  "title": "Notes That Stay",
+  "description": "Sticky notes that stay where you put them.\n\nAdd to Chrome: <listing URL>",
+  "tags": ["chrome extension", "sticky notes", "productivity"]
+}
+```
+
+One-time auth:
+
+```bash
+gcloud auth application-default login \
+  --scopes=openid,https://www.googleapis.com/auth/cloud-platform,https://www.googleapis.com/auth/drive.file
+gcloud services enable drive.googleapis.com --project=<PROJECT_ID>
+gcloud auth application-default set-quota-project <PROJECT_ID>
+```
+
+Put the Drive id of the existing `Youtube` folder in `video/.env` as
+`YOUTUBE_DRIVE_FOLDER_ID`.
+
+```bash
+cd video
+npm run check-video -- kyoto-basics en 16-9   # the upload command runs this again
+npm run upload -- anchored-notes kyoto-basics/en/16-9
+```
+
+The script runs `check-video`, refuses a missing or invalid sidecar, then asks
+`Type yes to continue:` on a TTY. It will not upload from a pipe. After yes it
+creates `Youtube/<channel>/<jobId>/` if needed, deletes any same-named
+`video.mp4` / `upload-metadata.json`, and uploads fresh copies.
+
+Stdout is only the result JSON:
+
+```json
+{
+  "channel": "anchored-notes",
+  "jobId": "kyoto-basics-en-16-9",
+  "path": "kyoto-basics/en/16-9",
+  "folderId": "...",
+  "video": { "id": "...", "webViewLink": "https://drive.google.com/..." },
+  "metadata": { "id": "...", "webViewLink": "https://drive.google.com/..." }
+}
+```
+
+```mermaid
+flowchart LR
+  check["check-video"] --> sidecar["format.upload-metadata.json"]
+  sidecar --> confirm["TTY yes"]
+  confirm --> folders["Youtube / channel / jobId"]
+  folders --> files["video.mp4 + upload-metadata.json"]
+```
 
 Before rendering, three gates say whether the video is worth the wait:
 
