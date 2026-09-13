@@ -3,7 +3,7 @@
 import type { GetTabIdResponse, LoginResponse, Message } from "./types.js";
 import { PENDING_WARNING_KEY } from "./types.js";
 import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js";
-import { login, onAuthChanged } from "./auth.js";
+import { login, onAuthChanged, refreshIfExpiringSoon } from "./auth.js";
 import { ensureEncryptionReady } from "./encryption.js";
 import { sync } from "./sync.js";
 import { getLang, initI18n, onLangChanged, t } from "./i18n.js";
@@ -217,11 +217,14 @@ function scheduleSync(): void {
 }
 
 onNotesChanged(() => scheduleSync());
-onAuthChanged((auth) => {
+onAuthChanged((auth, previous) => {
   // Set up the encryption key eagerly so a required custom password surfaces
   // in the UI right after sign-in instead of at the first sync attempt.
   // Errors (e.g. offline at sign-in) are logged; the periodic alarm retries.
-  if (auth) {
+  // Rewrites of the same account (a token refresh, sync's own plan update)
+  // aren't sign-ins: reacting to them would re-run setup and sync a second
+  // time right after the alarm already did.
+  if (auth && auth.email !== previous?.email) {
     void ensureEncryptionReady()
       .then(() => sync())
       .catch((err: unknown) => {
@@ -232,7 +235,15 @@ onAuthChanged((auth) => {
 
 chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
 chrome.alarms.onAlarm.addListener((alarm) => {
-  if (alarm.name === SYNC_ALARM) void sync();
+  if (alarm.name !== SYNC_ALARM) return;
+  // Renew the token ahead of expiry so sync() (and any other authenticated
+  // call) doesn't have to fall back to the reactive 401-retry. A failed
+  // proactive refresh (e.g. offline) must not skip the periodic sync itself.
+  void refreshIfExpiringSoon()
+    .catch((err: unknown) => {
+      console.error("[anchored-notes] proactive token refresh failed:", err);
+    })
+    .then(() => sync());
 });
 
 chrome.runtime.onMessage.addListener(

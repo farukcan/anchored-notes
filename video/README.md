@@ -277,7 +277,9 @@ Opening and resting are therefore two different shots (`stage-url.ts`):
   has to be told once what they are looking at, and the address bar is what
   tells them; a page filling a phone screen could be anything. Vertical opens
   here and pushes in from it, which is what `scenarios/opening.ts` paces so the
-  camera only starts moving once the hook has left.
+  camera only starts moving once the hook has left. `kyoto-basics` uses the
+  `snappy` opening: the first click comes earlier; the wait for the hook still
+  lands before the push-in.
 - `homeView(format)` — where `rect: null` returns to mid-scene. Wide can rest on
   the whole window all day; vertical returns to the widest slice that still
   fills the frame, because going back to the full window between beats would

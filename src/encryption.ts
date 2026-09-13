@@ -7,8 +7,7 @@
 // This module must not import sync.ts (sync.ts imports it); flows that need a
 // sync afterwards rely on the storage-change listener in background.ts.
 
-import { getAuthState } from "./auth.js";
-import { BACKEND_URL } from "./config.js";
+import { authFetch, getAuthState } from "./auth.js";
 import {
   deriveKey,
   exportKeyB64,
@@ -63,10 +62,8 @@ export async function getReadyKey(): Promise<{ key: CryptoKey; encCheck: string;
   return { key: await importKeyB64(state.rawKeyB64), encCheck: state.encCheck, mode: state.mode };
 }
 
-async function fetchMe(token: string): Promise<MeResponse> {
-  const res = await fetch(`${BACKEND_URL}/api/me`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+async function fetchMe(): Promise<MeResponse> {
+  const res = await authFetch("/api/me", {});
   if (!res.ok) {
     throw new Error(`GET /api/me failed: ${res.status} ${await res.text()}`);
   }
@@ -83,17 +80,13 @@ async function fetchMe(token: string): Promise<MeResponse> {
 }
 
 async function putEncryption(
-  token: string,
   encSalt: string,
   encCheck: string,
   expectedEncCheck: string
 ): Promise<Response> {
-  return fetch(`${BACKEND_URL}/api/me/encryption`, {
+  return authFetch("/api/me/encryption", {
     method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ encSalt, encCheck, expectedEncCheck }),
   });
 }
@@ -118,17 +111,17 @@ export async function ensureEncryptionReady(): Promise<EncStatus> {
     return "ready";
   }
 
-  let me = await fetchMe(auth.token);
+  let me = await fetchMe();
 
   if (me.encSalt === "") {
     // First device ever on this account: initialize default-mode encryption.
     const salt = generateSaltB64();
     const key = await deriveKey(me.id, salt);
     const check = await makeEncCheck(key);
-    const res = await putEncryption(auth.token, salt, check, "");
+    const res = await putEncryption(salt, check, "");
     if (res.status === 409) {
       // Another fresh device won the init race; adopt its salt/check below.
-      me = await fetchMe(auth.token);
+      me = await fetchMe();
     } else if (!res.ok) {
       throw new Error(`PUT /api/me/encryption failed: ${res.status} ${await res.text()}`);
     } else {
@@ -150,7 +143,7 @@ export async function ensureEncryptionReady(): Promise<EncStatus> {
 export async function unlockWithPassword(password: string): Promise<boolean> {
   const auth = await getAuthState();
   if (!auth) throw new Error("unlockWithPassword: not signed in");
-  const me = await fetchMe(auth.token);
+  const me = await fetchMe();
   if (me.encSalt === "") {
     throw new Error("unlockWithPassword: account has no encryption state");
   }
@@ -177,7 +170,7 @@ export async function setCustomPassword(newPassword: string): Promise<void> {
   const salt = generateSaltB64();
   const key = await deriveKey(newPassword, salt);
   const check = await makeEncCheck(key);
-  const res = await putEncryption(auth.token, salt, check, current.encCheck);
+  const res = await putEncryption(salt, check, current.encCheck);
   if (res.status === 409) {
     throw new Error("setCustomPassword: encryption state changed on another device");
   }

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 150×150 with a transparent ground — it sits over the video, so the mark
+     carries a cream rim and a shadow to hold its edge on any footage. */
+  html, body { width: 150px; height: 150px; }
+  body { background: transparent; display: flex; align-items: center; justify-content: center; }
+  .mark {
+    --mark: 132px;
+    border: 4px solid #f6f0e3;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+  }
+</style>
+</head>
+<body>
+  <div class="mark">
+    <div class="head"></div>
+    <svg viewBox="8 8 112 112" fill="none" stroke="#333333" stroke-linecap="round">
+      <g transform="translate(64 73) scale(0.8) translate(-64 -65)">
+        <circle cx="64" cy="42" r="7.75" stroke-width="5.5"/>
+        <path d="M64 38V93" stroke-width="6"/>
+        <path d="M45 55H83" stroke-width="6"/>
+        <path d="M39 64A25 25 0 0 0 89 64" stroke-width="6"/>
+        <path d="M40 66L30 50" stroke-width="6.4"/>
+        <path d="M88 66L98 50" stroke-width="6.4"/>
+      </g>
+    </svg>
+  </div>
+</body>
+</html>

@@ -14,24 +14,46 @@
 import { HOOK_TOTAL_MS } from "../src/layout";
 import type { FormatName, Point, Step } from "../src/types";
 
+/** Default opening is unhurried. `snappy` gets to the first click sooner. */
+export type OpeningPace = "default" | "snappy";
+
 /** The steps before the camera pushes in: reach the page, click, leave a note. */
-export function openingSteps(target: Point, noteId: string, format: FormatName): Step[] {
+export function openingSteps(
+  target: Point,
+  noteId: string,
+  format: FormatName,
+  pace: OpeningPace = "default"
+): Step[] {
+  const snappy = pace === "snappy";
+
   if (format !== "9-16") {
     return [
-      { action: "hold", ms: 600 },
-      { action: "cursor", to: target, ms: 800 },
-      { action: "click", ms: 320 },
-      { action: "createNote", id: noteId, content: "", ms: 380 }
+      { action: "hold", ms: snappy ? 180 : 600 },
+      { action: "cursor", to: target, ms: snappy ? 420 : 800 },
+      { action: "click", ms: snappy ? 280 : 320 },
+      { action: "createNote", id: noteId, content: "", ms: snappy ? 320 : 380 }
     ];
   }
 
-  // Padded so the push-in that follows begins after the hook has gone.
-  const click = 320;
-  const create = 400;
-  const glide = 1200;
+  const click = snappy ? 280 : 320;
+  const create = snappy ? 320 : 400;
+  const glide = snappy ? 700 : 1200;
+  // Wait until the hook has left before the following push-in. Snappy spends
+  // that wait after the click, so the pointer is already doing something.
+  const wait = Math.max(200, HOOK_TOTAL_MS - glide - click - create);
+
+  if (snappy) {
+    return [
+      { action: "cursor", to: target, ms: glide },
+      { action: "click", ms: click },
+      { action: "createNote", id: noteId, content: "", ms: create },
+      { action: "hold", ms: wait }
+    ];
+  }
+
   return [
     { action: "cursor", to: target, ms: glide },
-    { action: "hold", ms: Math.max(200, HOOK_TOTAL_MS - glide - click - create) },
+    { action: "hold", ms: wait },
     { action: "click", ms: click },
     { action: "createNote", id: noteId, content: "", ms: create }
   ];

@@ -1,6 +1,6 @@
 {
   "name": "anchored-notes",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Chrome extension to leave sticky notes anchored to pages, sites, tabs or globally",
   "type": "module",
   "private": true,
@@ -9,7 +9,7 @@
     "locales": "node mklocales.mjs",
     "typecheck": "tsc --noEmit",
     "build": "node mkicons.mjs && node mklocales.mjs && node build.mjs",
-    "test": "node --test",
+    "test": "node --import ./resolve-ts-hooks.mjs --test",
     "package": "node package.mjs"
   },
   "devDependencies": {
