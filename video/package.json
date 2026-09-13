@@ -14,13 +14,15 @@
     "voiceover": "tsx scripts/voiceover.ts",
     "sfx-fetch": "tsx scripts/sfx-fetch.ts",
     "sfx-manifest": "tsx scripts/sfx-manifest.ts",
-    "test": "node build-shell.mjs && node --test shell/stub.check.mjs",
+    "upload": "tsx scripts/upload-drive.ts",
+    "test": "node build-shell.mjs && node --test shell/stub.check.mjs && tsx --test scripts/lib/upload.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@elevenlabs/elevenlabs-js": "^2.65.0",
     "@remotion/cli": "4.0.506",
     "dotenv": "^17.4.2",
+    "googleapis": "^173.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "remotion": "4.0.506",

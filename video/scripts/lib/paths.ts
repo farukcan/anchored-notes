@@ -49,3 +49,7 @@ export const preflightPath = (scenario: string, lang: string, format: string): s
 
 export const videoPath = (scenario: string, lang: string, format: string): string =>
   path.join(outRoot, scenario, lang, `${format}.mp4`);
+
+/** YouTube sidecar, next to the rendered file — not an input to Remotion. */
+export const uploadMetadataPath = (scenario: string, lang: string, format: string): string =>
+  path.join(outRoot, scenario, lang, `${format}.upload-metadata.json`);
