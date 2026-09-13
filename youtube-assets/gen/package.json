@@ -1,0 +1,12 @@
+{
+  "name": "anchored-notes-youtube-assets",
+  "private": true,
+  "type": "module",
+  "description": "Renders the YouTube channel branding (banner, profile picture, watermark) from HTML templates",
+  "scripts": {
+    "shoot": "node shoot.mjs"
+  },
+  "dependencies": {
+    "puppeteer-core": "^25.3.0"
+  }
+}

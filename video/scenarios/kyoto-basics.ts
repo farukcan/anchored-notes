@@ -122,7 +122,7 @@ export const kyotoBasics: Scenario = {
         id: "open",
         narration: copy.openLine,
         steps: [
-          ...openingSteps({ x: 620, y: 430 }, NEW_NOTE, format),
+          ...openingSteps({ x: 620, y: 430 }, NEW_NOTE, format, "snappy"),
           {
             action: "parallel",
             ms: 760,

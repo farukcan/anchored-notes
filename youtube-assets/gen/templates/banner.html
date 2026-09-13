@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?display=swap&family=Fraunces:opsz,wght@9..144,460;9..144,560;9..144,700&family=Newsreader:opsz,wght@6..72,400;6..72,500" rel="stylesheet">
+<link rel="stylesheet" href="base.css">
+<style>
+  /* 2560×1440 is the full canvas (TV). YouTube crops it down to a 1546×423
+     box on phones, so everything that has to be readable lives in .safe;
+     the rest of the canvas is texture that only wide layouts ever show. */
+  html, body { width: 2560px; height: 1440px; }
+  .safe {
+    position: absolute; left: 507px; top: 508.5px; width: 1546px; height: 423px;
+    z-index: 4;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center;
+  }
+  .wordmark {
+    display: flex; align-items: center; gap: 30px;
+    font-family: "Fraunces", Georgia, serif; font-weight: 700; font-size: 96px;
+    letter-spacing: -0.015em; line-height: 1;
+  }
+  .wordmark .mark { --mark: 108px; box-shadow: 0 8px 20px rgba(43, 32, 16, 0.22); }
+  .tagline {
+    margin-top: 30px;
+    font-family: "Fraunces", Georgia, serif; font-weight: 460;
+    font-size: 42px; line-height: 1.25; letter-spacing: -0.01em;
+  }
+  .tagline .hl {
+    background: var(--yellow); padding: 0 12px 4px; border-radius: 7px;
+    box-shadow: 0 3px 0 #e3d340;
+  }
+  .scopes { display: flex; gap: 16px; margin-top: 36px; }
+  .scopes .chip { font-size: 22px; font-weight: 600; padding: 13px 22px; }
+  .scopes .chip small { font-size: 16px; margin-top: 3px; }
+  .c1 { background: var(--yellow);  transform: rotate(-1.6deg); }
+  .c2 { background: var(--blue);    transform: rotate(1.2deg); }
+  .c3 { background: var(--purple);  transform: rotate(-0.8deg); }
+  .c4 { background: var(--pink);    transform: rotate(1.6deg); }
+
+  /* Decorative notes. The two in the middle band are visible on desktop
+     (2560×423); the outer pair only on TV. */
+  .note {
+    position: absolute; z-index: 3;
+    font-family: -apple-system, "Helvetica Neue", sans-serif;
+    box-shadow: 0 26px 52px -18px rgba(43, 32, 16, 0.42);
+  }
+  .note .head { height: 34px; background: rgba(0, 0, 0, 0.09); }
+  .note .body { padding: 26px 28px; font-size: 25px; font-weight: 600; line-height: 1.5; }
+  .note .fold {
+    position: absolute; right: 0; bottom: 0; width: 38px; height: 38px;
+    background: linear-gradient(135deg, transparent 50%, rgba(0, 0, 0, 0.22) 50%);
+  }
+  .note .tape { width: 150px; height: 40px; top: -20px; left: 62px; transform: rotate(-5deg); }
+  .row { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+  .box { flex: none; width: 22px; height: 22px; border-radius: 5px; border: 3px solid #00000055; background: #fff; }
+  .box.on { background: #2f7cf6; border-color: #2f7cf6; position: relative; }
+  .box.on::after {
+    content: ""; position: absolute; left: 5px; top: 0; width: 6px; height: 12px;
+    border: solid #fff; border-width: 0 3px 3px 0; transform: rotate(42deg);
+  }
+  .row s { color: #00000077; }
+
+  .n1 { left: 120px;  top: 486px;  width: 344px; background: var(--yellow); transform: rotate(-3.2deg); }
+  .n2 { left: 2116px; top: 540px;  width: 328px; background: var(--blue);   transform: rotate(2.8deg); }
+  .n3 { left: 268px;  top: 108px;  width: 300px; background: var(--pink);   transform: rotate(2.2deg); }
+  .n4 { left: 1960px; top: 1076px; width: 316px; background: var(--purple); transform: rotate(-2.4deg); }
+</style>
+</head>
+<body class="paper">
+  <div class="note n1">
+    <div class="tape"></div>
+    <div class="head"></div>
+    <div class="body">
+      <div class="row"><span class="box on"></span><s>Book flights</s></div>
+      <div class="row"><span class="box"></span>Reserve hotel</div>
+      <div class="row"><span class="box"></span>Museum tickets</div>
+      <div class="row" style="margin-bottom:0"><span class="box"></span>Pack ⛩️</div>
+    </div>
+    <div class="fold"></div>
+  </div>
+
+  <div class="note n2">
+    <div class="tape" style="left:44px; transform:rotate(4deg)"></div>
+    <div class="head"></div>
+    <div class="body">## Kyoto — day 3<br><br>Nishiki Market lunch,<br>then Gion at dusk 🏮</div>
+    <div class="fold"></div>
+  </div>
+
+  <div class="note n3">
+    <div class="tape" style="width:130px; left:36px; transform:rotate(3deg)"></div>
+    <div class="head"></div>
+    <div class="body">Read this again<br>before Friday</div>
+    <div class="fold"></div>
+  </div>
+
+  <div class="note n4">
+    <div class="tape" style="width:132px; left:52px; transform:rotate(-4deg)"></div>
+    <div class="head"></div>
+    <div class="body">pin it now,<br>find it later ⚓</div>
+    <div class="fold"></div>
+  </div>
+
+  <div class="safe">
+    <div class="wordmark">
+      <div class="mark">
+        <div class="head"></div>
+        <svg viewBox="8 8 112 112" fill="none" stroke="#333333" stroke-linecap="round">
+          <g transform="translate(64 73) scale(0.8) translate(-64 -65)">
+            <circle cx="64" cy="42" r="7.75" stroke-width="5.5"/>
+            <path d="M64 38V93" stroke-width="6"/>
+            <path d="M45 55H83" stroke-width="6"/>
+            <path d="M39 64A25 25 0 0 0 89 64" stroke-width="6"/>
+            <path d="M40 66L30 50" stroke-width="6.4"/>
+            <path d="M88 66L98 50" stroke-width="6.4"/>
+          </g>
+        </svg>
+      </div>
+      Anchored Notes
+    </div>
+    <p class="tagline">Sticky notes that <span class="hl">stay</span> where you put them</p>
+    <div class="scopes">
+      <div class="chip c1">This page<small>one exact URL</small></div>
+      <div class="chip c2">This site<small>every page of it</small></div>
+      <div class="chip c3">This tab<small>follows navigation</small></div>
+      <div class="chip c4">Everywhere<small>all pages</small></div>
+    </div>
+  </div>
+</body>
+</html>

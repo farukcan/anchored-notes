@@ -1,0 +1,16 @@
+Anchored Notes is a Chrome extension for leaving sticky notes on web pages — notes that stay where you put them.
+
+Every note is anchored to one of four scopes and comes back whenever that scope matches:
+
+• This page — one exact URL
+• This site — every page of it
+• This tab — follows you as you navigate
+• Everywhere — all pages
+
+Write in a full markdown editor: headings, lists, task lists with clickable checkboxes, tables, quotes and code blocks, with a Notion-style "/" menu. Drag, resize and recolor your notes. The whole interface speaks 16 languages.
+
+Sign in with Google and your notes follow you across devices. Synced notes are always encrypted, and an optional passphrase upgrades them to end-to-end encryption, so nobody — not even the server — can read them.
+
+On this channel: short screen recordings of the extension in real use, walkthroughs of each feature, and notes on what changed in every release.
+
+Get it on the Chrome Web Store: [add listing URL]
