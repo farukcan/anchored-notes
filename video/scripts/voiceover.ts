@@ -15,19 +15,22 @@
 // Output is committed: the same text does not come back as the same audio
 // twice, so a render consumes these files rather than producing them.
 
-import "dotenv/config";
 import { execFileSync } from "node:child_process";
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { config as loadEnv } from "dotenv";
 import { ElevenLabsClient } from "@elevenlabs/elevenlabs-js";
 import { ANALYSIS_SAMPLE_RATE, SPEECH_FLOOR_DB, medianActiveRmsDb } from "./lib/audio-levels";
 import { decodePcmMono } from "./lib/ffmpeg";
-import { voiceAudioPath, voiceRoot, voiceTimelinePath } from "./lib/paths";
+import { videoRoot, voiceAudioPath, voiceRoot, voiceTimelinePath } from "./lib/paths";
 import { parseTarget } from "./lib/plan";
 import { getScenario } from "../scenarios/index";
 import { naturalMs } from "../src/beats";
 import type { VoicePhrase } from "../src/voice";
+
+// Anchored on videoRoot like upload-drive.ts, not on cwd (`dotenv/config`).
+loadEnv({ path: join(videoRoot, ".env"), quiet: true });
 
 /**
  * The longest pause left between two words. Anything more is dead air: on a

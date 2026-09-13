@@ -118,8 +118,10 @@ it creates `anchored-notes/` and the job folder under `Youtube`.
 6. Prompt on stderr: `Type yes to continue:` — only `yes` or `y` proceeds.
 7. ADC (`drive.file`) → ensure `Youtube/anchored-notes/<jobId>/`.
 8. **Overwrite:** if `video.mp4` or `upload-metadata.json` already exists in
-   that job folder, **delete then create** (not an in-place media update), so
-   Drive watchers see a fresh create event.
+   that job folder, its media is **updated in place**: a failed upload leaves
+   the previous version intact and the file id / `webViewLink` stays stable
+   across runs. More than one match (an earlier interrupted run) is reported
+   on stderr.
 9. Print **only** the result JSON on stdout.
 
 ```bash
@@ -169,7 +171,7 @@ flowchart LR
   files --> check["check-video"]
   check --> confirm["TTY yes"]
   confirm --> folders["Youtube / anchored-notes / jobId"]
-  folders --> overwrite["delete then create"]
+  folders --> overwrite["update in place / create"]
   overwrite --> stdout["stdout id + webViewLink"]
 ```
 

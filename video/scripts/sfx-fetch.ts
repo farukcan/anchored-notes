@@ -1,6 +1,7 @@
 import {mkdir, writeFile} from "node:fs/promises";
 import path from "node:path";
-import "dotenv/config";
+import {config as loadEnv} from "dotenv";
+import {videoRoot} from "./lib/paths";
 import {
   MAX_SFX_SECONDS,
   SFX_ROLES,
@@ -29,6 +30,8 @@ import {
  */
 
 const SEARCH_URL = "https://freesound.org/apiv2/search/text/";
+/** The API key only ever goes to Freesound itself. */
+const API_HOST = "freesound.org";
 /** The license URL Freesound returns for CC0. Verified per result, not trusted from the filter. */
 const CC0_LICENSE_URL = "creativecommons.org/publicdomain/zero";
 const FIELDS = "id,name,tags,description,duration,license,username,url,previews,ac_analysis";
@@ -104,6 +107,13 @@ const parseArgs = (argv: string[]): Args => {
   };
 };
 
+const isApiHost = (url: string): boolean => {
+  const {hostname} = new URL(url);
+  return hostname === API_HOST || hostname.endsWith(`.${API_HOST}`);
+};
+
+loadEnv({path: path.join(videoRoot, ".env"), quiet: true});
+
 const args = parseArgs(process.argv.slice(2));
 
 const apiKey = process.env.FREESOUND_API_KEY;
@@ -170,7 +180,13 @@ const downloadCandidates = async (): Promise<void> => {
     const relativeFile = `sfx/${args.role}/${key}.mp3`;
     const absoluteFile = path.join(sfxRoleDir(args.role), `${key}.mp3`);
 
-    const download = await fetch(previewUrl, {headers: {Authorization: `Token ${apiKey}`}});
+    // The preview URL comes from the API response; previews are public, so the
+    // key is only attached when the host really is Freesound (never leaked to a
+    // CDN or any other host the response might point at).
+    const download = await fetch(
+      previewUrl,
+      isApiHost(previewUrl) ? {headers: {Authorization: `Token ${apiKey}`}} : undefined,
+    );
     if (!download.ok) {
       throw new Error(
         `Preview download failed for ${result.id}: ${download.status} ${download.statusText} — ${previewUrl}`,
