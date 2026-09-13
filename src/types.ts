@@ -34,7 +34,23 @@ export type Message =
   | { type: "APPEND_SELECTION"; content: string }
   | { type: "SET_APPEND_TARGET"; hasTarget: boolean }
   | { type: "SYNC" }
-  | { type: "LOGIN" };
+  | { type: "LOGIN" }
+  | { type: "STORAGE_WRITE"; write: StorageWrite };
+
+// Note-storage mutations that non-background contexts forward to the
+// background worker, the single writer of the shared notes key (storage.ts).
+export type StorageWrite =
+  | { op: "saveNote"; note: Note }
+  | { op: "createNote"; note: Note }
+  | { op: "deleteNote"; id: string }
+  | { op: "replaceAllNotes"; notes: Note[] }
+  | { op: "wipeLocalNotes" }
+  | { op: "bumpAllNoteTimestamps" };
+
+// `created` is only set for createNote: false when the note limit was hit.
+export type StorageWriteResponse =
+  | { ok: true; created?: boolean }
+  | { ok: false; error: string };
 
 // Set by the background worker in chrome.storage.session (value: the tab id)
 // when a note couldn't be added on a restricted page (no content script

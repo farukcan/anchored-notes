@@ -6,6 +6,7 @@ import type { AnchorScope, GetTabIdResponse, Message, Note, PageContext } from "
 import { anchorKeyFor, isNoteVisible, pageContextFromLocation, shortDomainFromHostname } from "../matching.js";
 import { fetchSiteNameFromManifest } from "../site-manifest.js";
 import {
+  createNote,
   deleteNote,
   getBadgeOffset,
   getNotesMap,
@@ -137,18 +138,24 @@ async function getTabId(): Promise<number> {
   return res.tabId;
 }
 
+// This script's shadow root, created once. A host left behind by an earlier
+// generation of the script (extension update → orphaned content script) is
+// removed rather than reused: that script no longer receives storage events,
+// so its cards are dead, and drawing into its root would show every note twice.
+let hostShadow: ShadowRoot | undefined;
+
 function mountHost(): ShadowRoot {
-  const existing = document.getElementById(HOST_ID);
-  if (existing?.shadowRoot) return existing.shadowRoot;
+  if (hostShadow) return hostShadow;
+  document.getElementById(HOST_ID)?.remove();
 
   const host = document.createElement("div");
   host.id = HOST_ID;
-  const shadow = host.attachShadow({ mode: "open" });
+  hostShadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = styles;
-  shadow.appendChild(style);
+  hostShadow.appendChild(style);
   document.documentElement.appendChild(host);
-  return shadow;
+  return hostShadow;
 }
 
 const deps = {
@@ -356,7 +363,7 @@ function updateBadge(shadow: ShadowRoot, hidden: Note[]): void {
   for (const note of hidden) {
     const item = document.createElement("button");
     item.className = "an-badge-item";
-    item.textContent = deriveTitle(note.content);
+    item.textContent = deriveTitle(note.content) || t("empty", null);
     item.addEventListener("click", () => {
       parts.list.classList.remove("open");
       void saveNote({ ...note, hidden: false, updatedAt: Date.now() });
@@ -439,10 +446,14 @@ function init(): void {
   // notes, so fetch it in parallel instead of blocking the first paint on the
   // (possibly asleep) service worker — notes appear as the page renders.
   redraw(shadow);
-  void getTabId().then((id) => {
-    tabId = id;
-    redraw(shadow);
-  });
+  // If the worker can't be reached (failed to wake, or this context was
+  // invalidated by an update), only tab-scoped notes stay hidden here.
+  getTabId()
+    .then((id) => {
+      tabId = id;
+      redraw(shadow);
+    })
+    .catch(() => undefined);
   void resolveSiteName();
   watchPageTitle();
 
@@ -474,7 +485,7 @@ function init(): void {
     resolvePageTitle();
     redraw(shadow);
   };
-  if (navigation) {
+  if (typeof navigation !== "undefined") {
     navigation.addEventListener("navigatesuccess", onUrlChange);
   } else {
     window.addEventListener("popstate", onUrlChange);
@@ -498,21 +509,24 @@ function showToast(shadow: ShadowRoot, text: string): void {
 }
 
 // Enforce the note quota at the single creation point. Both the popup and the
-// context menu reach note creation through this CREATE_NOTE message.
+// context menu reach note creation through this CREATE_NOTE message. The check
+// itself lives in the storage write (createNote) so two quick creates can't
+// both pass against the same snapshot.
 async function createNoteWithinLimit(
   content: string,
   source: TrackSource,
 ): Promise<void> {
-  const map = await getNotesMap();
-  const limit = await getCurrentLimit();
-  if (Object.keys(map).length >= limit) {
+  const note = newNote(content);
+  // Set before the write: the storage change that mounts the card can arrive
+  // before createNote resolves.
+  pendingFocusNoteId = note.id;
+  if (!(await createNote(note))) {
+    pendingFocusNoteId = undefined;
+    const limit = await getCurrentLimit();
     showToast(mountHost(), t("noteLimitReached", { limit: formatLimit(limit) }));
     void track("note_limit_hit", { source, limit });
     return;
   }
-  const note = newNote(content);
-  pendingFocusNoteId = note.id;
-  await saveNote(note);
   void track("note_created", { source, scope: note.scope });
 }
 
@@ -557,8 +571,9 @@ async function bootstrap(): Promise<void> {
 // Re-injection (popup/context-menu retry, bulk-inject on install) can run this
 // bundle again in a tab that already has it. Key the guard by extension version
 // so an update can re-bootstrap after orphaned scripts; same-version re-runs
-// skip to avoid duplicate CREATE_NOTE listeners. mountHost already dedupes the
-// shadow host by id. Programmatic inject clears the guard first (see inject.ts).
+// skip to avoid duplicate CREATE_NOTE listeners. mountHost replaces any host a
+// previous generation left behind. Programmatic inject clears the guard first
+// (see inject.ts).
 type InjectionGuard = {
   version: string;
   onMessage: (message: Message) => boolean | undefined;

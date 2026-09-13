@@ -39,14 +39,25 @@ flowchart LR
   end
   POP[popup] -->|CREATE_NOTE| CS
   BG[background\nservice worker] -->|CREATE_NOTE / APPEND_SELECTION\nfrom context menu| CS
-  CS -->|GET_TAB_ID| BG
-  CS <-->|notes| ST[(chrome.storage.local)]
-  POP --> ST
-  OPT[options page] <--> ST
-  BG -->|onStartup: drop tab notes\nonRemoved: drop closed-tab notes| ST
+  CS -->|GET_TAB_ID / STORAGE_WRITE| BG
+  POP -->|STORAGE_WRITE| BG
+  OPT[options page] -->|STORAGE_WRITE| BG
+  BG -->|single writer of notes| ST[(chrome.storage.local)]
+  ST -.->|onChanged| CS
+  ST -.->|onChanged| POP
+  ST -.->|onChanged| OPT
 ```
 
-- **Storage:** all notes live under one `notes` key in `chrome.storage.local`.
+- **Storage:** all notes live under one `notes` key in `chrome.storage.local`,
+  with pending deletion tombstones under `deletedNoteIds`. Only the background
+  worker writes them: every other context (each tab's content script, popup,
+  options) is its own JS realm, so a per-realm queue can't stop two contexts
+  from interleaving read-modify-write cycles on the shared key and losing an
+  update. `src/storage.ts` forwards writes from those contexts as
+  `STORAGE_WRITE` messages and the worker applies them through one serialized
+  queue, writing a note and its tombstone in the same step. Reads and
+  `onChanged` listeners stay local, so every context re-renders from the change
+  event. The note-limit check (`createNote`) runs inside that queue too.
   Tab-scoped notes are dropped on `onStartup` (previous tab ids are meaningless)
   and on tab close, making them effectively session-only.
 - **Visibility** is decided by the pure `isNoteVisible` function in
@@ -143,11 +154,16 @@ Client modules:
   open produces concurrent refreshes. The loser adopts the winner's stored
   token instead of discarding a live session, which is what lets its request
   (or realtime handshake) retry rather than be read as signed out.
-- **Sync** — `src/sync.ts` runs only in the background worker (single context, no
-  cross-context races). It pushes local non-`tab` notes plus tombstoned deletions
-  (`deletedNoteIds` in `src/storage.ts`) and merges the response into local
-  storage atomically (last-write-wins on `updatedAt`). Triggers: note changes
-  (debounced), sign-in, a 5-minute alarm, and realtime events. `tab`-scoped notes
+- **Sync** — `src/sync.ts` runs only in the background worker, the same context
+  that owns all note writes. It pushes local non-`tab` notes plus tombstoned
+  deletions (`deletedNoteIds` in `src/storage.ts`) and merges the response into
+  local storage atomically (last-write-wins on `updatedAt`; a pushed note the
+  server neither returns nor rejects is kept, since deletions always arrive as
+  explicit tombstones). A trigger that lands while a run is in flight queues one
+  more run, so an edit made during the round-trip is pushed right after.
+  Triggers: note changes (debounced), sign-in, a 5-minute alarm (created only
+  when missing — re-creating it on every worker wake would keep resetting its
+  countdown), and realtime events. `tab`-scoped notes
   are session-only and never sync; switching an already-synced note to `tab`
   scope tombstones it so the next sync deletes the server copy, while the note
   lives on locally (`applySyncResult` keeps `tab` notes through applied deletes).

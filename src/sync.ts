@@ -83,120 +83,128 @@ function fromDTO(dto: NoteDTO, content: string): Note {
   };
 }
 
-// Guard against overlapping runs (debounced change + periodic alarm).
+// Guard against overlapping runs (debounced change + periodic alarm). A
+// trigger that lands mid-run isn't dropped: it asks for one more pass after
+// the current one, so an edit made during the round-trip still gets pushed
+// instead of waiting for the next alarm.
 let inFlight = false;
+let rerunRequested = false;
 
 export async function sync(): Promise<void> {
-  if (inFlight) return;
-  const auth = await getAuthState();
-  if (!auth) return;
-
+  if (inFlight) {
+    rerunRequested = true;
+    return;
+  }
   inFlight = true;
   try {
-    // No verified encryption key on this device (e.g. a custom password not
-    // yet entered) means no sync: pushing would need the key, and pulling
-    // would yield undecryptable content.
-    let keyState = await getReadyKey();
-    if (!keyState) {
-      const status = await ensureEncryptionReady();
-      if (status !== "ready") return;
-      keyState = await getReadyKey();
-      if (!keyState) throw new Error("sync: encryption ready but key state missing");
-    }
-    const key = keyState.key;
-
-    const syncable = (await getAllNotes()).filter((n) => n.scope !== "tab");
-    const deletes = await getDeletedNoteIds();
-    const localById = new Map(syncable.map((n) => [n.id, n]));
-
-    const upserts = await Promise.all(syncable.map((n) => toDTO(n, key)));
-
-    const res = await authFetch("/api/notes/sync", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ upserts, deletes, encCheck: keyState.encCheck }),
-    });
-
-    // authFetch already retried once after a token refresh, and raises rather
-    // than returning a 401 it couldn't get a verdict on, so a 401 here means
-    // PocketBase confirmed the session is invalid.
-    if (res.status === 401) {
-      await logout();
-      return;
-    }
-    // 409: the account's verifier changed (password set/changed on another
-    // device) and the server rejected this push before applying anything.
-    if (res.status === 409) {
-      await markPasswordRequiredIfStale(keyState.encCheck);
-      return;
-    }
-    if (!res.ok) {
-      throw new Error(`sync failed: ${res.status} ${await res.text()}`);
-    }
-
-    const data = (await res.json()) as SyncResponse;
-
-    // Belt-and-braces staleness check for servers that don't enforce the
-    // request encCheck: apply nothing with a stale key.
-    if (data.encCheck !== keyState.encCheck) {
-      await markPasswordRequiredIfStale(keyState.encCheck);
-      return;
-    }
-
-    // Keep notes the backend didn't store (over-limit or errored) local-only so
-    // nothing is lost client-side.
-    const notStored = new Set([...data.rejected, ...data.failed]);
-    const keptLocal = syncable.filter((n) => notStored.has(n.id));
-
-    // Server tombstones (deleted=true) tell us a note was deleted on another
-    // device: drop it locally and don't render it.
-    const liveNotes = data.notes.filter((n) => !n.deleted);
-    const serverDeletedIds = data.notes.filter((n) => n.deleted).map((n) => n.clientId);
-
-    // Decrypt pulled content. `bumps` collects notes whose server copy must be
-    // re-pushed encrypted (legacy plaintext or unreadable): bumping the local
-    // updatedAt to serverTs+1 makes the server's strictly-newer LWW accept the
-    // follow-up push while a genuinely newer edit elsewhere still wins.
-    const serverNotes: Note[] = [];
-    const bumps = new Map<string, number>();
-    for (const dto of liveNotes) {
-      if (!isEncrypted(dto.content)) {
-        // Legacy plaintext from before encryption: accept and self-heal.
-        serverNotes.push(fromDTO(dto, dto.content));
-        bumps.set(dto.clientId, dto.noteUpdatedAt + 1);
-        continue;
-      }
-      try {
-        serverNotes.push(fromDTO(dto, await decryptContent(key, dto.content)));
-      } catch (err) {
-        console.error(`[anchored-notes] cannot decrypt note ${dto.clientId}:`, err);
-        const local = localById.get(dto.clientId);
-        if (local) {
-          // Route through the kept-local path so applySyncResult doesn't drop
-          // the note as "pushed but missing", then re-push it encrypted.
-          keptLocal.push(local);
-          bumps.set(dto.clientId, dto.noteUpdatedAt + 1);
-        }
-        // No local copy: leave the server record alone; a device that can
-        // read it will heal it.
-      }
-    }
-
-    // Atomic merge re-reads local state, so notes created/edited during the
-    // round-trip survive (vs. a blanket overwrite of the snapshot).
-    await applySyncResult({
-      serverNotes,
-      pushedIds: syncable.map((n) => n.id),
-      rejected: keptLocal,
-      appliedDeletes: [...deletes, ...serverDeletedIds],
-    });
-    await clearDeletedNoteIds(deletes);
-    // The bump is a notes-storage write, so the existing change listener in
-    // background.ts schedules the follow-up sync that pushes the ciphertext.
-    if (bumps.size > 0) await bumpNoteTimestamps(bumps);
-
-    if (data.plan !== auth.plan) await updatePlan(data.plan);
+    do {
+      rerunRequested = false;
+      await syncOnce();
+    } while (rerunRequested);
   } finally {
     inFlight = false;
   }
+}
+
+async function syncOnce(): Promise<void> {
+  const auth = await getAuthState();
+  if (!auth) return;
+
+  // No verified encryption key on this device (e.g. a custom password not
+  // yet entered) means no sync: pushing would need the key, and pulling
+  // would yield undecryptable content.
+  let keyState = await getReadyKey();
+  if (!keyState) {
+    const status = await ensureEncryptionReady();
+    if (status !== "ready") return;
+    keyState = await getReadyKey();
+    if (!keyState) throw new Error("sync: encryption ready but key state missing");
+  }
+  const key = keyState.key;
+
+  const syncable = (await getAllNotes()).filter((n) => n.scope !== "tab");
+  const deletes = await getDeletedNoteIds();
+  const localById = new Map(syncable.map((n) => [n.id, n]));
+
+  const upserts = await Promise.all(syncable.map((n) => toDTO(n, key)));
+
+  const res = await authFetch("/api/notes/sync", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ upserts, deletes, encCheck: keyState.encCheck }),
+  });
+
+  // authFetch already retried once after a token refresh, and raises rather
+  // than returning a 401 it couldn't get a verdict on, so a 401 here means
+  // PocketBase confirmed the session is invalid.
+  if (res.status === 401) {
+    await logout();
+    return;
+  }
+  // 409: the account's verifier changed (password set/changed on another
+  // device) and the server rejected this push before applying anything.
+  if (res.status === 409) {
+    await markPasswordRequiredIfStale(keyState.encCheck);
+    return;
+  }
+  if (!res.ok) {
+    throw new Error(`sync failed: ${res.status} ${await res.text()}`);
+  }
+
+  const data = (await res.json()) as SyncResponse;
+
+  // Belt-and-braces staleness check for servers that don't enforce the
+  // request encCheck: apply nothing with a stale key.
+  if (data.encCheck !== keyState.encCheck) {
+    await markPasswordRequiredIfStale(keyState.encCheck);
+    return;
+  }
+
+  // Keep notes the backend didn't store (over-limit or errored) local-only so
+  // nothing is lost client-side.
+  const notStored = new Set([...data.rejected, ...data.failed]);
+  const keptLocal = syncable.filter((n) => notStored.has(n.id));
+
+  // Server tombstones (deleted=true) tell us a note was deleted on another
+  // device: drop it locally and don't render it.
+  const liveNotes = data.notes.filter((n) => !n.deleted);
+  const serverDeletedIds = data.notes.filter((n) => n.deleted).map((n) => n.clientId);
+
+  // Decrypt pulled content. `bumps` collects notes whose server copy must be
+  // re-pushed encrypted (legacy plaintext or unreadable): bumping the local
+  // updatedAt to serverTs+1 makes the server's strictly-newer LWW accept the
+  // follow-up push while a genuinely newer edit elsewhere still wins.
+  const serverNotes: Note[] = [];
+  const bumps = new Map<string, number>();
+  for (const dto of liveNotes) {
+    if (!isEncrypted(dto.content)) {
+      // Legacy plaintext from before encryption: accept and self-heal.
+      serverNotes.push(fromDTO(dto, dto.content));
+      bumps.set(dto.clientId, dto.noteUpdatedAt + 1);
+      continue;
+    }
+    try {
+      serverNotes.push(fromDTO(dto, await decryptContent(key, dto.content)));
+    } catch (err) {
+      console.error(`[anchored-notes] cannot decrypt note ${dto.clientId}:`, err);
+      // With a local copy, keep it (applySyncResult never drops a note the
+      // server didn't return) and re-push it encrypted. Without one, leave the
+      // server record alone; a device that can read it will heal it.
+      if (localById.has(dto.clientId)) bumps.set(dto.clientId, dto.noteUpdatedAt + 1);
+    }
+  }
+
+  // Atomic merge re-reads local state, so notes created/edited during the
+  // round-trip survive (vs. a blanket overwrite of the snapshot).
+  await applySyncResult({
+    serverNotes,
+    rejected: keptLocal,
+    appliedDeletes: [...deletes, ...serverDeletedIds],
+  });
+  await clearDeletedNoteIds(deletes);
+  // The bump is a notes-storage write, so the existing change listener in
+  // background.ts schedules the follow-up sync that pushes the ciphertext.
+  if (bumps.size > 0) await bumpNoteTimestamps(bumps);
+
+  if (data.plan !== auth.plan) await updatePlan(data.plan);
 }

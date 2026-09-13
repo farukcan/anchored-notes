@@ -1,8 +1,14 @@
-// Service worker: context menu, tab id replies, tab-note cleanup.
+// Service worker: context menu, tab id replies, tab-note cleanup, and the
+// single writer of note storage (see storage.ts).
 
 import type { GetTabIdResponse, LoginResponse, Message } from "./types.js";
 import { PENDING_WARNING_KEY } from "./types.js";
-import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js";
+import {
+  applyStorageWrite,
+  deleteAllTabNotes,
+  deleteTabNotes,
+  onNotesChanged,
+} from "./storage.js";
 import { login, onAuthChanged, refreshIfExpiringSoon } from "./auth.js";
 import { ensureEncryptionReady } from "./encryption.js";
 import { sync } from "./sync.js";
@@ -12,6 +18,9 @@ import { BACKEND_URL } from "./config.js";
 import { track } from "./umami.js";
 
 const SYNC_ALARM = "anchored-notes-sync";
+// How long the "!" badge (and its pending flag) stays if the popup never
+// opens to consume the warning.
+const WARNING_BADGE_MS = 10_000;
 
 const MENU_ID = "anchored-notes-add";
 const APPEND_MENU_ID = "anchored-notes-append-selection";
@@ -205,15 +214,41 @@ function warnCantAddNote(tabId: number, canOpenPopup: boolean): void {
     chrome.action.openPopup().catch(() => undefined);
   }
   void chrome.storage.session.set({ [PENDING_WARNING_KEY]: tabId });
+  // Otherwise the badge would sit there until the tab closes, and the flag
+  // would toast on some unrelated popup open much later.
+  setTimeout(() => void clearCantAddNoteWarning(tabId), WARNING_BADGE_MS);
 }
+
+async function clearCantAddNoteWarning(tabId: number): Promise<void> {
+  // The tab may be gone by now.
+  await chrome.action.setBadgeText({ tabId, text: "" }).catch(() => undefined);
+  const res = await chrome.storage.session.get(PENDING_WARNING_KEY);
+  // A newer warning for another tab owns the flag now; leave it.
+  if (res[PENDING_WARNING_KEY] === tabId) {
+    await chrome.storage.session.remove(PENDING_WARNING_KEY);
+  }
+}
+
+// storage.session is readable only from trusted contexts by default; the
+// content script (umami's note_edited throttle) needs it too. Idempotent, so
+// it simply runs on every worker start.
+void chrome.storage.session.setAccessLevel({
+  accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
+});
 
 // Sync triggers. sync() is a no-op for anonymous users, so these are safe to
 // always register. Local note edits are debounced; a periodic alarm pulls
 // changes made on other devices; signing in syncs immediately.
+function runSync(): void {
+  sync().catch((err: unknown) => {
+    console.error("[anchored-notes] sync failed:", err);
+  });
+}
+
 let syncTimer: ReturnType<typeof setTimeout> | undefined;
 function scheduleSync(): void {
   if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => void sync(), 2000);
+  syncTimer = setTimeout(runSync, 2000);
 }
 
 onNotesChanged(() => scheduleSync());
@@ -233,7 +268,18 @@ onAuthChanged((auth, previous) => {
   }
 });
 
-chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
+// alarms.create on an existing name replaces the alarm and restarts its
+// countdown. This top-level code runs on every service-worker wake, which for
+// an actively browsing user happens far more often than every 5 minutes, so an
+// unconditional create would keep pushing the alarm out and it might never
+// fire. Create it only when missing (fresh install, or cleared by an
+// update/reload).
+async function ensureSyncAlarm(): Promise<void> {
+  const existing = await chrome.alarms.get(SYNC_ALARM);
+  if (!existing) await chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
+}
+void ensureSyncAlarm();
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== SYNC_ALARM) return;
   // Renew the token ahead of expiry so sync() (and any other authenticated
@@ -243,7 +289,7 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     .catch((err: unknown) => {
       console.error("[anchored-notes] proactive token refresh failed:", err);
     })
-    .then(() => sync());
+    .then(runSync);
 });
 
 chrome.runtime.onMessage.addListener(
@@ -262,8 +308,14 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
     if (message.type === "SYNC") {
-      void sync();
+      runSync();
       return undefined;
+    }
+    if (message.type === "STORAGE_WRITE") {
+      // Every other context forwards its note writes here so all
+      // read-modify-write cycles on the shared key run through one queue.
+      void applyStorageWrite(message.write).then(sendResponse);
+      return true; // async response
     }
     if (message.type === "LOGIN") {
       // Run the OAuth flow here, not in the popup: opening the auth window makes

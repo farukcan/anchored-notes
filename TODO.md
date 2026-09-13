@@ -113,5 +113,5 @@ Store draft item id: `dnmmgfkolmlieeempmfjghddbcehijgc`
 ## Nice to have (not blocking)
 - [ ] Integration/e2e test for the auth + sync round-trip (unit tests cover
   matching/i18n/manifest logic only).
-- [ ] Error surfacing for sync failures in the UI (currently `sync()` throws and
-  is only logged in the background worker).
+- [ ] Error surfacing for sync failures in the UI (currently `sync()` failures
+  are caught and only logged in the background worker).

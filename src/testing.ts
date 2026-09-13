@@ -39,8 +39,13 @@ function emitChanges(changes: Record<string, { oldValue?: unknown; newValue?: un
 const fakeChrome = {
   storage: {
     local: {
-      get: (key: string): Promise<Record<string, unknown>> =>
-        Promise.resolve(key in storageLocal ? { [key]: storageLocal[key] } : {}),
+      get: (keys: string | string[]): Promise<Record<string, unknown>> => {
+        const result: Record<string, unknown> = {};
+        for (const key of typeof keys === "string" ? [keys] : keys) {
+          if (key in storageLocal) result[key] = storageLocal[key];
+        }
+        return Promise.resolve(result);
+      },
       set: (items: Record<string, unknown>): Promise<void> => {
         const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
         for (const [key, value] of Object.entries(items)) {
