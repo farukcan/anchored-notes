@@ -3,14 +3,25 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { after, test } from "node:test";
-import {
-  compositionId,
-  parseChannelSlug,
-  parseJobId,
-  slashJobId
-} from "./job-id";
+import { compositionId, parseJobId, slashJobId } from "./job-id";
 import { parseUploadMetadata } from "./upload-metadata";
-import { driveChildQuery, escapeDriveQuery, isAffirmative } from "./drive";
+import {
+  STORE_LISTING_URL,
+  buildUploadMetadata,
+  parsePrepareUploadArgs,
+  writeUploadMetadata,
+  youtubeTitle
+} from "./prepare-upload";
+import {
+  CHANNEL_SLUG,
+  driveChildQuery,
+  driveFolderNames,
+  escapeDriveQuery,
+  formatUploadResult,
+  isAffirmative,
+  parseUploadCliArgs,
+  requireYoutubeDriveFolderId
+} from "./drive";
 import { assertUploadFiles } from "./upload-ready";
 
 const scratch = mkdtempSync(join(tmpdir(), "anchored-upload-"));
@@ -32,10 +43,103 @@ test("parseJobId rejects unknown scenarios, langs, and shapes", () => {
   assert.throws(() => parseJobId("kyoto-basics/en/1-1"), /not <scenario>/);
 });
 
-test("parseChannelSlug is kebab-case only", () => {
-  assert.equal(parseChannelSlug("anchored-notes"), "anchored-notes");
-  assert.throws(() => parseChannelSlug("Anchored Notes"), /kebab-case/);
-  assert.throws(() => parseChannelSlug("-leading"), /kebab-case/);
+test("upload CLI takes only a jobId; channel is always anchored-notes", () => {
+  assert.equal(parseUploadCliArgs(["kyoto-basics/en/16-9"]), "kyoto-basics/en/16-9");
+  assert.equal(parseUploadCliArgs(["  kyoto-basics-en-16-9  "]), "kyoto-basics-en-16-9");
+  assert.throws(
+    () => parseUploadCliArgs(["anchored-notes", "kyoto-basics/en/16-9"]),
+    /channelSlug is no longer an argument/
+  );
+  assert.throws(() => parseUploadCliArgs([]), /Usage: npm run upload -- <jobId>/);
+  assert.throws(() => parseUploadCliArgs([""]), /Usage: npm run upload -- <jobId>/);
+  assert.throws(() => parseUploadCliArgs(["a", "b", "c"]), /Usage: npm run upload -- <jobId>/);
+  assert.deepEqual(driveFolderNames("kyoto-basics-en-16-9"), [
+    CHANNEL_SLUG,
+    "kyoto-basics-en-16-9"
+  ]);
+  assert.equal(CHANNEL_SLUG, "anchored-notes");
+});
+
+test("YOUTUBE_DRIVE_FOLDER_ID has no fallback name or default", () => {
+  assert.equal(
+    requireYoutubeDriveFolderId({ YOUTUBE_DRIVE_FOLDER_ID: "folder-id" }),
+    "folder-id"
+  );
+  assert.throws(() => requireYoutubeDriveFolderId({}), /YOUTUBE_DRIVE_FOLDER_ID is not set in \.env/);
+  assert.throws(
+    () => requireYoutubeDriveFolderId({ DRIVE_FOLDER_ID: "other" }),
+    /YOUTUBE_DRIVE_FOLDER_ID is not set in \.env/
+  );
+});
+
+test("stdout result JSON requires file id and webViewLink", () => {
+  const result = formatUploadResult({
+    jobId: "kyoto-basics-en-16-9",
+    path: "kyoto-basics/en/16-9",
+    folderId: "folder-1",
+    video: { id: "vid-1", webViewLink: "https://drive.google.com/file/d/vid-1/view" },
+    metadata: { id: "meta-1", webViewLink: "https://drive.google.com/file/d/meta-1/view" }
+  });
+  assert.deepEqual(result, {
+    channel: "anchored-notes",
+    jobId: "kyoto-basics-en-16-9",
+    path: "kyoto-basics/en/16-9",
+    folderId: "folder-1",
+    video: { id: "vid-1", webViewLink: "https://drive.google.com/file/d/vid-1/view" },
+    metadata: { id: "meta-1", webViewLink: "https://drive.google.com/file/d/meta-1/view" }
+  });
+  assert.throws(
+    () =>
+      formatUploadResult({
+        jobId: "kyoto-basics-en-16-9",
+        path: "kyoto-basics/en/16-9",
+        folderId: "folder-1",
+        video: { id: "vid-1" },
+        metadata: { id: "meta-1", webViewLink: "https://drive.google.com/file/d/meta-1/view" }
+      }),
+    /video upload did not return id and webViewLink/
+  );
+});
+
+test("prepare-upload derives title, description, tags from scenario copy", () => {
+  const en = buildUploadMetadata({ scenario: "kyoto-basics", lang: "en", format: "9-16" });
+  const tr = buildUploadMetadata({ scenario: "kyoto-basics", lang: "tr", format: "9-16" });
+  const wide = buildUploadMetadata({ scenario: "kyoto-basics", lang: "en", format: "16-9" });
+  const chat = buildUploadMetadata({ scenario: "ai-chat", lang: "en", format: "9-16" });
+
+  assert.equal(en.title, "Notes That Stay");
+  assert.equal(tr.title, "Notlar Yerinde Kalır");
+  assert.equal(youtubeTitle("İYİ KISMI SAKLA", "tr"), "İyi Kısmı Sakla");
+  assert.equal(en.title, wide.title);
+  assert.equal(en.description, wide.description);
+  assert.notEqual(en.title, chat.title);
+  assert.match(en.description, /notes never live/);
+  assert.match(en.description, /Sticky notes that stay where you put them/);
+  assert.match(en.description, /Add to Chrome: /);
+  assert.ok(en.description.includes(STORE_LISTING_URL));
+  assert.match(tr.description, /asla durmadığı/);
+  assert.match(tr.description, /Chrome'a Ekle: /);
+  assert.deepEqual(en.tags, ["chrome extension", "sticky notes", "productivity", "anchored notes"]);
+  assert.deepEqual(tr.tags, ["chrome eklentisi", "yapışkan notlar", "verimlilik", "anchored notes"]);
+  assert.deepEqual(parseUploadMetadata(en), en);
+  assert.equal(Object.keys(en).sort().join(","), "description,tags,title");
+});
+
+test("prepare-upload CLI is jobId-only and writes the sidecar", () => {
+  assert.equal(parsePrepareUploadArgs([]), null);
+  assert.equal(parsePrepareUploadArgs(["kyoto-basics/en/9-16"]), "kyoto-basics/en/9-16");
+  assert.throws(
+    () => parsePrepareUploadArgs(["anchored-notes", "kyoto-basics/en/9-16"]),
+    /channelSlug is no longer an argument/
+  );
+
+  const target = { scenario: "kyoto-basics", lang: "en", format: "9-16" as const };
+  const videoFile = join(scratch, "prepared.mp4");
+  const metadataFile = join(scratch, "prepared.upload-metadata.json");
+  writeFileSync(videoFile, "fake");
+  const { metadata } = writeUploadMetadata(target, metadataFile);
+  const ready = assertUploadFiles(target, { videoFile, metadataFile });
+  assert.equal(ready.metadata.title, metadata.title);
 });
 
 test("upload-metadata schema requires title, description, tags", () => {

@@ -51,10 +51,3 @@ export function parseJobId(jobId: string): UploadTarget {
 
   return { scenario, lang, format };
 }
-
-export function parseChannelSlug(slug: string): string {
-  if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
-    throw new Error(`channel slug "${slug}" must be kebab-case (a-z, 0-9, hyphen)`);
-  }
-  return slug;
-}

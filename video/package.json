@@ -15,6 +15,7 @@
     "sfx-fetch": "tsx scripts/sfx-fetch.ts",
     "sfx-manifest": "tsx scripts/sfx-manifest.ts",
     "upload": "tsx scripts/upload-drive.ts",
+    "prepare-upload": "tsx scripts/prepare-upload.ts",
     "test": "node build-shell.mjs && node --test shell/stub.check.mjs && tsx --test scripts/lib/upload.test.ts",
     "typecheck": "tsc --noEmit"
   },

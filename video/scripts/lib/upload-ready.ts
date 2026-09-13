@@ -25,7 +25,7 @@ export function assertUploadFiles(
     paths?.metadataFile ?? uploadMetadataPath(target.scenario, target.lang, target.format);
   if (!existsSync(metadataFile)) {
     throw new Error(
-      `upload-metadata.json not found at ${metadataFile}; write title/description/tags before uploading.`
+      `upload-metadata.json not found at ${metadataFile}; run npm run prepare-upload -- <jobId>.`
     );
   }
 

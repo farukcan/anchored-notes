@@ -1,10 +1,14 @@
 // Upload one rendered marketing video and its YouTube sidecar to Drive.
 //
-//   npm run upload -- <channelSlug> <jobId>
+//   npm run upload -- <jobId>
 //
-// jobId is scenario/lang/format (or the Remotion composition id). The script
-// refuses to talk to Drive until check-video passes, the sidecar parses, and
-// the operator types yes.
+// Channel is always `anchored-notes`. jobId is scenario/lang/format (or the
+// Remotion composition id). The script refuses to talk to Drive until
+// check-video passes, the sidecar parses, and the operator types yes.
+//
+// JSON this command *reads*: out/<scenario>/<lang>/<format>.upload-metadata.json
+//   { title, description, tags } — written by `npm run prepare-upload`.
+// JSON this command *writes* to stdout (only): folder + file id / webViewLink.
 
 import { createReadStream, existsSync } from "node:fs";
 import { createInterface } from "node:readline/promises";
@@ -14,14 +18,10 @@ import { config as loadEnv } from "dotenv";
 import { google } from "googleapis";
 import type { drive_v3 } from "googleapis";
 import { join } from "node:path";
-import {
-  compositionId,
-  parseChannelSlug,
-  parseJobId,
-  slashJobId
-} from "./lib/job-id";
+import { compositionId, parseJobId, slashJobId } from "./lib/job-id";
 import { assertUploadFiles } from "./lib/upload-ready";
 import {
+  CHANNEL_SLUG,
   DRIVE_METADATA_NAME,
   DRIVE_SCOPE,
   DRIVE_VIDEO_NAME,
@@ -30,28 +30,28 @@ import {
   VIDEO_MIME,
   driveChildQuery,
   driveFolderNames,
-  isAffirmative
+  formatUploadResult,
+  isAffirmative,
+  parseUploadCliArgs,
+  requireYoutubeDriveFolderId
 } from "./lib/drive";
 import { videoRoot } from "./lib/paths";
 
 loadEnv({ path: join(videoRoot, ".env"), quiet: true });
 
-const [channelArg, jobArg] = process.argv.slice(2);
-if (!channelArg || !jobArg) {
-  console.error("Usage: npm run upload -- <channelSlug> <jobId>");
-  console.error("  jobId: <scenario>/<lang>/<format>  or  <scenario>-<lang>-<format>");
+let jobArg: string;
+try {
+  jobArg = parseUploadCliArgs(process.argv.slice(2));
+} catch (error) {
+  console.error(error instanceof Error ? error.message : String(error));
   process.exit(1);
 }
 
-const youtubeFolderId = process.env.YOUTUBE_DRIVE_FOLDER_ID;
-if (!youtubeFolderId) {
-  throw new Error("YOUTUBE_DRIVE_FOLDER_ID is not set in .env (Drive id of the 'Youtube' folder).");
-}
+const youtubeFolderId = requireYoutubeDriveFolderId();
 if (!stdin.isTTY) {
   throw new Error("refusing to upload without a TTY — confirm in an interactive terminal");
 }
 
-const channelSlug = parseChannelSlug(channelArg);
 const target = parseJobId(jobArg);
 const jobId = compositionId(target);
 const files = assertUploadFiles(target);
@@ -59,7 +59,6 @@ const files = assertUploadFiles(target);
 runCheckVideo(target.scenario, target.lang, target.format);
 
 await confirmUpload({
-  channelSlug,
   jobId,
   slashId: slashJobId(target),
   videoFile: files.videoFile,
@@ -70,7 +69,7 @@ await confirmUpload({
 const auth = new google.auth.GoogleAuth({ scopes: [DRIVE_SCOPE] });
 const drive = google.drive({ version: "v3", auth });
 
-const [channelFolder, jobFolder] = driveFolderNames(channelSlug, jobId);
+const [channelFolder, jobFolder] = driveFolderNames(jobId);
 const channelFolderId = await ensureFolder(drive, youtubeFolderId, channelFolder);
 const jobFolderId = await ensureFolder(drive, channelFolderId, jobFolder);
 
@@ -85,14 +84,13 @@ const metadata = await uploadFile(
 
 console.log(
   JSON.stringify(
-    {
-      channel: channelSlug,
+    formatUploadResult({
       jobId,
       path: slashJobId(target),
       folderId: jobFolderId,
-      video: { id: video.id, webViewLink: video.webViewLink },
-      metadata: { id: metadata.id, webViewLink: metadata.webViewLink }
-    },
+      video,
+      metadata
+    }),
     null,
     2
   )
@@ -109,7 +107,6 @@ function runCheckVideo(scenario: string, lang: string, format: string): void {
 }
 
 async function confirmUpload(plan: {
-  channelSlug: string;
   jobId: string;
   slashId: string;
   videoFile: string;
@@ -117,7 +114,7 @@ async function confirmUpload(plan: {
   title: string;
 }): Promise<void> {
   const prompt =
-    `Upload "${plan.title}" (${plan.slashId}) to Youtube/${plan.channelSlug}/${plan.jobId}/ ?\n` +
+    `Upload "${plan.title}" (${plan.slashId}) to Youtube/${CHANNEL_SLUG}/${plan.jobId}/ ?\n` +
     `  video    ${plan.videoFile}\n` +
     `  metadata ${plan.metadataFile}\n` +
     `Type yes to continue: `;

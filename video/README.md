@@ -20,36 +20,80 @@ node render.mjs               # every scenario × language × format → out/
 
 ## Upload to Google Drive
 
-Manual publish of one already-rendered cut. The CLI does not open a browser
-OAuth window; it uses Application Default Credentials with the `drive.file`
-scope, the same contract as RemotionLab.
+Manual publish of one already-rendered cut. Channel is always `anchored-notes`
+— the CLI takes only a `jobId`. It does not open a browser OAuth window; it uses
+Application Default Credentials with the `drive.file` scope, the same contract
+as RemotionLab.
 
-**jobId** is the cut, not an opaque token:
+```bash
+cd video
+npm run upload -- kyoto-basics/en/16-9
+```
 
-| CLI | Local file | Drive folder |
+The old two-argument form (`npm run upload -- anchored-notes <jobId>`) is
+rejected.
+
+### jobId
+
+The cut, not an opaque token. Two spellings, one folder:
+
+| CLI | Local video | Drive folder |
 | --- | --- | --- |
-| `kyoto-basics/en/16-9` | `out/kyoto-basics/en/16-9.mp4` | `Youtube/<channel>/kyoto-basics-en-16-9/` |
+| `kyoto-basics/en/16-9` | `out/kyoto-basics/en/16-9.mp4` | `Youtube/anchored-notes/kyoto-basics-en-16-9/` |
 | `kyoto-basics-en-16-9` | same | same |
 
 The slash form matches `out/<scenario>/<lang>/<format>.mp4`. The dashed form is
 the Remotion composition id. Both are accepted; Drive uses the dashed name
-because folder titles cannot be a path.
+because folder titles cannot be a path. The scenario must exist and must have
+copy for that language; format is only `16-9` or `9-16`.
 
-Sidecar (required, next to the mp4):
+### Input files
 
+`upload` **reads** two local files and never writes them. The sidecar is
+produced by `prepare-upload`, not by hand:
+
+```bash
+cd video
+npm run prepare-upload                      # every out/<scenario>/<lang>/<format>.mp4
+npm run prepare-upload -- kyoto-basics/en/9-16
 ```
-out/<scenario>/<lang>/<format>.upload-metadata.json
-```
+
+| File | Role |
+| --- | --- |
+| `out/<scenario>/<lang>/<format>.mp4` | Rendered cut. Must already exist for upload. |
+| `out/<scenario>/<lang>/<format>.upload-metadata.json` | YouTube sidecar. **Required read.** |
+
+`prepare-upload` derives `{ title, description, tags }` from the scenario hook
+and the shared outro copy for that language (English and Turkish stay
+separate). Title is the on-screen hook, title-cased. Description is the hook
+gap, the outro tagline, and the Chrome Web Store CTA. Tags are the product
+tags in that language. Format is the filename (`16-9` / `9-16`), not a fourth
+JSON key — both cuts of a scenario share the same YouTube fields so the upload
+schema stays `{ title, description, tags }`.
 
 ```json
 {
   "title": "Notes That Stay",
-  "description": "Sticky notes that stay where you put them.\n\nAdd to Chrome: <listing URL>",
-  "tags": ["chrome extension", "sticky notes", "productivity"]
+  "description": "The page you researched on is the one place your notes never live.\n\nSticky notes that stay where you put them.\n\nAdd to Chrome: https://chromewebstore.google.com/detail/dnmmgfkolmlieeempmfjghddbcehijgc",
+  "tags": ["chrome extension", "sticky notes", "productivity", "anchored notes"]
 }
 ```
 
-One-time auth:
+The only JSON `upload` **produces** is the stdout result below (file ids and
+`webViewLink`s).
+
+### Environment
+
+Same variable as RemotionLab — no alias and no default. Put the Drive id of the
+existing `Youtube` folder in `video/.env`:
+
+```
+YOUTUBE_DRIVE_FOLDER_ID=
+```
+
+That folder is the parent of `anchored-notes/<jobId>/`.
+
+### ADC auth (one-time)
 
 ```bash
 gcloud auth application-default login \
@@ -58,21 +102,36 @@ gcloud services enable drive.googleapis.com --project=<PROJECT_ID>
 gcloud auth application-default set-quota-project <PROJECT_ID>
 ```
 
-Put the Drive id of the existing `Youtube` folder in `video/.env` as
-`YOUTUBE_DRIVE_FOLDER_ID`.
+`drive.file` only covers files and folders this script creates, which is enough:
+it creates `anchored-notes/` and the job folder under `Youtube`.
+
+### Flow
+
+0. `npm run prepare-upload -- <jobId>` writes the sidecar from scenario copy.
+1. Parse a single `jobId` (slash or dashed). Two arguments fail immediately.
+2. Require `YOUTUBE_DRIVE_FOLDER_ID` in `video/.env`.
+3. Refuse a non-TTY (`stdin` is a pipe) — confirmation cannot be skipped.
+4. Require the mp4 and a valid sidecar (`assertUploadFiles`).
+5. Re-run `check-video` for that scenario / lang / format (hook, captions,
+   camera, pacing). Its output goes to stderr. A failed check aborts before
+   confirmation.
+6. Prompt on stderr: `Type yes to continue:` — only `yes` or `y` proceeds.
+7. ADC (`drive.file`) → ensure `Youtube/anchored-notes/<jobId>/`.
+8. **Overwrite:** if `video.mp4` or `upload-metadata.json` already exists in
+   that job folder, **delete then create** (not an in-place media update), so
+   Drive watchers see a fresh create event.
+9. Print **only** the result JSON on stdout.
 
 ```bash
 cd video
+npm run prepare-upload -- kyoto-basics/en/16-9
 npm run check-video -- kyoto-basics en 16-9   # the upload command runs this again
-npm run upload -- anchored-notes kyoto-basics/en/16-9
+npm run upload -- kyoto-basics/en/16-9
 ```
 
-The script runs `check-video`, refuses a missing or invalid sidecar, then asks
-`Type yes to continue:` on a TTY. It will not upload from a pipe. After yes it
-creates `Youtube/<channel>/<jobId>/` if needed, deletes any same-named
-`video.mp4` / `upload-metadata.json`, and uploads fresh copies.
+### stdout JSON
 
-Stdout is only the result JSON:
+Nothing else is written to stdout. Prompt, check-video, and errors go to stderr.
 
 ```json
 {
@@ -85,12 +144,33 @@ Stdout is only the result JSON:
 }
 ```
 
+A Drive response missing `id` or `webViewLink` is an error, not a partial JSON.
+
+### Errors (no Drive call unless noted)
+
+| Condition | What happens |
+| --- | --- |
+| Missing `jobId`, or the old `<channelSlug> <jobId>` form | Usage error, exit 1 |
+| Unknown scenario / lang / format | `parseJobId` throws |
+| `YOUTUBE_DRIVE_FOLDER_ID` unset | Throws; no default |
+| Not a TTY | `refusing to upload without a TTY` |
+| Missing mp4 | `Rendered video not found` |
+| Missing / invalid / underspecified sidecar | Path + parse error; run `prepare-upload` |
+| `check-video` fails | Child process exits non-zero |
+| Answer is not `yes` / `y` | `upload cancelled` |
+| ADC / Drive API failure | Throws after confirmation |
+
 ```mermaid
 flowchart LR
-  check["check-video"] --> sidecar["format.upload-metadata.json"]
-  sidecar --> confirm["TTY yes"]
-  confirm --> folders["Youtube / channel / jobId"]
-  folders --> files["video.mp4 + upload-metadata.json"]
+  prepare["prepare-upload"] --> sidecar["format.upload-metadata.json"]
+  jobId["jobId only"] --> env["YOUTUBE_DRIVE_FOLDER_ID"]
+  env --> files["mp4 + sidecar read"]
+  sidecar --> files
+  files --> check["check-video"]
+  check --> confirm["TTY yes"]
+  confirm --> folders["Youtube / anchored-notes / jobId"]
+  folders --> overwrite["delete then create"]
+  overwrite --> stdout["stdout id + webViewLink"]
 ```
 
 Before rendering, three gates say whether the video is worth the wait:
@@ -222,7 +302,8 @@ changes.
 2. If it needs a new backdrop, add `stages/<name>.html` (honour the contract
    above), its address in `STAGE_SITES` and its name in `STAGE_SITE_NAMES`
    (`stage-url.ts`), and its page copy in `copy/stages.ts`.
-3. `npm run check-video -- <id> tr 9-16`, then `node render.mjs <id>`.
+3. `npm run check-video -- <id> tr 9-16`, then `node render.mjs <id>`, then
+   `npm run prepare-upload -- <id>/tr/9-16` before upload.
 
 A scenario returns **beats**, each with an `id`, the line it says, and the steps
 that fill it. The id is the contract with everything timed against it: captions,
