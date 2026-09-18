@@ -2,9 +2,11 @@
 //
 // In a real browser this menu is painted by the browser, not by the page or the
 // extension — so it belongs here, beside the address bar, rather than being
-// faked inside the stage. What the extension contributes is two entries, and
+// faked inside the stage. What the extension contributes is its entries, and
 // their labels are imported from the extension's own dictionary: the video
-// cannot say something the product does not register.
+// cannot say something the product does not register. Which of them appear
+// depends on what was right-clicked, exactly as the extension registers them:
+// "Add note here" on any page, "Add selection to the note" only on a selection.
 //
 // Which entry is highlighted is not stated by the scenario. The pointer is
 // already somewhere, and the menu knows where its rows are, so the highlight is
@@ -16,6 +18,8 @@ import { tr } from "../../../src/locales/tr";
 import type { Point } from "../types";
 
 export interface ContextMenuCopy {
+  menuBack: string;
+  menuReload: string;
   menuCopy: string;
   menuPrint: string;
   menuInspect: string;
@@ -26,8 +30,8 @@ export interface ContextMenuProps {
   at: Point | null;
   /** Pointer position, in stage coordinates. */
   cursor: Point;
-  lang: string;
-  copy: ContextMenuCopy;
+  /** The menu's rows — pageMenuRows or selectionMenuRows. */
+  rows: Row[];
   iconSrc: string;
   dir: string;
 }
@@ -38,20 +42,39 @@ const ROW = 28;
 const RULE = 9;
 const PAD = 6;
 
-type Row = { kind: "item"; label: string; extension: boolean } | { kind: "rule" };
+export type Row = { kind: "item"; label: string; extension: boolean } | { kind: "rule" };
 
 /**
  * The extension's entries as the extension registers them
  * (src/background.ts buildContextMenu). Only two languages have video copy, and
  * anything else is a scenario bug rather than a reason to fall back silently.
  */
-function extensionLabels(lang: string): { add: string; append: string } {
+export function extensionLabels(lang: string): { add: string; append: string } {
   if (lang === "tr") return { add: tr.addNoteHere, append: tr.addSelectionToNote };
   if (lang === "en") return { add: en.addNoteHere, append: en.addSelectionToNote };
   throw new Error(`no context-menu labels for language "${lang}"`);
 }
 
-export function contextMenuRows(lang: string, copy: ContextMenuCopy): Row[] {
+/**
+ * The menu for a right-click on the page itself, with nothing selected. The
+ * extension registers "Add note here" for the page context only; its append
+ * entry is a selection-context item, so it is not here.
+ */
+export function pageMenuRows(lang: string, copy: ContextMenuCopy): Row[] {
+  const labels = extensionLabels(lang);
+  return [
+    { kind: "item", label: copy.menuBack, extension: false },
+    { kind: "item", label: copy.menuReload, extension: false },
+    { kind: "item", label: copy.menuPrint, extension: false },
+    { kind: "rule" },
+    { kind: "item", label: labels.add, extension: true },
+    { kind: "rule" },
+    { kind: "item", label: copy.menuInspect, extension: false }
+  ];
+}
+
+/** The menu for a right-click on selected text: both of the extension's entries. */
+export function selectionMenuRows(lang: string, copy: ContextMenuCopy): Row[] {
   const labels = extensionLabels(lang);
   return [
     { kind: "item", label: copy.menuCopy, extension: false },
@@ -62,6 +85,13 @@ export function contextMenuRows(lang: string, copy: ContextMenuCopy): Row[] {
     { kind: "rule" },
     { kind: "item", label: copy.menuInspect, extension: false }
   ];
+}
+
+/** Index of the row labelled `label`, for a scenario to aim at by name rather than by position. */
+export function rowIndexOf(rows: Row[], label: string): number {
+  const index = rows.findIndex((row) => row.kind === "item" && row.label === label);
+  if (index === -1) throw new Error(`context menu has no row labelled "${label}"`);
+  return index;
 }
 
 /** Vertical offset of a row's top edge, from the menu's own top edge. */
@@ -80,20 +110,19 @@ export function rowOffset(rows: Row[], index: number): number {
  * glitch rather than as a camera move. Easing to a stated shot instead makes
  * the same correction deliberate.
  */
-export function menuBounds(at: Point, lang: string, copy: ContextMenuCopy): {
+export function menuBounds(at: Point, rows: Row[]): {
   x: number;
   y: number;
   width: number;
   height: number;
 } {
-  const rows = contextMenuRows(lang, copy);
   const height = rows.reduce((total, row) => total + (row.kind === "rule" ? RULE : ROW), PAD * 2);
   return { x: at.x, y: at.y, width: WIDTH, height };
 }
 
 /** Centre of the menu, for a scenario to aim a shot at. */
-export function menuCentre(at: Point, lang: string, copy: ContextMenuCopy): Point {
-  const box = menuBounds(at, lang, copy);
+export function menuCentre(at: Point, rows: Row[]): Point {
+  const box = menuBounds(at, rows);
   return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
 }
 
@@ -107,8 +136,7 @@ export function menuCentre(at: Point, lang: string, copy: ContextMenuCopy): Poin
  */
 const ROW_REACH = 46;
 
-export function menuRowPoint(at: Point, lang: string, copy: ContextMenuCopy, index: number): Point {
-  const rows = contextMenuRows(lang, copy);
+export function menuRowPoint(at: Point, rows: Row[], index: number): Point {
   if (rows[index]?.kind !== "item") {
     throw new Error(`context menu row ${index} is not something that can be clicked`);
   }
@@ -118,14 +146,12 @@ export function menuRowPoint(at: Point, lang: string, copy: ContextMenuCopy, ind
 export const ContextMenu: React.FC<ContextMenuProps> = ({
   at,
   cursor,
-  lang,
-  copy,
+  rows,
   iconSrc,
   dir
 }) => {
   if (at === null) return null;
 
-  const rows = contextMenuRows(lang, copy);
   const height = rows.reduce((total, row) => total + (row.kind === "rule" ? RULE : ROW), PAD * 2);
   const inside = cursor.x >= at.x && cursor.x <= at.x + WIDTH;
 
@@ -179,7 +205,7 @@ export const ContextMenu: React.FC<ContextMenuProps> = ({
             }}
           >
             {/* Chrome shows an extension's own icon beside the entries it
-                contributes, which is also what tells the viewer these two rows
+                contributes, which is also what tells the viewer these rows
                 came from the product rather than from the browser. */}
             {row.extension ? (
               <img src={iconSrc} alt="" style={{ width: 15, height: 15, borderRadius: 3 }} />

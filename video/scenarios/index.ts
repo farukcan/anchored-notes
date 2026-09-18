@@ -6,8 +6,9 @@ import { kyotoBasics } from "./kyoto-basics";
 import { aiChat } from "./ai-chat";
 import { profile } from "./profile";
 import { videoWatch } from "./video-watch";
+import { ideaRush } from "./idea-rush";
 
-export const SCENARIOS: Scenario[] = [kyotoBasics, videoWatch, profile, aiChat];
+export const SCENARIOS: Scenario[] = [kyotoBasics, videoWatch, profile, aiChat, ideaRush];
 
 export function getScenario(id: string): Scenario {
   const found = SCENARIOS.find((scenario) => scenario.id === id);

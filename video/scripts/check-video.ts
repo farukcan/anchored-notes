@@ -169,6 +169,39 @@ for (const { step } of endTimes(plan.steps, 0)) {
   }
 }
 
+/**
+ * A page change under a moving camera.
+ *
+ * The click that changes page has to be seen, and the new page has to arrive in
+ * a shot that is holding still — a zoom running into or out of a navigation
+ * blends the two pages into one move and hides which click caused it. So the
+ * shot must be the same from the click just before a `navigate` step until a
+ * moment after it.
+ */
+const NAVIGATION_STILL_MS = 300;
+const shotAt = (ms: number): string =>
+  JSON.stringify(
+    stateAt({
+      steps: plan.steps,
+      timeMs: ms,
+      seedNotes: seeded,
+      pageKey: "page",
+      now: NOW,
+      home: homeView(target.format),
+      initial: initialView()
+    }).zoom
+  );
+for (const { step, endMs } of endTimes(plan.steps, 0)) {
+  if (step.action !== "navigate") continue;
+  const at = endMs - step.ms;
+  if (shotAt(at - NAVIGATION_STILL_MS) !== shotAt(at + NAVIGATION_STILL_MS)) {
+    failures.push(
+      `navigate to "${step.page ?? "(stage page)"}" at ${at}ms happens while the camera is moving — ` +
+        `hold the shot still for ${NAVIGATION_STILL_MS}ms either side of a page change`
+    );
+  }
+}
+
 const hook = scenario.hook(target.lang);
 if (!plan.beats.some((beat) => beat.id === hook.payoffBeat)) {
   failures.push(

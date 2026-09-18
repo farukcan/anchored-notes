@@ -2,9 +2,11 @@
 //
 //   shell.js            the chrome stub (bundled from shell/entry.ts)
 //   content.js          the real extension content script, copied from dist/
+//   editor.js           the editor chunk content.js loads on first card mount
 //   popup.js/.html      the real popup, copied from dist/
 //   icons/              badge + popup artwork
 //   stages/<s>.<l>.html marketing backdrops, one per stage × language
+//   stages/assets/      images the stages show, copied as they are
 //
 // Prerequisite: `npm run build` at the repo root (this copies dist/, it does not
 // build it — the whole point is that the video shows the shipped bundle).
@@ -38,7 +40,7 @@ await build({
 
 // Sourcemaps come along when present: the bundles carry a //# sourceMappingURL
 // comment, and a missing map is a 404 in every render's console.
-for (const file of ["content.js", "content.js.map", "popup.js", "popup.js.map"]) {
+for (const file of ["content.js", "content.js.map", "editor.js", "editor.js.map", "popup.js", "popup.js.map"]) {
   if (existsSync(join(DIST, file))) cpSync(join(DIST, file), join(PUBLIC, file));
 }
 
@@ -66,6 +68,11 @@ mkdirSync(stageOut, { recursive: true });
 const stages = existsSync(stagesDir)
   ? readdirSync(stagesDir).filter((f) => f.endsWith(".html"))
   : [];
+
+// Images a stage shows sit beside the pages that reference them, so a stage
+// links them relatively (`assets/...`) the same way under Remotion and Node.
+const stageAssets = join(stagesDir, "assets");
+if (existsSync(stageAssets)) cpSync(stageAssets, join(stageOut, "assets"), { recursive: true });
 
 let written = 0;
 for (const file of stages) {

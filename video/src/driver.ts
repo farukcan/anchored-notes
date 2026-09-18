@@ -4,7 +4,7 @@
 // frame. That is not a style preference — Remotion renders frames out of order
 // and across parallel tabs, so anything incremental would drift or tear.
 
-import { NEW_NOTE_ORIGIN, NEW_NOTE_SIZE, STAGE_HEIGHT, STAGE_WIDTH } from "../stage-url";
+import { NEW_NOTE_ORIGIN, NEW_NOTE_SIZE, STAGE_HEIGHT, STAGE_WIDTH, pageKeyFor } from "../stage-url";
 import type { FocusState, FocusTarget, NotesMap, Point, Rect, SceneState, Step } from "./types";
 
 function clamp01(value: number): number {
@@ -153,7 +153,9 @@ function applyStep(
             content: step.content,
             color: "yellow",
             scope: "page",
-            anchorKey: pageKey,
+            // The page open when it was created — a note left on one page of a
+            // site belongs to that page, not to the site.
+            anchorKey: pageKeyFor(pageKey, state.page),
             x: NEW_NOTE_ORIGIN.x,
             y: NEW_NOTE_ORIGIN.y,
             w: NEW_NOTE_SIZE.w,
@@ -226,6 +228,9 @@ function applyStep(
     case "popup":
       return { ...state, popupOpen: step.open };
 
+    case "navigate":
+      return { ...state, page: step.page };
+
     case "zoom":
       // A null rect means "back to where this video rests", which is the whole
       // window on a wide canvas and the widest page slice on a phone-shaped one.
@@ -263,7 +268,10 @@ export interface StateInput {
   timeMs: number;
   /** Notes on the stage before the first step. */
   seedNotes: NotesMap;
-  /** anchorKey for page-scoped notes created during the scenario. */
+  /**
+   * anchorKey of the stage's own page. A note created on another of its pages
+   * anchors to pageKeyFor(pageKey, page).
+   */
   pageKey: string;
   /** The frozen clock, for notes created mid-scenario. */
   now: number;
@@ -285,6 +293,7 @@ export function stateAt(input: StateInput): SceneState {
     contextMenu: null,
     popupOpen: false,
     badgeListOpen: false,
+    page: null,
     openMenuNoteId: null,
     outroProgress: 0
   };
