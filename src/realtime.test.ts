@@ -13,14 +13,18 @@ import {
   setFetchHandler,
   storageLocal,
 } from "./testing.ts";
-import { connectRealtime } from "./realtime.ts";
+import { connectRealtime, subscribeRealtime } from "./realtime.ts";
 
 const REALTIME_URL = `${PB_URL}/api/realtime`;
 const REFRESH_URL = `${PB_URL}/api/collections/users/auth-refresh`;
 
 class FakeEventSource {
+  static CONNECTING = 0;
+  static OPEN = 1;
+  static CLOSED = 2;
   static instances: FakeEventSource[] = [];
   closed = false;
+  readyState = FakeEventSource.CONNECTING;
   private readonly listeners = new Map<string, ((event: { data: string }) => void)[]>();
 
   constructor() {
@@ -33,6 +37,7 @@ class FakeEventSource {
 
   close(): void {
     this.closed = true;
+    this.readyState = FakeEventSource.CLOSED;
   }
 
   emit(type: string, data: string): void {
@@ -219,5 +224,37 @@ test("realtime keeps the connection when the stored account changed underneath",
   assert.deepEqual(subscriptionCalls(), ["old"]);
   assert.equal(source.closed, false);
   assert.deepEqual(closures, []);
+  disconnect();
+});
+
+test("subscribeRealtime refuses a URL that is not the PocketBase realtime endpoint", async () => {
+  setFetchHandler(() => new Response(null, { status: 204 }));
+  const result = await subscribeRealtime("https://evil.test/api/realtime", "client-1");
+  assert.equal(result.status, 0);
+  assert.equal(result.gaveUp, false);
+  assert.equal(fetchCalls.filter((c) => c.url.includes("evil.test")).length, 0);
+  assert.deepEqual(subscriptionCalls(), []);
+});
+
+test("subscribeRealtime refuses a malformed client id", async () => {
+  setFetchHandler(() => new Response(null, { status: 204 }));
+  const result = await subscribeRealtime(REALTIME_URL, "client 1");
+  assert.equal(result.status, 0);
+  assert.deepEqual(subscriptionCalls(), []);
+});
+
+test("realtime reports closure when EventSource closes before handshake", async () => {
+  const closures: string[] = [];
+  const disconnect = connectRealtime(
+    () => undefined,
+    (reason) => closures.push(reason),
+  );
+  await flush();
+  const source = FakeEventSource.instances[FakeEventSource.instances.length - 1];
+  source.readyState = FakeEventSource.CLOSED;
+  source.emit("error", "");
+  await flush();
+  assert.deepEqual(closures, ["connectFailed"]);
+  assert.equal(source.closed, true);
   disconnect();
 });

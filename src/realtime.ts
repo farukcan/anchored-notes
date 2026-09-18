@@ -10,18 +10,28 @@
 // EventSource auto-reconnects on drop and emits a fresh PB_CONNECT, so we simply
 // re-subscribe whenever PB_CONNECT arrives.
 //
-// This POST goes straight to PocketBase (not the backend authFetch wraps), so
-// it applies the same rule itself: a 401 may just be an expired token, so
-// refresh once and retry before giving up on the session — and only give up
-// when the refresh actually establishes that the session is over.
+// The subscribe POST is issued by the background worker when the caller is a
+// content script, so the page's CSP never sees the token. The 401 handling
+// matches authFetch: refresh once and retry; only a confirmed dead session
+// gives up.
 
 import { getRuntimeConfig } from "./config.js";
 import { getAuthState, refreshAuthToken } from "./auth.js";
+import type { Message, RealtimeSubscribeResponse } from "./types.js";
 
 const NOTES_TOPIC = "notes/*";
+const CLIENT_ID_RE = /^[A-Za-z0-9_-]{1,128}$/;
 
 interface ConnectEvent {
   clientId: string;
+}
+
+export function realtimeSubscribeUrl(pbUrl: string): string {
+  return `${pbUrl.replace(/\/$/, "")}/api/realtime`;
+}
+
+function isAllowedSubscribe(pbUrl: string, realtimeUrl: string, clientId: string): boolean {
+  return realtimeUrl === realtimeSubscribeUrl(pbUrl) && CLIENT_ID_RE.test(clientId);
 }
 
 function postSubscription(realtimeUrl: string, clientId: string, token: string): Promise<Response> {
@@ -32,73 +42,123 @@ function postSubscription(realtimeUrl: string, clientId: string, token: string):
   });
 }
 
+export interface SubscribeResult {
+  status: number;
+  gaveUp: boolean;
+}
+
+// Handshake POST after PB_CONNECT. Exported so the background worker can run
+// it on behalf of a content script (page CSP/CORS must not see the token).
+export async function subscribeRealtime(realtimeUrl: string, clientId: string): Promise<SubscribeResult> {
+  const { pbUrl } = await getRuntimeConfig();
+  if (!isAllowedSubscribe(pbUrl, realtimeUrl, clientId)) {
+    console.warn("[anchored-notes] realtime subscribe: refused unexpected target");
+    return { status: 0, gaveUp: false };
+  }
+  const auth = await getAuthState();
+  if (!auth) return { status: 0, gaveUp: false };
+  try {
+    let res = await postSubscription(realtimeUrl, clientId, auth.token);
+    if (res.status === 401) {
+      const refresh = await refreshAuthToken();
+      if (refresh.status === "unavailable") {
+        console.warn("[anchored-notes] realtime subscribe: token refresh unavailable");
+        return { status: res.status, gaveUp: false };
+      }
+      if (refresh.status === "refreshed") {
+        res = await postSubscription(realtimeUrl, clientId, refresh.state.token);
+      }
+    }
+    if (!res.ok) {
+      console.warn(`[anchored-notes] realtime subscribe failed: ${res.status}`);
+    }
+    return { status: res.status, gaveUp: res.status === 401 };
+  } catch (err) {
+    console.warn("[anchored-notes] realtime subscribe error:", err);
+    return { status: 0, gaveUp: false };
+  }
+}
+
+async function runSubscribe(
+  realtimeUrl: string,
+  clientId: string,
+  closed: () => boolean,
+): Promise<SubscribeResult> {
+  if (typeof window !== "undefined" && chrome.runtime?.sendMessage) {
+    const message: Message = { type: "REALTIME_SUBSCRIBE", realtimeUrl, clientId };
+    const res = (await chrome.runtime.sendMessage(message)) as RealtimeSubscribeResponse | undefined;
+    if (!res?.ok) return { status: 0, gaveUp: false };
+    return { status: res.status, gaveUp: res.gaveUp };
+  }
+  if (closed()) return { status: 0, gaveUp: false };
+  return subscribeRealtime(realtimeUrl, clientId);
+}
+
+export type RealtimeCloseReason = "gaveUp" | "connectFailed" | "setupFailed" | "timedOut";
+
+const HANDSHAKE_TIMEOUT_MS = 10_000;
+
 // Opens a realtime subscription and invokes onChange on every notes event.
-// onClosed fires if the subscription gives up on its own (a 401 that survives
-// a token refresh), so the caller can drop its handle and reconnect later
-// instead of holding a dead one. Returns a disconnect function.
-export function connectRealtime(onChange: () => void, onClosed: () => void): () => void {
+// onClosed fires when this connection stops on its own: a confirmed-dead
+// session (`gaveUp`), an EventSource that never handshakes (`connectFailed`),
+// a handshake timeout (`timedOut`), or a config fetch error (`setupFailed`).
+// Caller disconnect does not fire it.
+export function connectRealtime(
+  onChange: () => void,
+  onClosed: (reason: RealtimeCloseReason) => void,
+): () => void {
   let source: EventSource | null = null;
   let closed = false;
+  let connected = false;
+  let handshakeTimer: ReturnType<typeof setTimeout> | undefined;
 
   const disconnect = (): void => {
     closed = true;
+    if (handshakeTimer !== undefined) {
+      clearTimeout(handshakeTimer);
+      handshakeTimer = undefined;
+    }
     source?.close();
     source = null;
   };
 
+  const fail = (reason: RealtimeCloseReason): void => {
+    if (closed) return;
+    disconnect();
+    onClosed(reason);
+  };
+
   const subscribe = async (realtimeUrl: string, clientId: string): Promise<void> => {
-    const auth = await getAuthState();
-    if (!auth || closed) return;
-    try {
-      let res = await postSubscription(realtimeUrl, clientId, auth.token);
-      if (res.status === 401) {
-        // The token expired since this context last read it: renew it and try
-        // again with the fresh one, exactly like authFetch does.
-        const refresh = await refreshAuthToken();
-        if (closed) return;
-        if (refresh.status === "unavailable") {
-          // Nothing was established: PocketBase was unreachable, or the stored
-          // account changed underneath. Leave the EventSource open so its next
-          // PB_CONNECT retries the handshake, rather than tearing down a
-          // session that is probably alive; the periodic background sync
-          // covers the gap in the meantime.
-          console.warn("[anchored-notes] realtime subscribe: token refresh unavailable");
-          return;
-        }
-        if (refresh.status === "refreshed") {
-          res = await postSubscription(realtimeUrl, clientId, refresh.state.token);
-        }
-      }
-      // The caller can disconnect across either await. This connection is then
-      // already dead, and reporting its closure would clear a handle that now
-      // points at a newer, live connection.
-      if (closed) return;
-      if (!res.ok) {
-        console.warn(`[anchored-notes] realtime subscribe failed: ${res.status}`);
-        // A 401 that survives the refresh means the session is genuinely over:
-        // stop here instead of letting EventSource reconnect and re-POST
-        // forever. onClosed lets the caller reconnect on the next auth change,
-        // and sync's own 401 handling signs the user out.
-        if (res.status === 401) {
-          disconnect();
-          onClosed();
-        }
-      }
-    } catch (err) {
-      console.warn("[anchored-notes] realtime subscribe error:", err);
-    }
+    if (closed) return;
+    const result = await runSubscribe(realtimeUrl, clientId, () => closed);
+    if (closed) return;
+    if (result.gaveUp) fail("gaveUp");
   };
 
   void (async (): Promise<void> => {
-    const { pbUrl } = await getRuntimeConfig();
-    if (closed) return;
-    const realtimeUrl = `${pbUrl}/api/realtime`;
-    source = new EventSource(realtimeUrl);
-    source.addEventListener("PB_CONNECT", (event) => {
-      const data = JSON.parse((event as MessageEvent).data) as ConnectEvent;
-      void subscribe(realtimeUrl, data.clientId);
-    });
-    source.addEventListener(NOTES_TOPIC, () => onChange());
+    try {
+      const { pbUrl } = await getRuntimeConfig();
+      if (closed) return;
+      const realtimeUrl = realtimeSubscribeUrl(pbUrl);
+      source = new EventSource(realtimeUrl);
+      handshakeTimer = setTimeout(() => fail("timedOut"), HANDSHAKE_TIMEOUT_MS);
+      source.addEventListener("error", () => {
+        if (!connected && source?.readyState === EventSource.CLOSED) fail("connectFailed");
+      });
+      source.addEventListener("PB_CONNECT", (event) => {
+        connected = true;
+        if (handshakeTimer !== undefined) {
+          clearTimeout(handshakeTimer);
+          handshakeTimer = undefined;
+        }
+        const data = JSON.parse((event as MessageEvent).data) as ConnectEvent;
+        void subscribe(realtimeUrl, data.clientId);
+      });
+      source.addEventListener(NOTES_TOPIC, () => onChange());
+    } catch (err) {
+      console.warn("[anchored-notes] realtime connect:", err);
+      fail("setupFailed");
+    }
   })();
 
   return disconnect;

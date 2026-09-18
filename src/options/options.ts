@@ -5,7 +5,16 @@ import { commonmark, listItemSchema } from "@milkdown/preset-commonmark";
 import { gfm } from "@milkdown/preset-gfm";
 import { $view } from "@milkdown/utils";
 import type { Node as ProseNode } from "@milkdown/prose/model";
-import type { LoginResponse, Note } from "../types.js";
+import {
+  isAnchorScope,
+  isNoteColor,
+  type AccountMergeResponse,
+  type LoginResponse,
+  type Note,
+  type NoteColor,
+} from "../types.js";
+import { getPendingAccountMerge } from "../account-merge.js";
+import { httpUrl } from "../safe-href.js";
 import { deleteNote, getAllNotes, onNotesChanged, replaceAllNotes, wipeLocalNotes } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { formatRelativeTime } from "../relative-time.js";
@@ -15,7 +24,7 @@ import { getEncStatus, getReadyKey, onEncStatusChanged, setCustomPassword, unloc
 import { getLang, initI18n, LANG_META, LANGS, onLangChanged, setLang, t, type Lang } from "../i18n.js";
 import { track, trackEncPasswordRequiredShown } from "../umami.js";
 
-const SWATCH: Record<string, string> = {
+const SWATCH: Record<NoteColor, string> = {
   yellow: "#fcee5f",
   green: "#c9f0c0",
   pink: "#fbd0e2",
@@ -153,6 +162,7 @@ function refreshLocalizedUi(): void {
   renderLangMenu();
   renderAccount(currentAuth);
   void renderEncryption(currentAuth);
+  void renderAccountMerge();
   void render();
 }
 
@@ -315,37 +325,83 @@ async function renderEncryption(auth: AuthState | null): Promise<void> {
   action.type = "button";
   action.textContent =
     keyState.mode === "custom" ? t("encChangePassword", null) : t("encSetPassword", null);
-  action.addEventListener("click", () => void handleSetPassword(action));
+  action.addEventListener("click", () => handleSetPassword());
 
   box.append(statusLine, action);
 }
 
-// Prompt for a new custom password (twice) with an explicit data-loss warning,
-// then re-key the account. setCustomPassword bumps all note timestamps, which
-// schedules the re-encrypting sync; requestSync just accelerates it.
-async function handleSetPassword(button: HTMLButtonElement): Promise<void> {
-  const password = window.prompt(t("encNewPasswordPrompt", null));
-  if (!password) return;
-  const repeat = window.prompt(t("encConfirmPasswordPrompt", null));
-  if (repeat === null) return;
-  if (password !== repeat) {
-    window.alert(t("encConfirmMismatch", null));
-    return;
-  }
-  if (!window.confirm(t("encLossWarning", null))) return;
+const MIN_PASSWORD_LEN = 4;
 
-  button.disabled = true;
-  try {
-    await setCustomPassword(password);
-    void track("enc_password_set", { source: "options" });
-    requestSync();
-  } catch (err) {
-    console.error("[anchored-notes] set encryption password failed:", err);
-    window.alert(t("encChangeFailed", null));
-  } finally {
-    button.disabled = false;
-  }
-  await renderEncryption(currentAuth);
+// Inline password form (masked inputs, min length, explicit data-loss warning)
+// instead of window.prompt, which shows the secret in the clear.
+function handleSetPassword(): void {
+  const box = document.getElementById("encryption") as HTMLDivElement;
+  box.replaceChildren();
+
+  const hint = document.createElement("div");
+  hint.className = "enc-hint";
+  hint.textContent = t("encPasswordHint", null);
+
+  const password = document.createElement("input");
+  password.type = "password";
+  password.className = "enc-password";
+  password.placeholder = t("encPasswordPlaceholder", null);
+  password.autocomplete = "new-password";
+  password.minLength = MIN_PASSWORD_LEN;
+
+  const repeat = document.createElement("input");
+  repeat.type = "password";
+  repeat.className = "enc-password";
+  repeat.placeholder = t("encConfirmPlaceholder", null);
+  repeat.autocomplete = "new-password";
+  repeat.minLength = MIN_PASSWORD_LEN;
+
+  const error = document.createElement("span");
+  error.className = "enc-error";
+
+  const save = document.createElement("button");
+  save.className = "enc-unlock";
+  save.type = "button";
+  save.textContent = t("encSavePassword", null);
+
+  const cancel = document.createElement("button");
+  cancel.className = "enc-action";
+  cancel.type = "button";
+  cancel.textContent = t("encCancel", null);
+  cancel.addEventListener("click", () => void renderEncryption(currentAuth));
+
+  const submit = async (): Promise<void> => {
+    error.textContent = "";
+    if (password.value.length < MIN_PASSWORD_LEN) {
+      error.textContent = t("encPasswordMinLength", null);
+      return;
+    }
+    if (password.value !== repeat.value) {
+      error.textContent = t("encConfirmMismatch", null);
+      return;
+    }
+    if (!window.confirm(t("encLossWarning", null))) return;
+    save.disabled = true;
+    try {
+      await setCustomPassword(password.value);
+      void track("enc_password_set", { source: "options" });
+      requestSync();
+    } catch (err) {
+      console.error("[anchored-notes] set encryption password failed:", err);
+      error.textContent = t("encChangeFailed", null);
+      save.disabled = false;
+      return;
+    }
+    await renderEncryption(currentAuth);
+  };
+
+  save.addEventListener("click", () => void submit());
+  const onEnter = (e: KeyboardEvent): void => {
+    if (e.key === "Enter") void submit();
+  };
+  password.addEventListener("keydown", onEnter);
+  repeat.addEventListener("keydown", onEnter);
+  box.append(hint, password, repeat, save, cancel, error);
 }
 
 // Open the Polar checkout (free) or customer portal (pro) in a new tab. The plan
@@ -373,7 +429,11 @@ async function handleSignIn(button: HTMLButtonElement): Promise<void> {
   try {
     const res = (await chrome.runtime.sendMessage({ type: "LOGIN" })) as LoginResponse;
     if (res.ok) {
-      requestSync();
+      if (await getPendingAccountMerge()) {
+        await renderAccountMerge();
+      } else {
+        requestSync();
+      }
     } else {
       button.disabled = false;
       button.textContent = t("accountSignInFailed", null);
@@ -403,15 +463,49 @@ async function handleDeleteAccount(button: HTMLButtonElement, auth: AuthState): 
   await wipeLocalNotes();
 }
 
-// anchorKey comes from sync/import as well as this device, so only link it
-// when it parses as a real http(s) URL (never e.g. `javascript:`).
-function httpUrl(value: string): string | undefined {
-  try {
-    const url = new URL(value);
-    return url.protocol === "http:" || url.protocol === "https:" ? url.href : undefined;
-  } catch {
-    return undefined;
+async function renderAccountMerge(): Promise<void> {
+  const box = document.getElementById("account-merge") as HTMLDivElement;
+  const pending = await getPendingAccountMerge();
+  box.replaceChildren();
+  if (!pending) {
+    box.hidden = true;
+    return;
   }
+  box.hidden = false;
+  const body = document.createElement("div");
+  body.textContent = t("accountMergeBody", { count: pending.count, email: pending.email });
+  const actions = document.createElement("div");
+  actions.className = "account-merge-actions";
+  const addButton = (label: string, choice: "upload" | "keep" | "delete"): void => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.addEventListener("click", () => void handleAccountMerge(choice));
+    actions.appendChild(button);
+  };
+  addButton(t("accountMergeUpload", null), "upload");
+  addButton(t("accountMergeKeep", null), "keep");
+  addButton(t("accountMergeDelete", null), "delete");
+  box.append(body, actions);
+}
+
+async function handleAccountMerge(choice: "upload" | "keep" | "delete"): Promise<void> {
+  let res: AccountMergeResponse | undefined;
+  try {
+    res = (await chrome.runtime.sendMessage({
+      type: "ACCOUNT_MERGE",
+      choice,
+    })) as AccountMergeResponse | undefined;
+  } catch (err) {
+    window.alert(err instanceof Error ? err.message : t("accountMergeFailed", null));
+    return;
+  }
+  if (!res?.ok) {
+    window.alert(res?.error ?? t("accountMergeFailed", null));
+    return;
+  }
+  await renderAccountMerge();
+  requestSync();
 }
 
 async function render(): Promise<void> {
@@ -513,8 +607,6 @@ function exportNotes(): void {
   });
 }
 
-const SCOPES = new Set(["global", "site", "page", "tab"]);
-
 function isValidNote(value: unknown): value is Note {
   if (typeof value !== "object" || value === null) return false;
   const n = value as Record<string, unknown>;
@@ -522,9 +614,9 @@ function isValidNote(value: unknown): value is Note {
     typeof n.id === "string" &&
     typeof n.content === "string" &&
     typeof n.color === "string" &&
-    n.color in SWATCH &&
+    isNoteColor(n.color) &&
     typeof n.scope === "string" &&
-    SCOPES.has(n.scope) &&
+    isAnchorScope(n.scope) &&
     typeof n.anchorKey === "string" &&
     Number.isFinite(n.x) &&
     Number.isFinite(n.y) &&
@@ -615,6 +707,7 @@ onAuthChanged((auth) => {
   currentAuth = auth;
   renderAccount(auth);
   void renderEncryption(auth);
+  void renderAccountMerge();
 });
 onEncStatusChanged(() => void renderEncryption(currentAuth));
 onLangChanged(refreshLocalizedUi);
@@ -626,6 +719,7 @@ async function main(): Promise<void> {
   currentAuth = await getAuthState();
   renderAccount(currentAuth);
   await renderEncryption(currentAuth);
+  await renderAccountMerge();
   await render();
   void track("options_opened");
   // Refresh from the backend in the background when signed in.

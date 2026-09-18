@@ -1,22 +1,31 @@
 // Factory for a single sticky-note DOM card. Holds a local mutable copy of the
 // note and reports edits through the provided callbacks.
 
-import type { AnchorScope, Note, NoteColor } from "../types.js";
+import { ANCHOR_SCOPES, NOTE_COLORS, type AnchorScope, type Note } from "../types.js";
 import { formatRelativeTime } from "../relative-time.js";
 import { t, type MessageKey } from "../i18n.js";
 import { track, trackNoteEdited } from "../umami.js";
-import { createMarkdownEditor, type MarkdownEditorHandle } from "./editor.js";
+import type { MarkdownEditorHandle } from "./editor.js";
 
-export const COLORS: NoteColor[] = [
-  "yellow",
-  "green",
-  "pink",
-  "purple",
-  "blue",
-  "gray",
-  "dark",
-];
-const SCOPES: AnchorScope[] = ["global", "site", "page", "tab"];
+let editorModule: typeof import("./editor.js") | undefined;
+let editorModulePromise: Promise<typeof import("./editor.js")> | undefined;
+
+function loadEditor(): Promise<typeof import("./editor.js")> {
+  if (editorModule) return Promise.resolve(editorModule);
+  if (!editorModulePromise) {
+    editorModulePromise = import(chrome.runtime.getURL("editor.js"))
+      .then((mod) => {
+        editorModule = mod as typeof import("./editor.js");
+        return editorModule;
+      })
+      .catch((err: unknown) => {
+        editorModulePromise = undefined;
+        throw err;
+      });
+  }
+  return editorModulePromise;
+}
+
 const SCOPE_LABEL_KEY: Record<AnchorScope, MessageKey> = {
   global: "scopeEverywhereLabel",
   site: "scopeSiteLabel",
@@ -133,7 +142,7 @@ export function createNoteCard(
   const scope = document.createElement("select");
   scope.className = "note-scope";
   scope.title = t("scopeSelectTitle", null);
-  for (const s of SCOPES) {
+  for (const s of ANCHOR_SCOPES) {
     const opt = document.createElement("option");
     opt.value = s;
     opt.textContent = scopeLabel(s, scopeLabels);
@@ -144,7 +153,7 @@ export function createNoteCard(
 
   function applyScopeLabels(next: ScopeLabels): void {
     scopeLabels = next;
-    for (const s of SCOPES) {
+    for (const s of ANCHOR_SCOPES) {
       const opt = scope.querySelector<HTMLOptionElement>(
         `option[value="${s}"]`,
       );
@@ -182,7 +191,7 @@ export function createNoteCard(
 
   const palette = document.createElement("div");
   palette.className = "note-palette";
-  for (const c of COLORS) {
+  for (const c of NOTE_COLORS) {
     const sw = document.createElement("button");
     sw.className = `note-swatch swatch-${c}`;
     sw.title = c;
@@ -226,22 +235,30 @@ export function createNoteCard(
   body.addEventListener("focusout", () => {
     editorFocused = false;
   });
+  let editorLoad: Promise<void> | undefined;
   function mount(): void {
-    if (editor) return;
-    editor = createMarkdownEditor(body, el, note.content, (markdown) => {
-      if (destroyed) return; // trailing change from teardown: never resave
-      latestContent = markdown;
-      if (markdown === note.content) return; // ignore the initial value echo
-      window.clearTimeout(contentTimer);
-      contentTimer = window.setTimeout(() => {
-        // Clear the handle so update()'s "save pending" guard reflects reality;
-        // otherwise a stale id would block all future external content updates.
-        contentTimer = undefined;
+    if (editor || editorLoad) return;
+    editorLoad = loadEditor()
+      .then((mod) => {
         if (destroyed) return;
-        patch({ content: markdown });
-        void trackNoteEdited({ source: "card" });
-      }, SAVE_DEBOUNCE_MS);
-    });
+        editor = mod.createMarkdownEditor(body, el, note.content, (markdown) => {
+          if (destroyed) return; // trailing change from teardown: never resave
+          latestContent = markdown;
+          if (markdown === note.content) return; // ignore the initial value echo
+          window.clearTimeout(contentTimer);
+          contentTimer = window.setTimeout(() => {
+            // Clear the handle so update()'s "save pending" guard reflects reality;
+            // otherwise a stale id would block all future external content updates.
+            contentTimer = undefined;
+            if (destroyed) return;
+            patch({ content: markdown });
+            void trackNoteEdited({ source: "card" });
+          }, SAVE_DEBOUNCE_MS);
+        });
+      })
+      .catch(() => {
+        editorLoad = undefined;
+      });
   }
 
   function flushPendingContent(): void {

@@ -13,7 +13,7 @@ import {
   storageLocal,
   type FetchCall,
 } from "./testing.ts";
-import { exportKeyB64, makeEncCheck } from "./crypto.ts";
+import { encryptContent, exportKeyB64, importKeyB64, makeEncCheck } from "./crypto.ts";
 import { saveNote } from "./storage.ts";
 import { sync } from "./sync.ts";
 import type { Note } from "./types.ts";
@@ -29,6 +29,7 @@ async function signInWithKey(): Promise<string> {
   ]);
   const encCheck = await makeEncCheck(key);
   storageLocal["auth"] = { token: "t", email: "a@b.c", plan: "free" };
+  storageLocal["lastAccountEmail"] = "a@b.c";
   storageLocal["encKeyState"] = { rawKeyB64: await exportKeyB64(key), encCheck, mode: "default" };
   return encCheck;
 }
@@ -103,4 +104,65 @@ test("a sync with no pending trigger runs once", async () => {
   await sync();
 
   assert.equal(syncCalls().length, 1);
+});
+
+test("a second sync does not re-push an unchanged note", async () => {
+  const encCheck = await signInWithKey();
+  const local = note("stable");
+  await saveNote(local);
+  const key = await importKeyB64(
+    (storageLocal["encKeyState"] as { rawKeyB64: string }).rawKeyB64,
+  );
+  const content = await encryptContent(key, local.content);
+  setFetchHandler(() =>
+    Response.json({
+      notes: [
+        {
+          clientId: local.id,
+          content,
+          color: local.color,
+          scope: local.scope,
+          anchorKey: local.anchorKey,
+          x: local.x,
+          y: local.y,
+          w: local.w,
+          h: local.h,
+          hidden: false,
+          deleted: false,
+          noteCreatedAt: local.createdAt,
+          noteUpdatedAt: local.updatedAt,
+        },
+      ],
+      rejected: [],
+      failed: [],
+      plan: "free",
+      limit: 30,
+      encCheck,
+    }),
+  );
+
+  await sync();
+  await sync();
+
+  assert.equal(syncCalls().length, 2);
+  assert.deepEqual(pushedIds(syncCalls()[0]), ["stable"]);
+  assert.deepEqual(pushedIds(syncCalls()[1]), []);
+});
+
+test("pushed notes encrypt content only", async () => {
+  const encCheck = await signInWithKey();
+  await saveNote(note("enc"));
+  setFetchHandler(() =>
+    Response.json({ notes: [], rejected: [], failed: [], plan: "free", limit: 30, encCheck }),
+  );
+
+  await sync();
+
+  const body = JSON.parse(String(syncCalls()[0]!.init?.body)) as {
+    upserts: { content: string; scope: string; anchorKey: string }[];
+  };
+  const dto = body.upserts[0]!;
+  assert.match(dto.content, /^enc:v1:/);
+  assert.equal(dto.scope, "page");
+  assert.equal(dto.anchorKey, "https://example.com/");
 });

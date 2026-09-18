@@ -16,11 +16,7 @@ export function resolveManifestUrl(doc: Document = document): string | null {
     }
   }
 
-  try {
-    return new URL("/manifest.json", doc.location?.href ?? location.href).href;
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 export function siteNameFromManifest(manifest: WebManifest): string | undefined {

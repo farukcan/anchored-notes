@@ -18,6 +18,11 @@ const NOTES_KEY = "notes";
 const BADGE_OFFSET_KEY = "badgeOffset";
 // Tombstones: ids of user-deleted notes not yet pushed to the sync backend.
 const DELETED_KEY = "deletedNoteIds";
+// Watermark for delta push: only notes with updatedAt newer than this are
+// re-encrypted and sent. Pull still returns the authoritative set.
+const LAST_SYNCED_AT_KEY = "lastSyncedAt";
+// Note ids the user chose to keep device-only after an account switch.
+const DEVICE_ONLY_KEY = "deviceOnlyNoteIds";
 
 type NotesMap = Record<string, Note>;
 
@@ -105,7 +110,14 @@ export async function getDeletedNoteIds(): Promise<string[]> {
 
 async function sendWrite(write: StorageWrite): Promise<StorageWriteResponse> {
   const message: Message = { type: "STORAGE_WRITE", write };
-  const response = (await chrome.runtime.sendMessage(message)) as StorageWriteResponse | undefined;
+  let response: StorageWriteResponse | undefined;
+  try {
+    response = (await chrome.runtime.sendMessage(message)) as StorageWriteResponse | undefined;
+  } catch (err) {
+    throw new Error(
+      `storage.${write.op}: ${err instanceof Error ? err.message : String(err)}`,
+    );
+  }
   if (!response) {
     throw new Error(`storage.${write.op}: no response from the background worker`);
   }
@@ -135,11 +147,29 @@ export async function applyStorageWrite(write: StorageWrite): Promise<StorageWri
         await replaceAllNotesLocal(write.notes);
         return { ok: true };
       case "wipeLocalNotes":
-        await enqueue(() => chrome.storage.local.remove([NOTES_KEY, DELETED_KEY]));
+        await enqueue(() =>
+          chrome.storage.local.remove([
+            NOTES_KEY,
+            DELETED_KEY,
+            LAST_SYNCED_AT_KEY,
+            DEVICE_ONLY_KEY,
+          ]),
+        );
         return { ok: true };
       case "bumpAllNoteTimestamps":
         await bumpAllNoteTimestampsLocal();
         return { ok: true };
+      case "clearAllDeletedNoteIds":
+        await mutateState((_notes, deleted) => {
+          if (deleted.size === 0) return {};
+          deleted.clear();
+          return { deleted: true };
+        });
+        return { ok: true };
+      default: {
+        const _exhaustive: never = write;
+        return { ok: false, error: `unknown storage write: ${JSON.stringify(_exhaustive)}` };
+      }
     }
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
@@ -175,6 +205,23 @@ export async function wipeLocalNotes(): Promise<void> {
 // the encryption key changes and every note must be re-encrypted server-side.
 export async function bumpAllNoteTimestamps(): Promise<void> {
   await submit({ op: "bumpAllNoteTimestamps" });
+}
+
+export async function clearAllDeletedNoteIds(): Promise<void> {
+  await submit({ op: "clearAllDeletedNoteIds" });
+}
+
+export async function getDeviceOnlyNoteIds(): Promise<Set<string>> {
+  const result = await chrome.storage.local.get(DEVICE_ONLY_KEY);
+  return new Set((result[DEVICE_ONLY_KEY] as string[] | undefined) ?? []);
+}
+
+export async function setDeviceOnlyNoteIds(ids: string[]): Promise<void> {
+  if (ids.length === 0) {
+    await chrome.storage.local.remove(DEVICE_ONLY_KEY);
+    return;
+  }
+  await chrome.storage.local.set({ [DEVICE_ONLY_KEY]: ids });
 }
 
 async function saveNoteLocal(note: Note): Promise<void> {
@@ -242,6 +289,17 @@ async function replaceAllNotesLocal(incoming: Note[]): Promise<void> {
     }
     return { notes: true, deleted: deletedChanged };
   });
+  await chrome.storage.local.set({ [LAST_SYNCED_AT_KEY]: 0 });
+}
+
+export async function getLastSyncedAt(): Promise<number> {
+  const result = await chrome.storage.local.get(LAST_SYNCED_AT_KEY);
+  const value = result[LAST_SYNCED_AT_KEY];
+  return typeof value === "number" && Number.isFinite(value) ? value : 0;
+}
+
+export async function setLastSyncedAt(ts: number): Promise<void> {
+  await chrome.storage.local.set({ [LAST_SYNCED_AT_KEY]: ts });
 }
 
 function bumpAllNoteTimestampsLocal(): Promise<void> {

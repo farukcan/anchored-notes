@@ -43,6 +43,7 @@ flowchart LR
   POP -->|STORAGE_WRITE| BG
   OPT[options page] -->|STORAGE_WRITE| BG
   BG -->|single writer of notes| ST[(chrome.storage.local)]
+  CS -->|leader-tab SSE| PB[PocketBase realtime]
   ST -.->|onChanged| CS
   ST -.->|onChanged| POP
   ST -.->|onChanged| OPT
@@ -106,7 +107,12 @@ Client modules:
   `deleteAccount` calls the backend `DELETE /api/account` to hard-delete the
   account and all synced notes, then signs out and wipes local notes
   (`wipeLocalNotes`). The options page exposes sign-in, sign-out and a
-  type-your-email-to-confirm **Delete account** action.
+  type-your-email-to-confirm **Delete account** action. Signing in after a
+  different account (logout records `lastAccountEmail`) prompts the user to
+  upload leftover local notes, keep them only on this device, or delete them —
+  they are not pushed until that choice. A missing `lastAccountEmail` on an
+  already-signed-in session is recorded as the current account so sync is not
+  stalled.
   PocketBase tokens expire (~7 days), so two mechanisms keep an actively used
   device signed in across that boundary: `refreshIfExpiringSoon` runs on the
   5-minute sync alarm (`src/background.ts`) and proactively renews the token
@@ -115,8 +121,9 @@ Client modules:
   endpoints, account deletion, billing) — refreshes once and retries on a 401.
   The realtime subscribe POST (`src/realtime.ts`) talks to PocketBase directly
   rather than through `authFetch`, and applies the same refresh-once-and-retry
-  rule itself; when it does give up it reports the closure so the content
-  script drops its handle and reconnects on the next auth change instead of
+  rule itself (the worker runs that POST so the page's CSP never sees the
+  token); when it does give up it reports the closure so the leader tab
+  drops its handle and reconnects on the next auth change instead of
   holding a dead one — never for a connection the caller already disconnected,
   which would clear the handle on the newer connection that replaced it. A
   refresh replaces the token and nothing else: `plan` and `email` stay under
@@ -169,29 +176,35 @@ Client modules:
   lives on locally (`applySyncResult` keeps `tab` notes through applied deletes).
   The note card shows a small notice on `tab`-scoped notes that they aren't
   synced or saved and vanish at session end.
-- **Encryption** — note `content` is encrypted at the sync boundary
-  (`src/sync.ts` encrypts on push, decrypts on pull); local storage stays
-  plaintext so search/titles/export are unaffected. `src/crypto.ts` holds the
+- **Encryption** — note `content` is encrypted at the sync boundary (`src/sync.ts`
+  encrypts on push, decrypts on pull); `scope`, `anchorKey`, position, color,
+  and timestamps stay plaintext, matching the privacy policy. Local storage
+  stays plaintext so search/titles/export are unaffected. Only notes with
+  `updatedAt` newer than the stored `lastSyncedAt` watermark are re-encrypted
+  and pushed; the server still returns the authoritative set on every sync. `src/crypto.ts` holds the
   primitives (PBKDF2-SHA256 600k iters → AES-256-GCM, random IV per encryption,
   wire format `enc:v1:<base64(iv || ciphertext)>`); `src/encryption.ts` holds the
   key lifecycle. Every signed-in account is encrypted: without a custom password
   the key derives from the PocketBase user id (zero-friction encryption at
-  rest); setting a password in the options page upgrades to true end-to-end
-  encryption — losing that password makes synced notes unrecoverable, and the
-  UI warns so. The account's salt + verifier (`encSalt`/`encCheck`) live on the
-  backend; a device whose key stops matching (password changed elsewhere) gets
-  a `409` from sync, wipes its key, and shows a "password required" unlock in
-  the popup/options until the new password is entered. Legacy plaintext pulled
-  from the server is accepted and self-heals: the note's `updatedAt` is bumped
-  to the server timestamp + 1 so the follow-up sync re-pushes it encrypted.
-  The derived key persists in `chrome.storage.local` and is wiped on
-  sign-out/account deletion.
+  rest — the operator who has `userId` + `encSalt` can derive that key). Setting
+  a password in the options page upgrades to true end-to-end encryption — losing
+  that password makes synced notes unrecoverable, and the UI warns so. The
+  account's salt + verifier (`encSalt`/`encCheck`) live on the backend; a device
+  whose key stops matching (password changed elsewhere) gets a `409` from sync,
+  wipes its key, and shows a "password required" unlock in the popup/options
+  until the new password is entered. Legacy plaintext pulled from the server is
+  accepted and self-heals: the note's `updatedAt` is bumped to the server
+  timestamp + 1 so the follow-up sync re-pushes it encrypted. The raw AES key
+  and the auth token persist in `chrome.storage.local` (extension-private; a
+  compromised device can read them) and are wiped on sign-out/account deletion.
 - **Realtime** — `src/realtime.ts` subscribes to PocketBase's SSE realtime for the
   signed-in user's own notes, so changes from other devices appear live instead of
-  waiting for the alarm. The content script connects while the tab is **visible
-  and signed in** (and disconnects otherwise); a realtime event just triggers a
-  background sync (the single reconciliation path), which updates storage and
-  re-renders every context.
+  waiting for the alarm. A single **leader tab** (visible + signed-in) holds the
+  EventSource; a `chrome.storage.session` lease stops every tab from opening its
+  own connection. Config fetch and the subscribe POST run in the background
+  worker so they are not subject to the page's CSP. A realtime event just
+  triggers a background sync (the single reconciliation path), which updates
+  storage and re-renders every context.
 - **Config** — `src/config.ts` hardcodes only the backend URL; the PocketBase
   URL and OAuth provider name are fetched at runtime from the backend's
   `/api/config` (cached per session). Loading the extension requires the
@@ -239,15 +252,16 @@ notes locally (and never resurrects a note another device deleted). `rejected`
 and `failed` notes are kept local-only so nothing is lost. The wire
 format maps the local `Note` fields: `id → clientId`, `createdAt → noteCreatedAt`,
 `updatedAt → noteUpdatedAt`; `content` is encrypted in transit (see
-**Encryption** above); all other fields (`color`, `scope`, `anchorKey`,
-`x/y/w/h`, `hidden`) are sent as-is.
+**Encryption** above); `scope`, `anchorKey`, `color`, `x/y/w/h`, and
+`hidden` are sent as-is.
 
-**Realtime — PocketBase** (`src/realtime.ts`): open an `EventSource` to
-`…/api/realtime`, read the `clientId` from the `PB_CONNECT` event, then `POST`
-`{ clientId, subscriptions: ["notes/*"] }` with `Authorization: <token>`. Events
-arrive as `{ action, record }`; the owner-only `listRule` scopes them to the
-user's own notes. `EventSource` auto-reconnects (re-subscribe on each
-`PB_CONNECT`).
+**Realtime — PocketBase** (`src/realtime.ts`): the leader tab opens an
+`EventSource` to `…/api/realtime` and reads `clientId` from `PB_CONNECT`. The
+subscribe `POST { clientId, subscriptions: ["notes/*"] }` with
+`Authorization: <token>` runs in the background worker (URL must match the
+runtime PocketBase realtime endpoint). Events arrive as `{ action, record }`;
+the owner-only `listRule` scopes them to the user's own notes. `EventSource`
+auto-reconnects (re-subscribe on each `PB_CONNECT`).
 
 **Encryption state — backend** (`src/encryption.ts`): `GET /api/me` returns
 `{ id, encSalt, encCheck, … }` used to derive/verify the device key, and

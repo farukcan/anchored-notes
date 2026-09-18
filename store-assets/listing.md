@@ -33,7 +33,7 @@ Anchored Notes lets you leave sticky notes anchored to web pages. Each note is p
 
 Write in a full markdown editor: headings, lists, task lists with clickable checkboxes, tables, quotes and code blocks, with a Notion-style "/" menu. Drag, resize and recolor notes (7 colors). Available in 16 languages.
 
-Sign in with Google to sync your notes across devices. Synced notes are always encrypted; set an optional passphrase to upgrade to end-to-end encryption so only you can read them.
+Sign in with Google to sync your notes across devices. Synced notes are always encrypted at rest. Set an optional passphrase to upgrade to end-to-end encryption so only you can read them (without a passphrase, encryption uses an account-derived key).
 
 Free: 10 notes without an account, 30 with a free account. Pro: unlimited notes.
 ```
@@ -56,9 +56,8 @@ Anchored Notes lets users attach persistent sticky notes to web pages, anchored 
 
 | Permission | Justification |
 | ---------- | ------------- |
-| `scripting` | Programmatically injects our bundled content script (`content.js`) into tabs that were already open before the extension was installed or updated. Declarative content scripts only load into pages navigated after install, so pre-existing tabs cannot receive notes until manually reloaded — making the extension look broken on first use. We inject on install/update into open http(s) tabs, and on demand (with retry) when the user clicks "Add note" via the popup or right-click. We only inject our own static `files: ["content.js"]`; never remote or dynamically generated code. |
+| `scripting` | Programmatically injects our bundled content script (`content.js`) into tabs that were already open before the extension was installed or updated. Declarative content scripts only load into pages navigated after install, so pre-existing tabs cannot receive notes until manually reloaded — making the extension look broken on first use. We inject on install/update into the active http(s) tab of each window, on tab focus for the rest, and on demand (with retry) when the user clicks "Add note" via the popup or right-click. We only inject our own static `files: ["content.js"]`; never remote or dynamically generated code. |
 | `host_permissions` (`<all_urls>`) | The core feature is attaching notes to any web page the user visits, so the content script and note rendering must run on all sites the user chooses to annotate. |
-| `activeTab` | Lets the popup act on the current tab (read its URL to match notes, inject/retry the content script on user action) without a broad grant when a narrower one suffices. |
 | `contextMenus` | Adds right-click menu items: "Add note here" to create a note, and "Add selection to the note" to append selected text as a blockquote to the last focused note. |
 | `storage` | Stores the user's notes, language choice and settings locally (`chrome.storage.local`) and transient UI state (`chrome.storage.session`). |
 | `identity` | Optional Google sign-in (OAuth) to sync notes across devices; used only when the user chooses to sign in. |

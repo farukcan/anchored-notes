@@ -11,14 +11,18 @@ import {
   getReadyKey,
   markPasswordRequiredIfStale,
 } from "./encryption.js";
+import { getPendingAccountMerge } from "./account-merge.js";
 import {
   applySyncResult,
   bumpNoteTimestamps,
   clearDeletedNoteIds,
   getAllNotes,
   getDeletedNoteIds,
+  getDeviceOnlyNoteIds,
+  getLastSyncedAt,
+  setLastSyncedAt,
 } from "./storage.js";
-import type { AnchorScope, Note, NoteColor } from "./types.js";
+import { isAnchorScope, type AnchorScope, type Note, type NoteColor } from "./types.js";
 
 interface NoteDTO {
   clientId: string;
@@ -45,8 +49,8 @@ interface SyncResponse {
   encCheck: string;
 }
 
-// Content is encrypted at this boundary: local notes stay plaintext, the
-// server only ever sees `enc:v1:` ciphertext.
+// Only note *content* is encrypted at this boundary (privacy policy). Local
+// notes stay plaintext. `scope` and `anchorKey` travel in the clear.
 async function toDTO(note: Note, key: CryptoKey): Promise<NoteDTO> {
   return {
     clientId: note.id,
@@ -65,7 +69,10 @@ async function toDTO(note: Note, key: CryptoKey): Promise<NoteDTO> {
   };
 }
 
-// content arrives already decrypted (or as accepted legacy plaintext).
+function needsHeal(dto: NoteDTO): boolean {
+  return !isEncrypted(dto.content);
+}
+
 function fromDTO(dto: NoteDTO, content: string): Note {
   return {
     id: dto.clientId,
@@ -89,6 +96,13 @@ function fromDTO(dto: NoteDTO, content: string): Note {
 // instead of waiting for the next alarm.
 let inFlight = false;
 let rerunRequested = false;
+// True while applySyncResult is writing so the storage listener does not
+// bounce into another sync for a write we ourselves just produced.
+let applyingResult = false;
+
+export function isApplyingSyncResult(): boolean {
+  return applyingResult;
+}
 
 export async function sync(): Promise<void> {
   if (inFlight) {
@@ -109,6 +123,9 @@ export async function sync(): Promise<void> {
 async function syncOnce(): Promise<void> {
   const auth = await getAuthState();
   if (!auth) return;
+  // Leftover notes from another account (or anonymous use) must not upload
+  // until the user picks upload / keep / delete on the options page.
+  if (await getPendingAccountMerge()) return;
 
   // No verified encryption key on this device (e.g. a custom password not
   // yet entered) means no sync: pushing would need the key, and pulling
@@ -125,8 +142,11 @@ async function syncOnce(): Promise<void> {
   const syncable = (await getAllNotes()).filter((n) => n.scope !== "tab");
   const deletes = await getDeletedNoteIds();
   const localById = new Map(syncable.map((n) => [n.id, n]));
+  const lastSyncedAt = await getLastSyncedAt();
+  const deviceOnly = await getDeviceOnlyNoteIds();
+  const dirty = syncable.filter((n) => n.updatedAt > lastSyncedAt && !deviceOnly.has(n.id));
 
-  const upserts = await Promise.all(syncable.map((n) => toDTO(n, key)));
+  const upserts = await Promise.all(dirty.map((n) => toDTO(n, key)));
 
   const res = await authFetch("/api/notes/sync", {
     method: "POST",
@@ -135,10 +155,22 @@ async function syncOnce(): Promise<void> {
   });
 
   // authFetch already retried once after a token refresh, and raises rather
-  // than returning a 401 it couldn't get a verdict on, so a 401 here means
-  // PocketBase confirmed the session is invalid.
+  // than returning a 401 it couldn't get a verdict on. Logout only when the
+  // backend marks the token expired (or omits a code — legacy). Other 401s
+  // are treated as transient so a misconfigured verifier cannot wipe keys.
   if (res.status === 401) {
-    await logout();
+    let code: string | undefined;
+    try {
+      const body = (await res.clone().json()) as { code?: string };
+      code = body.code;
+    } catch {
+      // Non-JSON body: same as the legacy "no code" path.
+    }
+    if (code === undefined || code === "token_expired") {
+      await logout();
+    } else {
+      console.warn("[anchored-notes] sync 401 treated as transient:", code);
+    }
     return;
   }
   // 409: the account's verifier changed (password set/changed on another
@@ -177,14 +209,14 @@ async function syncOnce(): Promise<void> {
   const serverNotes: Note[] = [];
   const bumps = new Map<string, number>();
   for (const dto of liveNotes) {
-    if (!isEncrypted(dto.content)) {
-      // Legacy plaintext from before encryption: accept and self-heal.
-      serverNotes.push(fromDTO(dto, dto.content));
-      bumps.set(dto.clientId, dto.noteUpdatedAt + 1);
-      continue;
-    }
     try {
-      serverNotes.push(fromDTO(dto, await decryptContent(key, dto.content)));
+      const content = isEncrypted(dto.content)
+        ? await decryptContent(key, dto.content)
+        : dto.content;
+      if (!isAnchorScope(dto.scope)) throw new Error(`invalid scope ${dto.scope}`);
+      serverNotes.push(fromDTO(dto, content));
+      // Legacy plaintext content: accept and re-push encrypted.
+      if (needsHeal(dto)) bumps.set(dto.clientId, dto.noteUpdatedAt + 1);
     } catch (err) {
       console.error(`[anchored-notes] cannot decrypt note ${dto.clientId}:`, err);
       // With a local copy, keep it (applySyncResult never drops a note the
@@ -194,14 +226,30 @@ async function syncOnce(): Promise<void> {
     }
   }
 
+  const acceptedMax = dirty
+    .filter((n) => !notStored.has(n.id))
+    .reduce((max, n) => Math.max(max, n.updatedAt), lastSyncedAt);
+  const serverMax = serverNotes.reduce((max, n) => Math.max(max, n.updatedAt), 0);
+  const watermark = Math.max(acceptedMax, serverMax);
+
   // Atomic merge re-reads local state, so notes created/edited during the
-  // round-trip survive (vs. a blanket overwrite of the snapshot).
-  await applySyncResult({
-    serverNotes,
-    rejected: keptLocal,
-    appliedDeletes: [...deletes, ...serverDeletedIds],
-  });
-  await clearDeletedNoteIds(deletes);
+  // round-trip survive (vs. a blanket overwrite of the snapshot). The apply
+  // write is tagged so onNotesChanged does not bounce into another sync.
+  applyingResult = true;
+  try {
+    await applySyncResult({
+      serverNotes,
+      rejected: keptLocal,
+      appliedDeletes: [...deletes, ...serverDeletedIds],
+    });
+    await clearDeletedNoteIds(deletes);
+    await setLastSyncedAt(watermark);
+    // onChanged for the apply write may land after set() resolves; hold the
+    // flag one macrotask so the bounce listener still sees it.
+    await new Promise<void>((resolve) => setTimeout(resolve, 0));
+  } finally {
+    applyingResult = false;
+  }
   // The bump is a notes-storage write, so the existing change listener in
   // background.ts schedules the follow-up sync that pushes the ciphertext.
   if (bumps.size > 0) await bumpNoteTimestamps(bumps);

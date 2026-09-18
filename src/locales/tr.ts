@@ -12,6 +12,7 @@ export const tr: Record<MessageKey, string> = {
   cantAddNote: "Chrome bu sayfada not eklenmesine izin vermiyor (ör. sistem sayfaları veya Web Mağazası).",
   notesUsage: "{count} / {limit} not kullanıldı",
   noteLimitReached: "Not limitine ulaşıldı ({limit}). Yeni not eklemek için bir notu silin.",
+  syncFailed: "Eşitleme başarısız. Otomatik olarak tekrar denenecek.",
   language: "Dil",
   // account
   accountSignInBenefit: "Giriş yap; notların tüm cihazlarında senkronize olsun ve güvende kalsın.",
@@ -26,6 +27,11 @@ export const tr: Record<MessageKey, string> = {
   accountUpgrade: "Pro'ya yükselt",
   accountManageBilling: "Aboneliği yönet",
   accountBillingFailed: "İşlem başarısız.",
+  accountMergeBody: "Bu cihazda {count} yerel not var. Bunları {email} hesabına yükle, yalnızca bu cihazda tut veya sil?",
+  accountMergeUpload: "Bu hesaba yükle",
+  accountMergeKeep: "Bu cihazda tut",
+  accountMergeDelete: "Yerel notları sil",
+  accountMergeFailed: "Bu seçim uygulanamadı. Uzantıyı yeniden yükleyip tekrar deneyin.",
   // encryption
   encStatusDefault: "Notlar eşitlenmeden önce şifrelenir. Uçtan uca şifreleme için bir parola belirle.",
   encStatusCustom: "Notların parolanla uçtan uca şifreleniyor.",
@@ -39,6 +45,12 @@ export const tr: Record<MessageKey, string> = {
   encConfirmMismatch: "Parolalar eşleşmiyor.",
   encLossWarning: "Bu parolayı unutursan eşitlenmiş notların KURTARILAMAZ. Devam edilsin mi?",
   encChangeFailed: "Şifreleme parolası güncellenemedi.",
+  encPasswordMinLength: "En az 4 karakter kullan.",
+  encPasswordHint: "Güçlü bir parola seç. Unutursan eşitlenmiş notlar kurtarılamaz.",
+  encPasswordPlaceholder: "Yeni parola",
+  encConfirmPlaceholder: "Parolayı tekrar yaz",
+  encSavePassword: "Kaydet",
+  encCancel: "Vazgeç",
   // options
   optionsTitle: "Anchored Notes — Seçenekler",
   searchPlaceholder: "Notlarda ara…",

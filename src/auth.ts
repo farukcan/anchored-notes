@@ -25,6 +25,21 @@ export interface AuthState {
 }
 
 const AUTH_KEY = "auth";
+const LAST_ACCOUNT_EMAIL_KEY = "lastAccountEmail";
+
+export async function getLastAccountEmail(): Promise<string | null> {
+  const result = await chrome.storage.local.get(LAST_ACCOUNT_EMAIL_KEY);
+  const email = result[LAST_ACCOUNT_EMAIL_KEY];
+  return typeof email === "string" && email.length > 0 ? email : null;
+}
+
+export async function setLastAccountEmail(email: string | null): Promise<void> {
+  if (email === null) {
+    await chrome.storage.local.remove(LAST_ACCOUNT_EMAIL_KEY);
+    return;
+  }
+  await chrome.storage.local.set({ [LAST_ACCOUNT_EMAIL_KEY]: email });
+}
 
 // Shape of the PocketBase auth-methods OAuth2 provider entry we rely on.
 interface OAuth2Provider {
@@ -141,6 +156,8 @@ async function performLogin(): Promise<AuthState> {
 }
 
 export async function logout(): Promise<void> {
+  const current = await getAuthState();
+  if (current) await setLastAccountEmail(current.email);
   await setAuthState(null);
   // The encryption key is account-bound; never leave it on a signed-out device.
   await wipeEncryptionState();

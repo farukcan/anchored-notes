@@ -51,20 +51,19 @@ Store draft item id: `dnmmgfkolmlieeempmfjghddbcehijgc`
     every page so a note can be anchored to any URL the user visits.
   - `identity` — Google OAuth2 sign-in via `chrome.identity.launchWebAuthFlow`
     to authenticate the user for cross-device note sync.
-  - `activeTab` — the popup reads the current tab (`chrome.tabs.query`) to
-    create/show a note for the page the user is looking at.
   - `contextMenus` — right-click menu entry to add a note to the current page.
   - `storage` — persists notes, tombstones, and the auth token in
     `chrome.storage.local`.
   - `alarms` — a periodic alarm (every 5 min) triggers background sync with the
     backend.
-  - `scripting` — programmatically inject `content.js` into tabs that were open
-    before install/update (declarative content scripts miss those) and on
-    popup/context-menu retry when the content script is not yet present.
+  - `scripting` — programmatically inject `content.js` into the active tab of
+    each window on install/update (declarative content scripts miss those) and
+    on popup/context-menu retry; other tabs are injected when they become
+    focused.
 - [x] Single-purpose statement: "sticky notes anchored to pages/sites/tabs".
 - Where to paste (dashboard **Privacy** tab, not the package upload step):
   - Single purpose → "Single purpose" field.
-  - The 7 API permissions → each gets its own "Permission justification" box
+  - The API permissions → each gets its own "Permission justification" box
     (auto-listed from the manifest).
   - `<all_urls>` → the separate "Host permission justification" box.
   - Privacy policy URL (item 1) + data-usage disclosures also live here.
