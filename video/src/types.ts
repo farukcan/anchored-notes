@@ -94,6 +94,15 @@ export type Step =
   | { action: "badgeList"; open: boolean; ms: number }
   /** Show the extension popup over the stage. */
   | { action: "popup"; open: boolean; ms: number }
+  /**
+   * Go to another page of the same site, or back to the stage's own page when
+   * `page` is null. The stage is one document with several views, and the move
+   * is a same-document navigation — what a single-page site does — so the
+   * extension sees a new URL and re-matches its notes on its own: a page-scoped
+   * note left on one page is gone on the next and back on return. `page` names
+   * a `data-page-view` in the stage.
+   */
+  | { action: "navigate"; page: string | null; ms: number }
   /** Zoom the stage to a region, or back out when `rect` is null. */
   | { action: "zoom"; rect: Rect | null; ms: number }
   /**
@@ -236,6 +245,8 @@ export interface SceneState {
   caret: string | null;
   popupOpen: boolean;
   badgeListOpen: boolean;
+  /** Which of the stage's pages is open; null is the page the stage opens on. */
+  page: string | null;
   /** Note whose ⋮ menu is open, if any. */
   openMenuNoteId: string | null;
   /** 0 → no closing card, 1 → it fully covers the frame. */

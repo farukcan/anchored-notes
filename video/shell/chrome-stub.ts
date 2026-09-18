@@ -199,9 +199,17 @@ export function installChromeStub(win: Window, state: StubState, role: "content"
   const { config } = state;
 
   // The content frame *is* the active tab; record it so the popup frame can ask
-  // about the page rather than about itself.
+  // about the page rather than about itself. Read live rather than copied: a
+  // scenario can navigate the frame to another page of its site after boot.
   if (role === "content") {
-    state.activeTab = { url: win.location.href, title: win.document.title };
+    state.activeTab = {
+      get url(): string {
+        return win.location.href;
+      },
+      get title(): string {
+        return win.document.title;
+      }
+    };
   }
 
   const runtime = {

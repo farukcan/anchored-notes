@@ -5,6 +5,7 @@
 // chrome stub. So "apply this state" means writing notes into storage exactly
 // like a sync would, and letting the extension's own reconcile draw them.
 
+import { TAB_ID, pageSearch } from "../stage-url";
 import type { FocusState, Note, NotesMap, Point, SceneState } from "./types";
 
 const HOST_ID = "anchored-notes-host";
@@ -42,8 +43,51 @@ export function pageKeyOf(win: Window): string {
 }
 
 /**
- * Resolves once the extension has mounted and the page's webfonts are in — the
- * two things that make an early frame render differently from a late one.
+ * The tab title of every page the stage can show, keyed by page (`""` is the
+ * stage's own). A stage with several pages marks each view with
+ * `data-page-view` and `data-title`; one without is a single page titled by its
+ * <title>. Read once at boot so the browser chrome can be labelled per frame
+ * without asking the frame.
+ */
+export function pageTitlesOf(win: Window): Record<string, string> {
+  const views = Array.from(win.document.querySelectorAll<HTMLElement>("[data-page-view]"));
+  if (views.length === 0) return { "": win.document.title };
+  const titles: Record<string, string> = {};
+  for (const view of views) {
+    const title = view.dataset.title;
+    if (!title) throw new Error(`stage page view "${view.dataset.pageView}" has no data-title`);
+    titles[view.dataset.pageView ?? ""] = title;
+  }
+  return titles;
+}
+
+/**
+ * Put the frame on `page`, the way a single-page site changes page: the view is
+ * switched and the URL is replaced in the same document. The extension observes
+ * that navigation (src/content/index.ts onUrlChange) and re-matches its notes by
+ * itself — nothing here decides which notes a page shows.
+ *
+ * The title changes before the URL, because the extension reads the page title
+ * when it hears about the navigation. The hash carries the render config and is
+ * kept as it is.
+ */
+function applyPage(win: Window, page: string | null): void {
+  const search = pageSearch(page);
+  if (win.location.search === search) return;
+  const name = page ?? "";
+  const view = win.document.querySelector<HTMLElement>(`[data-page-view="${name}"]`);
+  if (!view) throw new Error(`stage has no page view "${name}" — mark one with data-page-view`);
+  const title = view.dataset.title;
+  if (!title) throw new Error(`stage page view "${name}" has no data-title`);
+  win.document.documentElement.dataset.page = name;
+  win.document.title = title;
+  win.history.replaceState(win.history.state, "", `${win.location.pathname}${search}${win.location.hash}`);
+}
+
+/**
+ * Resolves once the extension has mounted and the page's webfonts and images
+ * are in — the things that make an early frame render differently from a late
+ * one.
  */
 export async function waitForStage(frame: HTMLIFrameElement): Promise<void> {
   const win = stubWindow(frame);
@@ -62,6 +106,24 @@ export async function waitForStage(frame: HTMLIFrameElement): Promise<void> {
   }
 
   await loadFonts(win);
+  await loadImages(win);
+}
+
+/**
+ * Make sure every image the page holds is decoded before a frame is captured,
+ * including those on pages the stage has not shown yet: a hidden page's images
+ * would otherwise be decoded the frame it appears, and that frame would show an
+ * empty card. An image that cannot be decoded fails the render rather than
+ * leaving a hole in the video.
+ */
+async function loadImages(win: Window): Promise<void> {
+  await Promise.all(
+    Array.from(win.document.images).map((image) =>
+      image.decode().catch((error: unknown) => {
+        throw new Error(`stage image ${image.src} could not be decoded: ${String(error)}`);
+      })
+    )
+  );
 }
 
 /**
@@ -164,6 +226,9 @@ export async function applyState(frame: HTMLIFrameElement, state: SceneState): P
   const chromeApi = win.chrome;
   if (!chromeApi) throw new Error("stage frame has no chrome stub");
 
+  // The page first: a note written for a page the frame is not on yet would be
+  // matched against the wrong URL and drawn a frame late.
+  applyPage(win, state.page);
   await chromeApi.storage.local.set({ notes: state.notes as NotesMap });
   await settle(win);
 
@@ -194,7 +259,7 @@ export async function applyState(frame: HTMLIFrameElement, state: SceneState): P
   const FrameElement = (win as Window & typeof globalThis).HTMLElement;
   for (const card of root.querySelectorAll(".note")) {
     if (!(card instanceof FrameElement)) continue;
-    const note = noteAt(state.notes, card);
+    const note = noteAt(win, state.notes, card);
     const isTarget = note !== null && note.id === target?.id;
     if (isTarget) matched = true;
     if (note !== null && note.id === state.caret) caretCard = card;
@@ -224,14 +289,34 @@ export async function applyState(frame: HTMLIFrameElement, state: SceneState): P
 }
 
 /**
- * The note a card was built from. Cards carry no id attribute, so the only
- * handle is the position reconcile has just applied.
+ * Whether the extension draws `note` on the page the frame is on — the rule in
+ * src/matching.ts isNoteVisible, against the frame's own URL.
  */
-function noteAt(notes: NotesMap, card: HTMLElement): Note | null {
+function drawnOn(win: Window, note: Note): boolean {
+  if (note.hidden === true) return false;
+  const { origin, pathname, search } = win.location;
+  switch (note.scope) {
+    case "global":
+      return true;
+    case "site":
+      return note.anchorKey === origin;
+    case "page":
+      return note.anchorKey === `${origin}${pathname}${search}`;
+    case "tab":
+      return note.anchorKey === String(TAB_ID);
+  }
+}
+
+/**
+ * The note a card was built from. Cards carry no id attribute, so the only
+ * handle is the position reconcile has just applied — looked up among the notes
+ * this page draws, because notes on two pages of a site may share a spot.
+ */
+function noteAt(win: Window, notes: NotesMap, card: HTMLElement): Note | null {
   const left = Math.round(parseFloat(card.style.left));
   const top = Math.round(parseFloat(card.style.top));
   for (const note of Object.values(notes)) {
-    if (note.x === left && note.y === top) return note;
+    if (drawnOn(win, note) && note.x === left && note.y === top) return note;
   }
   return null;
 }

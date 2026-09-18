@@ -1,0 +1,284 @@
+<!doctype html>
+<!-- Stage: a design inspiration gallery — the page where ideas arrive faster
+     than they can be kept. Copy comes from video/copy/stages.ts. The site
+     carries no name or wordmark: an invented brand reads as noise, and a real
+     one would be an imitation, so the page says what kind of site it is through
+     its layout alone. The artworks are generated photographs of invented,
+     unbranded packaging (stages/assets/inspiration/), so nothing on the grid
+     is someone's real work.
+
+     It is one document with several pages, the way a single-page site is: the
+     collection, and the detail page of two of its shots. The driver's
+     `navigate` step switches between them with a same-document navigation, so
+     the extension sees each as its own URL and re-matches its notes by itself.
+     Each page is marked with data-page-view (its name; "" is the collection)
+     and data-title (its tab title); <html data-page> says which one is open.
+
+     No webfont: a gallery is an application, not a publication, and a system
+     stack is what one looks like. It also sets it apart from the article stage,
+     which is set in serif.
+
+     Stage contract (every stage must honour it):
+       - 1280x800 viewport, no scrollbars, no page-level animation
+       - no <link rel="manifest">: the browser would fetch it for real; the
+         content script's lookup falls back to /manifest.json, which the stub
+         answers with the configured site name
+       - shell.js first, then the extension bundle it hosts
+       - the page background repeated on <html>, so a focus step blurring <body>
+         cannot lighten the window's border
+       - all motion comes from the Remotion driver, never from the page -->
+<html lang="{{lang}}" dir="{{dir}}" data-page="">
+<head>
+<meta charset="utf-8">
+<title>{{igTitle}}</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --ground: #f1f1f4;
+    --card: #ffffff;
+    --ink: #17171c;
+    --ink-soft: #6b6b78;
+    --rule: #e0e0e6;
+    --accent: #4b3cf5;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  /* Frames are rendered out of wall-clock order, so any page-driven motion would
+     land on an arbitrary point of its timeline. The driver owns all movement. */
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+  html, body { width: 1280px; height: 800px; overflow: hidden; }
+  html { background: var(--ground); }
+  body {
+    background: var(--ground);
+    color: var(--ink);
+    font-family: var(--font);
+    font-size: 14px;
+    line-height: 1.45;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .top {
+    display: flex; align-items: center; gap: 30px;
+    height: 60px; padding: 0 40px;
+    background: var(--card); border-bottom: 1px solid var(--rule);
+  }
+  /* The site has no name and no wordmark — only the kind of thing it is. */
+  .mark { display: grid; grid-template-columns: repeat(2, 11px); gap: 3px; flex: none; }
+  .mark i { width: 11px; height: 11px; border-radius: 3px; background: var(--accent); display: block; }
+  .mark i:nth-child(2) { background: #ff8a3d; }
+  .mark i:nth-child(3) { background: #19b38a; }
+  .mark i:nth-child(4) { background: #f2c230; }
+  nav { display: flex; gap: 22px; font-size: 14px; color: var(--ink-soft); font-weight: 500; }
+  nav b { color: var(--ink); font-weight: 650; }
+  .search {
+    margin-inline-start: auto; width: 320px; height: 36px;
+    border-radius: 18px; background: var(--ground);
+    display: flex; align-items: center; padding: 0 16px;
+    color: var(--ink-soft); font-size: 13.5px;
+  }
+  .me {
+    width: 32px; height: 32px; border-radius: 50%; flex: none;
+    background: radial-gradient(circle at 32% 30%, #ffb38a, #c2553a);
+  }
+
+  /* Centred, and narrow enough to sit inside the slice a vertical cut rests on. */
+  .head { text-align: center; padding: 24px 0 0; }
+  .kicker {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--accent);
+  }
+  h1 {
+    font-size: 34px; font-weight: 750; line-height: 1.12; letter-spacing: -0.02em;
+    max-width: 470px; margin: 8px auto 8px;
+  }
+  .meta { color: var(--ink-soft); font-size: 13.5px; }
+  .chips { display: flex; justify-content: center; gap: 8px; margin: 16px 0 20px; }
+  .chips span {
+    height: 30px; padding: 0 14px; border-radius: 15px;
+    display: flex; align-items: center;
+    background: var(--card); border: 1px solid var(--rule);
+    font-size: 13px; font-weight: 550; color: #3b3b46;
+  }
+  .chips span:nth-child(2) { background: var(--ink); border-color: var(--ink); color: #fff; }
+
+  .grid { display: flex; gap: 20px; padding: 0 40px; align-items: flex-start; }
+  .col { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+  .tile {
+    background: var(--card); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 1px 2px #1717200f, 0 6px 18px #1717200a;
+  }
+  .art { position: relative; overflow: hidden; }
+  .cap { display: flex; align-items: center; gap: 9px; padding: 10px 12px; }
+  .cap .by {
+    width: 22px; height: 22px; border-radius: 50%; flex: none;
+    background: linear-gradient(140deg, #c7c7d2, #8d8d9c);
+  }
+  .cap div { min-width: 0; flex: 1; }
+  .cap b { display: block; font-size: 13px; font-weight: 650; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cap small { display: block; font-size: 11.5px; color: var(--ink-soft); }
+  .cap em { font-style: normal; font-size: 12px; color: var(--ink-soft); flex: none; }
+  .cap em::before { content: "♥ "; color: #e0506a; }
+
+  /* Each tile keeps its own height, so the grid stays a masonry. The photos
+     are generated product shots of invented packaging, cropped to fit. */
+  .art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .palette { height: 190px; }
+  .candles { height: 210px; }
+  .coffee { height: 250px; }
+  .type { height: 220px; }
+  .bakery { height: 210px; }
+  .choc { height: 250px; }
+  .citrus { height: 240px; }
+  .tea { height: 230px; }
+
+  /* Only the open page is shown. */
+  [data-page-view] { display: none; }
+  html[data-page=""] [data-page-view=""],
+  html[data-page="bakery"] [data-page-view="bakery"],
+  html[data-page="coffee"] [data-page-view="coffee"] { display: block; }
+
+  /* A shot's own page: the work centred, its details in the margins. */
+  .shot { position: relative; height: 740px; }
+  .back {
+    display: table; margin: 22px auto 0; height: 30px; line-height: 30px; padding: 0 14px;
+    border-radius: 15px; background: var(--card); border: 1px solid var(--rule);
+    font-size: 13px; font-weight: 600; color: #3b3b46;
+  }
+  .shot h2 {
+    text-align: center; font-size: 26px; font-weight: 750; letter-spacing: -0.015em;
+    margin: 14px 0 2px;
+  }
+  .shot .who { text-align: center; color: var(--ink-soft); font-size: 13.5px; }
+  .shot .who b { color: var(--ink); font-weight: 600; }
+  .shot .big {
+    position: absolute; left: 330px; top: 110px; width: 620px; height: 470px;
+    border-radius: 16px; box-shadow: 0 2px 4px #1717200f, 0 18px 40px #17172014;
+  }
+  .shot .about { position: absolute; left: 40px; top: 110px; width: 260px; }
+  .shot .about p { font-size: 13.5px; color: #3b3b46; line-height: 1.55; }
+  .shot .about h3 {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-soft); margin: 22px 0 10px;
+  }
+  .shot .swatches { display: flex; gap: 8px; }
+  .shot .swatches i { width: 34px; height: 34px; border-radius: 9px; display: block; }
+  .shot .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .shot .tags span {
+    height: 26px; line-height: 26px; padding: 0 11px; border-radius: 13px;
+    background: var(--card); border: 1px solid var(--rule); font-size: 12px; color: #3b3b46;
+  }
+  .shot .act { position: absolute; left: 980px; top: 110px; width: 260px; display: flex; gap: 10px; }
+  .shot .act span {
+    flex: 1; height: 40px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+    font-size: 13.5px; font-weight: 650; background: var(--card); border: 1px solid var(--rule);
+  }
+  .shot .act span:first-child { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .shot .act span:last-child::before { content: "♥ "; color: #e0506a; }
+  .shot .more { position: absolute; left: 980px; top: 460px; width: 260px; }
+  .shot .more h3 {
+    font-size: 11.5px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;
+    color: var(--ink-soft); margin-bottom: 10px;
+  }
+  .shot .more div { display: flex; gap: 10px; }
+  .shot .more i { flex: 1; height: 84px; border-radius: 10px; display: block; }
+
+</style>
+</head>
+<body>
+  <div class="top">
+    <div class="mark"><i></i><i></i><i></i><i></i></div>
+    <nav><b>{{igNav1}}</b><span>{{igNav2}}</span><span>{{igNav3}}</span></nav>
+    <div class="search">{{igSearch}}</div>
+    <div class="me"></div>
+  </div>
+
+  <main data-page-view="" data-title="{{igTitle}}">
+  <div class="head">
+    <div class="kicker">{{igKicker}}</div>
+    <h1>{{igTitle}}</h1>
+    <div class="meta">{{igMeta}}</div>
+    <div class="chips">
+      <span>{{igChip1}}</span><span>{{igChip2}}</span><span>{{igChip3}}</span><span>{{igChip4}}</span><span>{{igChip5}}</span>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col">
+      <div class="tile">
+        <div class="art palette"><img src="assets/inspiration/palette.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT1}}</b><small>{{igA1}}</small></div><em>412</em></div>
+      </div>
+      <div class="tile">
+        <div class="art candles"><img src="assets/inspiration/candles.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT2}}</b><small>{{igA2}}</small></div><em>268</em></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="tile">
+        <div class="art coffee"><img src="assets/inspiration/coffee.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT3}}</b><small>{{igA3}}</small></div><em>537</em></div>
+      </div>
+      <div class="tile">
+        <div class="art type"><img src="assets/inspiration/type.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT4}}</b><small>{{igA4}}</small></div><em>190</em></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="tile">
+        <div class="art bakery"><img src="assets/inspiration/bakery.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT5}}</b><small>{{igA5}}</small></div><em>644</em></div>
+      </div>
+      <div class="tile">
+        <div class="art choc"><img src="assets/inspiration/chocolate.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT6}}</b><small>{{igA6}}</small></div><em>305</em></div>
+      </div>
+    </div>
+    <div class="col">
+      <div class="tile">
+        <div class="art citrus"><img src="assets/inspiration/citrus.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT7}}</b><small>{{igA7}}</small></div><em>891</em></div>
+      </div>
+      <div class="tile">
+        <div class="art tea"><img src="assets/inspiration/tea.jpg" alt=""></div>
+        <div class="cap"><span class="by"></span><div><b>{{igT8}}</b><small>{{igA8}}</small></div><em>356</em></div>
+      </div>
+    </div>
+  </div>
+  </main>
+
+  <section class="shot" data-page-view="bakery" data-title="{{igT5}} · {{igA5}}">
+    <div class="back">← {{igBack}}</div>
+    <h2>{{igT5}}</h2>
+    <div class="who">{{igBy}} <b>{{igA5}}</b></div>
+    <div class="about">
+      <p>{{igD5}}</p>
+      <h3>{{igColours}}</h3>
+      <div class="swatches"><i style="background:#f6b6c8"></i><i style="background:#fff4f7;border:1px solid #eadde2"></i><i style="background:#e0507a"></i></div>
+      <h3>{{igTags}}</h3>
+      <div class="tags"><span>{{igChip2}}</span><span>{{igChip5}}</span></div>
+    </div>
+    <div class="art bakery big"><img src="assets/inspiration/bakery.jpg" alt=""></div>
+    <div class="act"><span>{{igSave}}</span><span>644</span></div>
+    <div class="more"><h3>{{igMore}}</h3><div><i style="background:#f6b6c8"></i><i style="background:#fbd9a4"></i></div></div>
+  </section>
+
+  <section class="shot" data-page-view="coffee" data-title="{{igT3}} · {{igA3}}">
+    <div class="back">← {{igBack}}</div>
+    <h2>{{igT3}}</h2>
+    <div class="who">{{igBy}} <b>{{igA3}}</b></div>
+    <div class="about">
+      <p>{{igD3}}</p>
+      <h3>{{igColours}}</h3>
+      <div class="swatches"><i style="background:#caa27a"></i><i style="background:#1c1b1a"></i><i style="background:#e8dccb"></i></div>
+      <h3>{{igTags}}</h3>
+      <div class="tags"><span>{{igChip2}}</span><span>{{igChip3}}</span></div>
+    </div>
+    <div class="art coffee big"><img src="assets/inspiration/coffee.jpg" alt=""></div>
+    <div class="act"><span>{{igSave}}</span><span>537</span></div>
+    <div class="more"><h3>{{igMore}}</h3><div><i style="background:#a57c52"></i><i style="background:#2f3a33"></i></div></div>
+  </section>
+
+  <script src="../shell.js"></script>
+  <script src="../content.js"></script>
+</body>
+</html>

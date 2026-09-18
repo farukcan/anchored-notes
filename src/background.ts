@@ -1,17 +1,42 @@
-// Service worker: context menu, tab id replies, tab-note cleanup.
+// Service worker: context menu, tab id replies, tab-note cleanup, and the
+// single writer of note storage (see storage.ts).
 
-import type { GetTabIdResponse, LoginResponse, Message } from "./types.js";
-import { PENDING_WARNING_KEY } from "./types.js";
-import { deleteAllTabNotes, deleteTabNotes, onNotesChanged } from "./storage.js";
-import { login, onAuthChanged, refreshIfExpiringSoon } from "./auth.js";
+import type {
+  AccountMergeResponse,
+  GetTabIdResponse,
+  LoginResponse,
+  Message,
+  RealtimeSubscribeResponse,
+  RuntimeConfigResponse,
+} from "./types.js";
+import { LAST_SYNC_ERROR_KEY, PENDING_WARNING_KEY } from "./types.js";
+import {
+  applyStorageWrite,
+  deleteAllTabNotes,
+  deleteTabNotes,
+  onNotesChanged,
+} from "./storage.js";
+import {
+  getAuthState,
+  getLastAccountEmail,
+  login,
+  onAuthChanged,
+  refreshIfExpiringSoon,
+  setLastAccountEmail,
+} from "./auth.js";
+import { applyAccountMerge, getPendingAccountMerge } from "./account-merge.js";
 import { ensureEncryptionReady } from "./encryption.js";
-import { sync } from "./sync.js";
+import { isApplyingSyncResult, sync } from "./sync.js";
 import { getLang, initI18n, onLangChanged, t } from "./i18n.js";
 import { injectContentScript } from "./inject.js";
-import { BACKEND_URL } from "./config.js";
+import { BACKEND_URL, getRuntimeConfig } from "./config.js";
+import { subscribeRealtime } from "./realtime.js";
 import { track } from "./umami.js";
 
 const SYNC_ALARM = "anchored-notes-sync";
+// How long the "!" badge (and its pending flag) stays if the popup never
+// opens to consume the warning.
+const WARNING_BADGE_MS = 10_000;
 
 const MENU_ID = "anchored-notes-add";
 const APPEND_MENU_ID = "anchored-notes-append-selection";
@@ -73,22 +98,25 @@ async function createContextMenu(): Promise<void> {
 }
 
 // Declarative content scripts only load into tabs navigated after install, so
-// tabs open from before this install/update have no content script and can't
-// receive notes. Inject the bundle into every open http(s) tab so notes work
-// (and existing notes render) without the user having to reload. Per-tab errors
-// (discarded or restricted tabs) are swallowed.
-async function injectIntoOpenTabs(): Promise<void> {
-  const tabs = await chrome.tabs.query({ url: ["http://*/*", "https://*/*"] });
-  await Promise.all(
-    tabs.map(async (tab) => {
-      if (tab.id === undefined) return;
-      try {
-        await injectContentScript(tab.id);
-      } catch {
-        // Restricted (e.g. Web Store) or discarded tab: nothing to do.
-      }
-    })
-  );
+// tabs open from before this install/update have no content script. Injecting
+// the  bundle into every open tab on update spikes CPU; only the active tab
+// of each window is injected now, and background tabs get it when focused.
+async function injectIntoActiveTabs(): Promise<void> {
+  const tabs = await chrome.tabs.query({
+    active: true,
+    url: ["http://*/*", "https://*/*"],
+  });
+  await Promise.all(tabs.map((tab) => (tab.id !== undefined ? injectIntoTab(tab.id) : undefined)));
+}
+
+async function injectIntoTab(tabId: number): Promise<void> {
+  const tab = await chrome.tabs.get(tabId).catch(() => undefined);
+  if (!tab?.url || !/^https?:/.test(tab.url)) return;
+  try {
+    await injectContentScript(tabId);
+  } catch {
+    // Restricted (e.g. Web Store) or discarded tab: nothing to do.
+  }
 }
 
 chrome.runtime.onInstalled.addListener((details) => {
@@ -102,7 +130,7 @@ chrome.runtime.onInstalled.addListener((details) => {
     void openWelcomeTab();
   }
   if (details.reason === "install" || details.reason === "update") {
-    void injectIntoOpenTabs();
+    void injectIntoActiveTabs();
   }
 });
 
@@ -175,6 +203,7 @@ chrome.contextMenus.onClicked.addListener((info, tab) => {
 chrome.tabs.onActivated.addListener((info) => {
   activeTabId = info.tabId;
   syncAppendMenuVisibility();
+  void injectIntoTab(info.tabId);
 });
 
 chrome.tabs.onRemoved.addListener((tabId) => {
@@ -205,18 +234,50 @@ function warnCantAddNote(tabId: number, canOpenPopup: boolean): void {
     chrome.action.openPopup().catch(() => undefined);
   }
   void chrome.storage.session.set({ [PENDING_WARNING_KEY]: tabId });
+  // Otherwise the badge would sit there until the tab closes, and the flag
+  // would toast on some unrelated popup open much later.
+  setTimeout(() => void clearCantAddNoteWarning(tabId), WARNING_BADGE_MS);
 }
+
+async function clearCantAddNoteWarning(tabId: number): Promise<void> {
+  // The tab may be gone by now.
+  await chrome.action.setBadgeText({ tabId, text: "" }).catch(() => undefined);
+  const res = await chrome.storage.session.get(PENDING_WARNING_KEY);
+  // A newer warning for another tab owns the flag now; leave it.
+  if (res[PENDING_WARNING_KEY] === tabId) {
+    await chrome.storage.session.remove(PENDING_WARNING_KEY);
+  }
+}
+
+// storage.session is readable only from trusted contexts by default; the
+// content script (umami's note_edited throttle) needs it too. Idempotent, so
+// it simply runs on every worker start.
+void chrome.storage.session.setAccessLevel({
+  accessLevel: "TRUSTED_AND_UNTRUSTED_CONTEXTS",
+});
 
 // Sync triggers. sync() is a no-op for anonymous users, so these are safe to
 // always register. Local note edits are debounced; a periodic alarm pulls
 // changes made on other devices; signing in syncs immediately.
+function runSync(): void {
+  sync()
+    .then(() => chrome.storage.session.remove(LAST_SYNC_ERROR_KEY))
+    .catch((err: unknown) => {
+      console.error("[anchored-notes] sync failed:", err);
+      void chrome.storage.session.set({ [LAST_SYNC_ERROR_KEY]: true });
+    });
+}
+
 let syncTimer: ReturnType<typeof setTimeout> | undefined;
 function scheduleSync(): void {
   if (syncTimer) clearTimeout(syncTimer);
-  syncTimer = setTimeout(() => void sync(), 2000);
+  syncTimer = setTimeout(runSync, 2000);
 }
 
-onNotesChanged(() => scheduleSync());
+onNotesChanged(() => {
+  if (isApplyingSyncResult()) return;
+  scheduleSync();
+});
 onAuthChanged((auth, previous) => {
   // Set up the encryption key eagerly so a required custom password surfaces
   // in the UI right after sign-in instead of at the first sync attempt.
@@ -226,14 +287,41 @@ onAuthChanged((auth, previous) => {
   // time right after the alarm already did.
   if (auth && auth.email !== previous?.email) {
     void ensureEncryptionReady()
-      .then(() => sync())
+      .then(async () => {
+        if (await getPendingAccountMerge()) {
+          await chrome.runtime.openOptionsPage();
+          return;
+        }
+        await sync();
+      })
       .catch((err: unknown) => {
         console.error("[anchored-notes] post-sign-in encryption setup failed:", err);
       });
   }
 });
 
-chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
+// Existing signed-in users have no lastAccountEmail; without this,
+// leftover notes would look like an account-switch and sync would stall.
+async function migrateLastAccountEmail(): Promise<void> {
+  const auth = await getAuthState();
+  if (auth && (await getLastAccountEmail()) === null) {
+    await setLastAccountEmail(auth.email);
+  }
+}
+
+// alarms.create on an existing name replaces the alarm and restarts its
+// countdown. This top-level code runs on every service-worker wake, which for
+// an actively browsing user happens far more often than every 5 minutes, so an
+// unconditional create would keep pushing the alarm out and it might never
+// fire. Create it only when missing (fresh install, or cleared by an
+// update/reload).
+async function ensureSyncAlarm(): Promise<void> {
+  const existing = await chrome.alarms.get(SYNC_ALARM);
+  if (!existing) await chrome.alarms.create(SYNC_ALARM, { periodInMinutes: 5 });
+}
+void ensureSyncAlarm();
+void migrateLastAccountEmail();
+
 chrome.alarms.onAlarm.addListener((alarm) => {
   if (alarm.name !== SYNC_ALARM) return;
   // Renew the token ahead of expiry so sync() (and any other authenticated
@@ -243,15 +331,14 @@ chrome.alarms.onAlarm.addListener((alarm) => {
     .catch((err: unknown) => {
       console.error("[anchored-notes] proactive token refresh failed:", err);
     })
-    .then(() => sync());
+    .then(runSync);
 });
 
 chrome.runtime.onMessage.addListener(
-  (message: Message, sender, sendResponse) => {
+  (message: Message, sender) => {
     if (message.type === "GET_TAB_ID") {
       const response: GetTabIdResponse = { tabId: sender.tab?.id ?? -1 };
-      sendResponse(response);
-      return true;
+      return Promise.resolve(response);
     }
     if (message.type === "SET_APPEND_TARGET") {
       const tabId = sender.tab?.id;
@@ -262,26 +349,45 @@ chrome.runtime.onMessage.addListener(
       return undefined;
     }
     if (message.type === "SYNC") {
-      void sync();
+      runSync();
       return undefined;
+    }
+    if (message.type === "STORAGE_WRITE") {
+      // Returning the Promise keeps the worker alive until the write
+      // finishes; sendResponse + `return true` can yield an empty reply.
+      return applyStorageWrite(message.write);
+    }
+    if (message.type === "ACCOUNT_MERGE") {
+      return applyAccountMerge(message.choice)
+        .then(() => ({ ok: true }) satisfies AccountMergeResponse)
+        .catch((err: unknown) => ({ ok: false, error: String(err) }) satisfies AccountMergeResponse);
+    }
+    if (message.type === "GET_RUNTIME_CONFIG") {
+      return getRuntimeConfig()
+        .then((cfg) => ({ ok: true, ...cfg }) satisfies RuntimeConfigResponse)
+        .catch((err: unknown) => ({ ok: false, error: String(err) }) satisfies RuntimeConfigResponse);
+    }
+    if (message.type === "REALTIME_SUBSCRIBE") {
+      return subscribeRealtime(message.realtimeUrl, message.clientId)
+        .then((result) => ({ ok: true, ...result }) satisfies RealtimeSubscribeResponse)
+        .catch((err: unknown) => ({ ok: false, error: String(err) }) satisfies RealtimeSubscribeResponse);
     }
     if (message.type === "LOGIN") {
       // Run the OAuth flow here, not in the popup: opening the auth window makes
       // the popup lose focus and close, which would kill an in-popup flow before
       // the token exchange completes.
-      void (async () => {
+      return (async (): Promise<LoginResponse> => {
         await track("sign_in_started");
         try {
           await login();
           await track("sign_in_succeeded");
-          sendResponse({ ok: true } satisfies LoginResponse);
+          return { ok: true };
         } catch (err: unknown) {
           console.error("[anchored-notes] login failed:", err);
           await track("sign_in_failed");
-          sendResponse({ ok: false, error: String(err) } satisfies LoginResponse);
+          return { ok: false, error: String(err) };
         }
       })();
-      return true; // keep the message channel open for the async response
     }
     return undefined;
   },

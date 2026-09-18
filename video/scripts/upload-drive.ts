@@ -138,11 +138,16 @@ async function findChild(
 ): Promise<string | null> {
   const res = await drive.files.list({
     q: driveChildQuery(parentId, title, mimeType),
-    fields: "files(id, name)",
-    pageSize: 1
+    fields: "files(id, name)"
   });
   const files = res.data.files ?? [];
-  return files.length > 0 ? (files[0].id ?? null) : null;
+  // Duplicates can only come from an earlier interrupted run; surface them
+  // (stderr — stdout is reserved for the result JSON) rather than silently
+  // picking one forever.
+  if (files.length > 1) {
+    console.warn(`${files.length} Drive entries named '${title}' under ${parentId}; using ${files[0].id}`);
+  }
+  return files[0]?.id ?? null;
 }
 
 async function ensureFolder(drive: drive_v3.Drive, parentId: string, title: string): Promise<string> {
@@ -156,12 +161,9 @@ async function ensureFolder(drive: drive_v3.Drive, parentId: string, title: stri
   return res.data.id;
 }
 
-async function deleteChildIfExists(drive: drive_v3.Drive, parentId: string, title: string): Promise<void> {
-  const existing = await findChild(drive, parentId, title, null);
-  if (!existing) return;
-  await drive.files.delete({ fileId: existing });
-}
-
+// Re-uploads replace the existing file's media in place instead of deleting
+// and re-creating it: a failed upload then leaves the previous version intact,
+// and the file id (and every shared webViewLink) stays stable across runs.
 async function uploadFile(
   drive: drive_v3.Drive,
   parentId: string,
@@ -169,11 +171,11 @@ async function uploadFile(
   filePath: string,
   mimeType: string
 ): Promise<drive_v3.Schema$File> {
-  await deleteChildIfExists(drive, parentId, title);
-  const res = await drive.files.create({
-    requestBody: { name: title, parents: [parentId] },
-    media: { mimeType, body: createReadStream(filePath) },
-    fields: "id, name, webViewLink"
-  });
+  const existing = await findChild(drive, parentId, title, null);
+  const media = { mimeType, body: createReadStream(filePath) };
+  const fields = "id, name, webViewLink";
+  const res = existing
+    ? await drive.files.update({ fileId: existing, media, fields })
+    : await drive.files.create({ requestBody: { name: title, parents: [parentId] }, media, fields });
   return res.data;
 }

@@ -6,6 +6,8 @@ import { getAllNotes, saveNote } from "../storage.js";
 import { deriveTitle } from "../note-title.js";
 import { formatLimit, limitForPlan } from "../limits.js";
 import type { LoginResponse } from "../types.js";
+import { LAST_SYNC_ERROR_KEY } from "../types.js";
+import { getPendingAccountMerge } from "../account-merge.js";
 import { getAuthState, logout, onAuthChanged, startUpgrade, type AuthState } from "../auth.js";
 import { getEncStatus, onEncStatusChanged } from "../encryption.js";
 import { getLang, initI18n, LANG_META, LANGS, setLang, t, type Lang } from "../i18n.js";
@@ -170,7 +172,11 @@ async function handleSignIn(button: HTMLButtonElement): Promise<void> {
   try {
     const res = (await chrome.runtime.sendMessage({ type: "LOGIN" })) as LoginResponse;
     if (res.ok) {
-      requestSync();
+      if (await getPendingAccountMerge()) {
+        openOptionsPage("account_email");
+      } else {
+        requestSync();
+      }
     } else {
       button.disabled = false;
       button.textContent = t("accountSignInFailed", null);
@@ -210,6 +216,8 @@ async function render(): Promise<void> {
   renderUsage(all.length, limitForPlan(auth ? auth.plan : null));
   renderUsageCta(auth);
   await renderEncWarning(auth);
+  await renderAccountMergeNotice(auth);
+  await renderSyncError();
   const tab = await activeTab();
   if (!tab?.url || tab.id === undefined) {
     count.textContent = t("noActivePage", null);
@@ -223,7 +231,7 @@ async function render(): Promise<void> {
     const li = document.createElement("li");
     const text = document.createElement("span");
     text.className = "text";
-    text.textContent = note.content ? deriveTitle(note.content) : t("empty", null);
+    text.textContent = deriveTitle(note.content) || t("empty", null);
     const scope = document.createElement("span");
     scope.className = "scope";
     scope.textContent = note.scope;
@@ -309,9 +317,31 @@ async function consumePendingWarning(): Promise<void> {
   void chrome.action.setBadgeText({ tabId, text: "" });
 }
 
+async function renderAccountMergeNotice(auth: AuthState | null): Promise<void> {
+  const box = document.getElementById("account-merge") as HTMLDivElement | null;
+  if (!box) return;
+  box.replaceChildren();
+  if (!auth || !(await getPendingAccountMerge())) return;
+  const btn = document.createElement("button");
+  btn.className = "enc-warning-btn";
+  btn.type = "button";
+  btn.textContent = t("accountMergeUpload", null);
+  btn.addEventListener("click", () => openOptionsPage("account_email"));
+  box.appendChild(btn);
+}
+
+async function renderSyncError(): Promise<void> {
+  const box = document.getElementById("sync-error") as HTMLDivElement;
+  const res = await chrome.storage.session.get(LAST_SYNC_ERROR_KEY);
+  box.textContent = res[LAST_SYNC_ERROR_KEY] ? t("syncFailed", null) : "";
+}
+
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "session" && changes[PENDING_WARNING_KEY]?.newValue !== undefined) {
     void consumePendingWarning();
+  }
+  if (area === "session" && LAST_SYNC_ERROR_KEY in changes) {
+    void renderSyncError();
   }
 });
 

@@ -24,6 +24,8 @@ export interface SharedCopy {
    * screenshot tool would put another product's name in the frame, and none of
    * them is what the shot is about.
    */
+  menuBack: string;
+  menuReload: string;
   menuCopy: string;
   menuPrint: string;
   menuInspect: string;
@@ -33,6 +35,8 @@ export const SHARED_COPY: Record<string, SharedCopy> = {
   en: {
     outroTagline: "Sticky notes that stay where you put them.",
     outroCta: "Add to Chrome",
+    menuBack: "Back",
+    menuReload: "Reload",
     menuCopy: "Copy",
     menuPrint: "Print…",
     menuInspect: "Inspect"
@@ -40,6 +44,8 @@ export const SHARED_COPY: Record<string, SharedCopy> = {
   tr: {
     outroTagline: "Bıraktığın yerde kalan yapışkan notlar.",
     outroCta: "Chrome'a Ekle",
+    menuBack: "Geri",
+    menuReload: "Yeniden yükle",
     menuCopy: "Kopyala",
     menuPrint: "Yazdır…",
     menuInspect: "İncele"

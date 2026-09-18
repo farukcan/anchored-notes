@@ -1,5 +1,7 @@
 // Derives a short, human-readable title from a note's markdown content by
 // taking the first non-empty block and stripping common markdown markers.
+// Returns "" for blank content; callers substitute the localized placeholder
+// (this module stays free of the i18n layer).
 
 const MAX_TITLE_LENGTH = 80;
 
@@ -17,5 +19,5 @@ export function deriveTitle(content: string): string {
     const text = stripped || line;
     return text.length > MAX_TITLE_LENGTH ? `${text.slice(0, MAX_TITLE_LENGTH - 1)}…` : text;
   }
-  return "(empty)";
+  return "";
 }

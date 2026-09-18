@@ -1,22 +1,31 @@
 // Factory for a single sticky-note DOM card. Holds a local mutable copy of the
 // note and reports edits through the provided callbacks.
 
-import type { AnchorScope, Note, NoteColor } from "../types.js";
+import { ANCHOR_SCOPES, NOTE_COLORS, type AnchorScope, type Note } from "../types.js";
 import { formatRelativeTime } from "../relative-time.js";
 import { t, type MessageKey } from "../i18n.js";
 import { track, trackNoteEdited } from "../umami.js";
-import { createMarkdownEditor, type MarkdownEditorHandle } from "./editor.js";
+import type { MarkdownEditorHandle } from "./editor.js";
 
-export const COLORS: NoteColor[] = [
-  "yellow",
-  "green",
-  "pink",
-  "purple",
-  "blue",
-  "gray",
-  "dark",
-];
-const SCOPES: AnchorScope[] = ["global", "site", "page", "tab"];
+let editorModule: typeof import("./editor.js") | undefined;
+let editorModulePromise: Promise<typeof import("./editor.js")> | undefined;
+
+function loadEditor(): Promise<typeof import("./editor.js")> {
+  if (editorModule) return Promise.resolve(editorModule);
+  if (!editorModulePromise) {
+    editorModulePromise = import(chrome.runtime.getURL("editor.js"))
+      .then((mod) => {
+        editorModule = mod as typeof import("./editor.js");
+        return editorModule;
+      })
+      .catch((err: unknown) => {
+        editorModulePromise = undefined;
+        throw err;
+      });
+  }
+  return editorModulePromise;
+}
+
 const SCOPE_LABEL_KEY: Record<AnchorScope, MessageKey> = {
   global: "scopeEverywhereLabel",
   site: "scopeSiteLabel",
@@ -133,7 +142,7 @@ export function createNoteCard(
   const scope = document.createElement("select");
   scope.className = "note-scope";
   scope.title = t("scopeSelectTitle", null);
-  for (const s of SCOPES) {
+  for (const s of ANCHOR_SCOPES) {
     const opt = document.createElement("option");
     opt.value = s;
     opt.textContent = scopeLabel(s, scopeLabels);
@@ -144,7 +153,7 @@ export function createNoteCard(
 
   function applyScopeLabels(next: ScopeLabels): void {
     scopeLabels = next;
-    for (const s of SCOPES) {
+    for (const s of ANCHOR_SCOPES) {
       const opt = scope.querySelector<HTMLOptionElement>(
         `option[value="${s}"]`,
       );
@@ -182,7 +191,7 @@ export function createNoteCard(
 
   const palette = document.createElement("div");
   palette.className = "note-palette";
-  for (const c of COLORS) {
+  for (const c of NOTE_COLORS) {
     const sw = document.createElement("button");
     sw.className = `note-swatch swatch-${c}`;
     sw.title = c;
@@ -226,22 +235,30 @@ export function createNoteCard(
   body.addEventListener("focusout", () => {
     editorFocused = false;
   });
+  let editorLoad: Promise<void> | undefined;
   function mount(): void {
-    if (editor) return;
-    editor = createMarkdownEditor(body, el, note.content, (markdown) => {
-      if (destroyed) return; // trailing change from teardown: never resave
-      latestContent = markdown;
-      if (markdown === note.content) return; // ignore the initial value echo
-      window.clearTimeout(contentTimer);
-      contentTimer = window.setTimeout(() => {
-        // Clear the handle so update()'s "save pending" guard reflects reality;
-        // otherwise a stale id would block all future external content updates.
-        contentTimer = undefined;
+    if (editor || editorLoad) return;
+    editorLoad = loadEditor()
+      .then((mod) => {
         if (destroyed) return;
-        patch({ content: markdown });
-        void trackNoteEdited({ source: "card" });
-      }, SAVE_DEBOUNCE_MS);
-    });
+        editor = mod.createMarkdownEditor(body, el, note.content, (markdown) => {
+          if (destroyed) return; // trailing change from teardown: never resave
+          latestContent = markdown;
+          if (markdown === note.content) return; // ignore the initial value echo
+          window.clearTimeout(contentTimer);
+          contentTimer = window.setTimeout(() => {
+            // Clear the handle so update()'s "save pending" guard reflects reality;
+            // otherwise a stale id would block all future external content updates.
+            contentTimer = undefined;
+            if (destroyed) return;
+            patch({ content: markdown });
+            void trackNoteEdited({ source: "card" });
+          }, SAVE_DEBOUNCE_MS);
+        });
+      })
+      .catch(() => {
+        editorLoad = undefined;
+      });
   }
 
   function flushPendingContent(): void {
@@ -321,30 +338,48 @@ export function createNoteCard(
   }
 
   // --- drag via header ---
-  let dragStart: { px: number; py: number; x: number; y: number } | null = null;
+  // A drag starts from where the card is drawn (see clamp), not from the
+  // stored position, so a card pulled into view on a small window doesn't jump
+  // off-screen on the first pointer move. Only the drop is persisted;
+  // pointercancel (touch scroll, lost capture) snaps back to the stored spot.
+  type DragStart = { px: number; py: number; x: number; y: number };
+  let dragStart: DragStart | null = null;
+  function dragPosition(e: PointerEvent, start: DragStart): { x: number; y: number } {
+    return { x: start.x + (e.clientX - start.px), y: start.y + (e.clientY - start.py) };
+  }
   header.addEventListener("pointerdown", (e) => {
     if (e.target !== header && e.target !== date) return; // ignore tool clicks
-    dragStart = { px: e.clientX, py: e.clientY, x: note.x, y: note.y };
+    dragStart = { px: e.clientX, py: e.clientY, ...clampedPosition() };
     header.setPointerCapture(e.pointerId);
   });
   header.addEventListener("pointermove", (e) => {
     if (!dragStart) return;
-    const x = dragStart.x + (e.clientX - dragStart.px);
-    const y = dragStart.y + (e.clientY - dragStart.py);
-    note = { ...note, x, y };
+    const { x, y } = dragPosition(e, dragStart);
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
   });
   header.addEventListener("pointerup", (e) => {
     if (!dragStart) return;
+    const { x, y } = dragPosition(e, dragStart);
     dragStart = null;
     header.releasePointerCapture(e.pointerId);
-    patch({ x: note.x, y: note.y });
+    patch({ x, y });
+  });
+  header.addEventListener("pointercancel", () => {
+    if (!dragStart) return;
+    dragStart = null;
+    clamp();
   });
 
   // --- resize via corner handle ---
-  let resizeStart: { px: number; py: number; w: number; h: number } | null =
-    null;
+  type ResizeStart = { px: number; py: number; w: number; h: number };
+  let resizeStart: ResizeStart | null = null;
+  function resizeSize(e: PointerEvent, start: ResizeStart): { w: number; h: number } {
+    return {
+      w: Math.max(140, start.w + (e.clientX - start.px)),
+      h: Math.max(120, start.h + (e.clientY - start.py)),
+    };
+  }
   resize.addEventListener("pointerdown", (e) => {
     e.stopPropagation();
     resizeStart = { px: e.clientX, py: e.clientY, w: note.w, h: note.h };
@@ -352,17 +387,22 @@ export function createNoteCard(
   });
   resize.addEventListener("pointermove", (e) => {
     if (!resizeStart) return;
-    const w = Math.max(140, resizeStart.w + (e.clientX - resizeStart.px));
-    const h = Math.max(120, resizeStart.h + (e.clientY - resizeStart.py));
-    note = { ...note, w, h };
+    const { w, h } = resizeSize(e, resizeStart);
     el.style.width = `${w}px`;
     el.style.height = `${h}px`;
   });
   resize.addEventListener("pointerup", (e) => {
     if (!resizeStart) return;
+    const { w, h } = resizeSize(e, resizeStart);
     resizeStart = null;
     resize.releasePointerCapture(e.pointerId);
-    patch({ w: note.w, h: note.h });
+    patch({ w, h });
+  });
+  resize.addEventListener("pointercancel", () => {
+    if (!resizeStart) return;
+    resizeStart = null;
+    el.style.width = `${note.w}px`;
+    el.style.height = `${note.h}px`;
   });
 
   // --- external updates (e.g. edited in another tab or synced from another device) ---
@@ -387,18 +427,20 @@ export function createNoteCard(
   }
 
   // --- keep the card inside the viewport (e.g. after the window shrinks) ---
-  let clampTimer: number | undefined;
-  function clamp(): void {
+  // Visual only; the stored position stays authoritative. Persisting the
+  // clamped position without bumping updatedAt made the server's strictly-newer
+  // LWW hand the original back, which re-clamped and re-saved in an endless
+  // sync loop — and bumping it instead would let the smallest window overwrite
+  // every other device's layout.
+  function clampedPosition(): { x: number; y: number } {
     const maxX = Math.max(0, window.innerWidth - note.w);
     const maxY = Math.max(0, window.innerHeight - note.h);
-    const x = Math.max(0, Math.min(note.x, maxX));
-    const y = Math.max(0, Math.min(note.y, maxY));
-    if (x === note.x && y === note.y) return;
-    note = { ...note, x, y };
+    return { x: Math.max(0, Math.min(note.x, maxX)), y: Math.max(0, Math.min(note.y, maxY)) };
+  }
+  function clamp(): void {
+    const { x, y } = clampedPosition();
     el.style.left = `${x}px`;
     el.style.top = `${y}px`;
-    window.clearTimeout(clampTimer);
-    clampTimer = window.setTimeout(() => deps.save(note), 300);
   }
 
   function setScopeLabels(partial: Partial<ScopeLabels>): void {
@@ -423,7 +465,6 @@ export function createNoteCard(
   function destroy(): void {
     destroyed = true;
     window.clearTimeout(contentTimer);
-    window.clearTimeout(clampTimer);
     editor?.destroy();
   }
 

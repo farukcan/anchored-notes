@@ -7,6 +7,8 @@ const OUT = "dist";
 rmSync(OUT, { recursive: true, force: true });
 mkdirSync(OUT, { recursive: true });
 
+const sourcemap = !process.argv.includes("--no-sourcemap");
+
 await build({
   entryPoints: {
     background: "src/background.ts",
@@ -20,8 +22,21 @@ await build({
   outdir: OUT,
   minify: true,
   // Local/dev builds get maps; store packages pass --no-sourcemap (see package.mjs).
-  sourcemap: !process.argv.includes("--no-sourcemap"),
+  sourcemap,
   loader: { ".css": "text" },
+  logLevel: "info"
+});
+
+// Milkdown editor is a separate ESM chunk loaded on first card mount so
+// content.js stays small at document_start.
+await build({
+  entryPoints: { editor: "src/content/editor.ts" },
+  bundle: true,
+  format: "esm",
+  target: "chrome110",
+  outfile: `${OUT}/editor.js`,
+  minify: true,
+  sourcemap,
   logLevel: "info"
 });
 

@@ -224,12 +224,14 @@ function draftsFor(step: Step, startMs: number): CueDraft[] {
 
     // Silent on purpose. A fade has no acoustic counterpart, the camera and the
     // blur are the viewer's attention being directed rather than an event, and
-    // dragging a cursor through a sentence makes no sound.
+    // dragging a cursor through a sentence makes no sound. A page change is the
+    // consequence of the click before it, which already has its sound.
     case "hold":
     case "cursor":
     case "select":
     case "zoom":
     case "focus":
+    case "navigate":
     case "outro":
       return [];
   }

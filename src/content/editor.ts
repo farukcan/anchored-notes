@@ -9,8 +9,9 @@ import { listener, listenerCtx } from "@milkdown/plugin-listener";
 import { clipboard } from "@milkdown/plugin-clipboard";
 import { $prose, $useKeymap, $view, replaceAll } from "@milkdown/utils";
 import { history, undo, redo } from "@milkdown/prose/history";
-import { TextSelection } from "@milkdown/prose/state";
+import { Plugin, TextSelection } from "@milkdown/prose/state";
 import type { Node as ProseNode } from "@milkdown/prose/model";
+import { isSafeHref } from "../safe-href.js";
 import { createSlashMenu } from "./slash-menu.js";
 import { tableToolbarPlugin } from "./table-toolbar.js";
 
@@ -98,6 +99,42 @@ const exitListItemKeymap = $useKeymap("anchoredExitListItem", {
 // without this the editor has no edit history and Mod-z/Mod-y do nothing.
 const historyPlugin = $prose(() => history());
 
+// Drop javascript:/data: hrefs and mark rendered links as noopener. Page-context
+// clicks on a content-script editor would otherwise follow whatever the mark stored.
+const safeLinkPlugin = $prose(
+  () =>
+    new Plugin({
+      props: {
+        handleClick: (_view, _pos, event) => {
+          const target = event.target;
+          if (!(target instanceof Element)) return false;
+          const anchor = target.closest("a");
+          if (!anchor) return false;
+          anchor.setAttribute("rel", "noopener noreferrer");
+          const href = anchor.getAttribute("href") ?? "";
+          if (!isSafeHref(href)) {
+            event.preventDefault();
+            return true;
+          }
+          return false;
+        },
+      },
+      appendTransaction(_trs, _old, next) {
+        let tr = next.tr;
+        let changed = false;
+        next.doc.descendants((node, pos) => {
+          const mark = node.marks.find((m) => m.type.name === "link");
+          if (!mark) return;
+          const href = String(mark.attrs.href ?? "");
+          if (isSafeHref(href)) return;
+          tr = tr.removeMark(pos, pos + node.nodeSize, mark.type);
+          changed = true;
+        });
+        return changed ? tr : null;
+      },
+    }),
+);
+
 const historyKeymap = $useKeymap("anchoredHistory", {
   Undo: {
     shortcuts: "Mod-z",
@@ -134,6 +171,7 @@ export function createMarkdownEditor(
     .use(gfm)
     .use(taskListItemView)
     .use(historyPlugin)
+    .use(safeLinkPlugin)
     .use(historyKeymap)
     .use(exitListItemKeymap)
     .use(listener)

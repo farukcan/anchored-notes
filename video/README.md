@@ -118,8 +118,10 @@ it creates `anchored-notes/` and the job folder under `Youtube`.
 6. Prompt on stderr: `Type yes to continue:` — only `yes` or `y` proceeds.
 7. ADC (`drive.file`) → ensure `Youtube/anchored-notes/<jobId>/`.
 8. **Overwrite:** if `video.mp4` or `upload-metadata.json` already exists in
-   that job folder, **delete then create** (not an in-place media update), so
-   Drive watchers see a fresh create event.
+   that job folder, its media is **updated in place**: a failed upload leaves
+   the previous version intact and the file id / `webViewLink` stays stable
+   across runs. More than one match (an earlier interrupted run) is reported
+   on stderr.
 9. Print **only** the result JSON on stdout.
 
 ```bash
@@ -169,7 +171,7 @@ flowchart LR
   files --> check["check-video"]
   check --> confirm["TTY yes"]
   confirm --> folders["Youtube / anchored-notes / jobId"]
-  folders --> overwrite["delete then create"]
+  folders --> overwrite["update in place / create"]
   overwrite --> stdout["stdout id + webViewLink"]
 ```
 
@@ -193,6 +195,9 @@ npm run audio-preflight -- kyoto-basics tr 9-16   # measured levels; exit 1 bloc
 - a shot that changes by more than a fifth of the frame in a single frame —
   these videos are one continuous take, so a jump that size reads as a glitch
   rather than as a cut.
+- a page change (`navigate`) while the camera is moving — the shot has to hold
+  still from the click that causes it until the new page has arrived, or the
+  two pages blur into one move and the click cannot be seen.
 
 It prints the fastest camera move in every video, so the margin is visible
 rather than merely unbreached.
@@ -249,12 +254,16 @@ of upscaling pixels, and renders are reproducible.
   stage shows the kind of page the extension is used on and never imitates a
   real company's product. `article` shares the copy deck in
   `store-assets/gen/i18n.mjs`, so it and the store screenshots describe the same
-  fictional site in all 16 languages; `video-watch` and `profile` exist only for
-  videos, so their words live in `copy/stages.ts` and they are built for the
+  fictional site in all 16 languages; `video-watch`, `profile` and `inspiration`
+  exist only for videos, so their words live in `copy/stages.ts` and they are built for the
   languages that deck names. Stage contract: 1280×800, no scrollbars, no
   page-level animation, no `<link rel="manifest">`, `shell.js` before the
   extension bundle, and the page background repeated on `<html>` (see the focus
-  note below).
+  note below). Images a stage shows live in `stages/assets/` and are linked
+  relatively (`assets/...`); `build-shell.mjs` copies them beside the pages, and
+  `src/stage.ts` decodes every one — hidden pages included — before the first
+  frame, so a page change never lands on an empty picture. `inspiration`'s are
+  generated photographs of invented, unbranded packaging.
 - **`sfx/`** — the sound library: 40 CC0 effects, each measured by ffmpeg into
   `manifest.json` (peak, attack, a mix-ready `defaultGain` targeting −14 dBFS).
   Committed, because `public/` is generated. `npm run sfx-fetch` adds more from
@@ -286,6 +295,7 @@ of upscaling pixels, and renders are reproducible.
 | `video-watch` | `video-watch` | A note that has to sit beside what you are watching. |
 | `profile` | `profile` | A private reminder on a page that is not yours. |
 | `ai-chat` | `ai-chat` | Keeping the two sentences worth keeping out of a long answer. |
+| `idea-rush` | `inspiration` | Ideas leave as fast as they come: a note on each shot that sparked one, and each page keeps its own. |
 
 Each renders into two formats, and says the same thing in both. The vertical cut
 is not a crop of the wide one: it holds the establishing shot until the hook has
@@ -311,8 +321,19 @@ and the narration if one is ever recorded.
 
 Steps available inside a beat: `hold`, `cursor`, `click`, `createNote`, `type`,
 `select`, `contextMenu`, `appendQuote`, `move`, `noteMenu`, `setHidden`,
-`badgeList`, `popup`, `zoom`, `focus`, `sfx`, `parallel`, `outro`. Each runs for its `ms` and everything it changes is a
+`badgeList`, `popup`, `navigate`, `zoom`, `focus`, `sfx`, `parallel`, `outro`. Each runs for its `ms` and everything it changes is a
 function of elapsed time.
+
+`navigate` moves to another page of the same site, which is how `idea-rush`
+shows that a note belongs to the page it was left on. A stage with several
+pages is one document: each view is marked `data-page-view` (its name; `""`
+is the stage's own page) and `data-title` (its tab title), and its address is
+listed in `STAGE_PAGE_SITES` (`stage-url.ts`). The step switches the view and
+replaces the URL in the same document — the page rides in the query, so it is
+part of a page-scoped note's anchor — and the extension hears that navigation
+and re-matches its notes by itself (`src/content/index.ts` `onUrlChange`). A
+note is created on whichever page is open, so nothing in a scenario decides
+which notes a page shows.
 
 `ai-chat` is the one that uses the browser's own furniture. A passage is
 selected with `select`, and how much of it is highlighted is **whatever the
@@ -325,6 +346,14 @@ the two entries the extension registers, labelled from `src/locales/`. Clicking
 the first turns the selection into a note; clicking the second appends it to the
 existing one as a block quote, built the way `src/content/note-card.ts` builds
 it. Nothing there is an effect: it is the product's real context-menu path.
+
+Which entries the menu shows follows what was right-clicked, the way the
+extension registers them (`src/background.ts` `buildContextMenu`): on a
+selection, both; on the page itself, only "Add note here", among the browser's
+own page items (`pageMenuRows` / `selectionMenuRows` in
+`src/overlays/ContextMenu.tsx`). `idea-rush` makes every note that way — a
+right-click on the page, then "Add note here" — because a plain click on a page
+does not create one.
 
 The camera keeps its subject: whatever a `focus` step is holding sharp is kept
 inside the shot, and the shot widens if a drag would otherwise carry it off an

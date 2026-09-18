@@ -15,7 +15,7 @@
 import { CHROME_HEIGHT, NEW_NOTE_ORIGIN, NEW_NOTE_SIZE, POPUP_WIDTH, STAGE_WIDTH, TOOLBAR_ICON, homeView, shot } from "../stage-url";
 import { STAGE_COPY } from "../copy/stages";
 import { copyFor, pickCopy } from "../copy/index";
-import { menuCentre, menuRowPoint } from "../src/overlays/ContextMenu";
+import { menuCentre, menuRowPoint, selectionMenuRows } from "../src/overlays/ContextMenu";
 import type { Beat, FormatName, Hook, Point, Scenario, Step } from "../src/types";
 
 interface Copy {
@@ -123,7 +123,7 @@ function menuSteps(
   row: number,
   done: Step
 ): Step[] {
-  const copy = copyFor(lang);
+  const rows = selectionMenuRows(lang, copyFor(lang));
   return [
     // The menu appears in one frame, as a real one does; the shot eases onto it
     // over the same stretch, so the correction is a camera move rather than a
@@ -133,10 +133,10 @@ function menuSteps(
       ms: 620,
       steps: [
         { action: "contextMenu", at, ms: 1 },
-        { action: "zoom", rect: shot(menuCentre(at, lang, copy), menuShot(format), format), ms: 620 }
+        { action: "zoom", rect: shot(menuCentre(at, rows), menuShot(format), format), ms: 620 }
       ]
     },
-    { action: "cursor", to: menuRowPoint(at, lang, copy, row), ms: 560 },
+    { action: "cursor", to: menuRowPoint(at, rows, row), ms: 560 },
     { action: "hold", ms: 240 },
     { action: "click", ms: 260 },
     { action: "contextMenu", at: null, ms: 1 },

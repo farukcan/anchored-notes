@@ -25,6 +25,21 @@ export interface AuthState {
 }
 
 const AUTH_KEY = "auth";
+const LAST_ACCOUNT_EMAIL_KEY = "lastAccountEmail";
+
+export async function getLastAccountEmail(): Promise<string | null> {
+  const result = await chrome.storage.local.get(LAST_ACCOUNT_EMAIL_KEY);
+  const email = result[LAST_ACCOUNT_EMAIL_KEY];
+  return typeof email === "string" && email.length > 0 ? email : null;
+}
+
+export async function setLastAccountEmail(email: string | null): Promise<void> {
+  if (email === null) {
+    await chrome.storage.local.remove(LAST_ACCOUNT_EMAIL_KEY);
+    return;
+  }
+  await chrome.storage.local.set({ [LAST_ACCOUNT_EMAIL_KEY]: email });
+}
 
 // Shape of the PocketBase auth-methods OAuth2 provider entry we rely on.
 interface OAuth2Provider {
@@ -64,13 +79,29 @@ function normalizePlan(plan: string): Plan {
 
 // Run the Google OAuth2 code flow and persist the resulting account state.
 // Throws with context on failure; callers surface a localized message.
-export async function login(): Promise<AuthState> {
+// A LOGIN arriving while a flow is already open (double-click, popup and
+// options at once) joins that flow instead of opening a second auth window.
+let loginInFlight: Promise<AuthState> | null = null;
+
+export function login(): Promise<AuthState> {
+  if (loginInFlight === null) {
+    loginInFlight = performLogin().finally(() => {
+      loginInFlight = null;
+    });
+  }
+  return loginInFlight;
+}
+
+async function performLogin(): Promise<AuthState> {
   const { pbUrl, oauthProvider } = await getRuntimeConfig();
   const methodsRes = await fetch(`${pbUrl}/api/collections/users/auth-methods`);
   if (!methodsRes.ok) {
     throw new Error(`auth-methods failed: ${methodsRes.status}`);
   }
   const methods = (await methodsRes.json()) as AuthMethodsResponse;
+  if (!methods.oauth2.enabled) {
+    throw new Error("OAuth2 sign-in is not enabled in PocketBase");
+  }
   const provider = methods.oauth2.providers.find((p) => p.name === oauthProvider);
   if (!provider) {
     throw new Error(`OAuth provider "${oauthProvider}" not enabled in PocketBase`);
@@ -125,6 +156,8 @@ export async function login(): Promise<AuthState> {
 }
 
 export async function logout(): Promise<void> {
+  const current = await getAuthState();
+  if (current) await setLastAccountEmail(current.email);
   await setAuthState(null);
   // The encryption key is account-bound; never leave it on a signed-out device.
   await wipeEncryptionState();

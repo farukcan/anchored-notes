@@ -2,10 +2,18 @@
 // current page context, and keeps them in sync with storage.
 
 import styles from "./styles.css";
-import type { AnchorScope, GetTabIdResponse, Message, Note, PageContext } from "../types.js";
+import {
+  NOTE_COLORS,
+  type AnchorScope,
+  type GetTabIdResponse,
+  type Message,
+  type Note,
+  type PageContext,
+} from "../types.js";
 import { anchorKeyFor, isNoteVisible, pageContextFromLocation, shortDomainFromHostname } from "../matching.js";
 import { fetchSiteNameFromManifest } from "../site-manifest.js";
 import {
+  createNote,
   deleteNote,
   getBadgeOffset,
   getNotesMap,
@@ -20,7 +28,13 @@ import { initI18n, onLangChanged, t } from "../i18n.js";
 import { formatLimit, getCurrentLimit } from "../limits.js";
 import { getAuthState, onAuthChanged } from "../auth.js";
 import { connectRealtime } from "../realtime.js";
-import { COLORS, createNoteCard, toBlockquote, type NoteCardHandle } from "./note-card.js";
+import {
+  holdLeadership,
+  LEADER_HEARTBEAT_MS,
+  REALTIME_LEADER_KEY,
+  releaseLeadership,
+} from "../realtime-leader.js";
+import { createNoteCard, toBlockquote, type NoteCardHandle } from "./note-card.js";
 import { playErrorBeep } from "../sound.js";
 import { track, type TrackSource } from "../umami.js";
 
@@ -137,18 +151,43 @@ async function getTabId(): Promise<number> {
   return res.tabId;
 }
 
+// This script's shadow root, created once. A host left behind by an earlier
+// generation of the script (extension update → orphaned content script) is
+// removed rather than reused: that script no longer receives storage events,
+// so its cards are dead, and drawing into its root would show every note twice.
+let hostShadow: ShadowRoot | undefined;
+
 function mountHost(): ShadowRoot {
-  const existing = document.getElementById(HOST_ID);
-  if (existing?.shadowRoot) return existing.shadowRoot;
+  if (hostShadow) return hostShadow;
+  document.getElementById(HOST_ID)?.remove();
 
   const host = document.createElement("div");
   host.id = HOST_ID;
-  const shadow = host.attachShadow({ mode: "open" });
+  hostShadow = host.attachShadow({ mode: "open" });
   const style = document.createElement("style");
   style.textContent = styles;
-  shadow.appendChild(style);
+  hostShadow.appendChild(style);
   document.documentElement.appendChild(host);
-  return shadow;
+  watchHostAttachment(host);
+  return hostShadow;
+}
+
+// Pages that call replaceChildren()/document.write drop the host. Re-attach
+// it and redraw so reconcile never writes into a detached shadow root.
+function watchHostAttachment(host: HTMLElement): void {
+  let observedRoot: Element | undefined;
+  const reattach = (): void => {
+    if (!host.isConnected && document.documentElement) {
+      document.documentElement.appendChild(host);
+      if (hostShadow) redraw(hostShadow);
+    }
+    if (document.documentElement && document.documentElement !== observedRoot) {
+      observedRoot = document.documentElement;
+      new MutationObserver(reattach).observe(observedRoot, { childList: true });
+    }
+  };
+  new MutationObserver(reattach).observe(document, { childList: true });
+  reattach();
 }
 
 const deps = {
@@ -356,7 +395,7 @@ function updateBadge(shadow: ShadowRoot, hidden: Note[]): void {
   for (const note of hidden) {
     const item = document.createElement("button");
     item.className = "an-badge-item";
-    item.textContent = deriveTitle(note.content);
+    item.textContent = deriveTitle(note.content) || t("empty", null);
     item.addEventListener("click", () => {
       parts.list.classList.remove("open");
       void saveNote({ ...note, hidden: false, updatedAt: Date.now() });
@@ -375,7 +414,7 @@ function newNote(content: string): Note {
   return {
     id: crypto.randomUUID(),
     content,
-    color: COLORS[Math.floor(Math.random() * COLORS.length)],
+    color: NOTE_COLORS[Math.floor(Math.random() * NOTE_COLORS.length)],
     scope,
     anchorKey: anchorKeyFor(scope, ctx),
     x: Math.max(8, Math.round(window.innerWidth / 2 - w / 2)),
@@ -391,13 +430,19 @@ function redraw(shadow: ShadowRoot): void {
   void getNotesMap().then((m) => reconcile(shadow, Object.values(m)));
 }
 
-// Live updates: subscribe to PocketBase realtime for the signed-in user's notes
-// while this tab is visible, so changes from other devices appear without
-// waiting for the periodic sync. A realtime event only triggers a background
-// sync (the single reconciliation path); the resulting storage change then
-// re-renders the page through onNotesChanged. Debounced to collapse bursts.
+// Live updates: one visible signed-in tab holds the EventSource (session
+// lease). A realtime event only triggers a background sync; storage change
+// then re-renders every tab. Debounced to collapse bursts.
 let disconnectRealtime: (() => void) | null = null;
 let realtimeSyncTimer: ReturnType<typeof setTimeout> | undefined;
+let leaderHeartbeat: ReturnType<typeof setInterval> | undefined;
+let realtimeOp: Promise<void> = Promise.resolve();
+/** Confirmed-dead session: do not reconnect until auth changes. */
+let sessionGaveUp = false;
+/** This page cannot host SSE (CSP). Do not re-acquire the lease. */
+let cannotLead = false;
+/** Yield the lease once (handshake timeout) so another tab can try. */
+let yieldLeadership = false;
 
 function triggerRealtimeSync(): void {
   if (realtimeSyncTimer) clearTimeout(realtimeSyncTimer);
@@ -406,29 +451,89 @@ function triggerRealtimeSync(): void {
   }, 300);
 }
 
-// Serialize connect/disconnect so overlapping triggers (visibilitychange +
-// onAuthChanged) can't both pass the guard across an await and leak a second
-// EventSource.
-let realtimeOp: Promise<void> = Promise.resolve();
+function stopLeaderHeartbeat(): void {
+  if (leaderHeartbeat !== undefined) {
+    clearInterval(leaderHeartbeat);
+    leaderHeartbeat = undefined;
+  }
+}
 
 function refreshRealtime(): void {
-  realtimeOp = realtimeOp.then(applyRealtimeState);
+  realtimeOp = realtimeOp.then(applyRealtimeState).catch((err: unknown) => {
+    console.warn("[anchored-notes] realtime leader:", err);
+  });
+}
+
+async function isRealtimeEligible(): Promise<boolean> {
+  const auth = await getAuthState();
+  return auth !== null && document.visibilityState === "visible" && tabId >= 0;
+}
+
+function dropRealtimeConnection(): void {
+  stopLeaderHeartbeat();
+  if (disconnectRealtime) {
+    disconnectRealtime();
+    disconnectRealtime = null;
+  }
 }
 
 async function applyRealtimeState(): Promise<void> {
-  const auth = await getAuthState();
-  const shouldRun = auth !== null && document.visibilityState === "visible";
-  if (shouldRun && !disconnectRealtime) {
-    disconnectRealtime = connectRealtime(triggerRealtimeSync, () => {
-      // Dead session: release the handle so a later auth change or visibility
-      // flip reconnects instead of seeing a connected-looking dead one.
+  if (sessionGaveUp || cannotLead) {
+    dropRealtimeConnection();
+    if (tabId >= 0) await releaseLeadership(tabId);
+    return;
+  }
+
+  if (yieldLeadership) {
+    yieldLeadership = false;
+    if (disconnectRealtime) {
+      disconnectRealtime();
       disconnectRealtime = null;
+    }
+    if (tabId >= 0) await releaseLeadership(tabId);
+    if (leaderHeartbeat === undefined) {
+      leaderHeartbeat = setInterval(() => refreshRealtime(), LEADER_HEARTBEAT_MS);
+    }
+    return;
+  }
+
+  if (!(await isRealtimeEligible())) {
+    dropRealtimeConnection();
+    if (tabId >= 0) await releaseLeadership(tabId);
+    return;
+  }
+
+  const leader = await holdLeadership(tabId);
+  // Visibility/auth can change while the lease write is in flight (pagehide,
+  // tab switch). Re-check before opening EventSource or keeping the lease.
+  if (!(await isRealtimeEligible())) {
+    dropRealtimeConnection();
+    if (tabId >= 0) await releaseLeadership(tabId);
+    return;
+  }
+
+  if (leaderHeartbeat === undefined) {
+    leaderHeartbeat = setInterval(() => refreshRealtime(), LEADER_HEARTBEAT_MS);
+  }
+
+  if (!leader) {
+    if (disconnectRealtime) {
+      disconnectRealtime();
+      disconnectRealtime = null;
+    }
+    return;
+  }
+
+  if (!disconnectRealtime) {
+    disconnectRealtime = connectRealtime(triggerRealtimeSync, (reason) => {
+      disconnectRealtime = null;
+      if (reason === "gaveUp") sessionGaveUp = true;
+      if (reason === "connectFailed") cannotLead = true;
+      if (reason === "timedOut") yieldLeadership = true;
+      // setupFailed: keep the heartbeat and retry; do not tight-loop here.
+      if (reason !== "setupFailed") refreshRealtime();
     });
-    // Catch up on changes missed while this tab was hidden/disconnected.
     triggerRealtimeSync();
-  } else if (!shouldRun && disconnectRealtime) {
-    disconnectRealtime();
-    disconnectRealtime = null;
   }
 }
 
@@ -439,10 +544,15 @@ function init(): void {
   // notes, so fetch it in parallel instead of blocking the first paint on the
   // (possibly asleep) service worker — notes appear as the page renders.
   redraw(shadow);
-  void getTabId().then((id) => {
-    tabId = id;
-    redraw(shadow);
-  });
+  // If the worker can't be reached (failed to wake, or this context was
+  // invalidated by an update), only tab-scoped notes stay hidden here.
+  getTabId()
+    .then((id) => {
+      tabId = id;
+      redraw(shadow);
+      refreshRealtime();
+    })
+    .catch(() => undefined);
   void resolveSiteName();
   watchPageTitle();
 
@@ -452,11 +562,23 @@ function init(): void {
   // before the menu is committed (best-effort; unknown state defaults to shown).
   document.addEventListener("contextmenu", () => reportAppendTarget(), true);
 
-  // Connect realtime when signed in and this tab is visible; reconnect/disconnect
-  // as visibility or auth state changes.
   refreshRealtime();
   document.addEventListener("visibilitychange", () => refreshRealtime());
-  onAuthChanged(() => refreshRealtime());
+  window.addEventListener("pageshow", () => refreshRealtime());
+  window.addEventListener("pagehide", () => {
+    dropRealtimeConnection();
+    if (tabId >= 0) void releaseLeadership(tabId);
+  });
+  onAuthChanged(() => {
+    sessionGaveUp = false;
+    refreshRealtime();
+  });
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area !== "session" || !(REALTIME_LEADER_KEY in changes)) return;
+    const next = changes[REALTIME_LEADER_KEY].newValue as { tabId?: number } | undefined;
+    if (next?.tabId === tabId) return;
+    refreshRealtime();
+  });
 
   // Language switched (from the popup): relocalize existing cards in place so
   // their labels, hints and tooltips pick up the new language without tearing
@@ -474,7 +596,7 @@ function init(): void {
     resolvePageTitle();
     redraw(shadow);
   };
-  if (navigation) {
+  if (typeof navigation !== "undefined") {
     navigation.addEventListener("navigatesuccess", onUrlChange);
   } else {
     window.addEventListener("popstate", onUrlChange);
@@ -498,21 +620,24 @@ function showToast(shadow: ShadowRoot, text: string): void {
 }
 
 // Enforce the note quota at the single creation point. Both the popup and the
-// context menu reach note creation through this CREATE_NOTE message.
+// context menu reach note creation through this CREATE_NOTE message. The check
+// itself lives in the storage write (createNote) so two quick creates can't
+// both pass against the same snapshot.
 async function createNoteWithinLimit(
   content: string,
   source: TrackSource,
 ): Promise<void> {
-  const map = await getNotesMap();
-  const limit = await getCurrentLimit();
-  if (Object.keys(map).length >= limit) {
+  const note = newNote(content);
+  // Set before the write: the storage change that mounts the card can arrive
+  // before createNote resolves.
+  pendingFocusNoteId = note.id;
+  if (!(await createNote(note))) {
+    pendingFocusNoteId = undefined;
+    const limit = await getCurrentLimit();
     showToast(mountHost(), t("noteLimitReached", { limit: formatLimit(limit) }));
     void track("note_limit_hit", { source, limit });
     return;
   }
-  const note = newNote(content);
-  pendingFocusNoteId = note.id;
-  await saveNote(note);
   void track("note_created", { source, scope: note.scope });
 }
 
@@ -557,8 +682,9 @@ async function bootstrap(): Promise<void> {
 // Re-injection (popup/context-menu retry, bulk-inject on install) can run this
 // bundle again in a tab that already has it. Key the guard by extension version
 // so an update can re-bootstrap after orphaned scripts; same-version re-runs
-// skip to avoid duplicate CREATE_NOTE listeners. mountHost already dedupes the
-// shadow host by id. Programmatic inject clears the guard first (see inject.ts).
+// skip to avoid duplicate CREATE_NOTE listeners. mountHost replaces any host a
+// previous generation left behind. Programmatic inject clears the guard first
+// (see inject.ts).
 type InjectionGuard = {
   version: string;
   onMessage: (message: Message) => boolean | undefined;

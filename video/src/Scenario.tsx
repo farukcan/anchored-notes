@@ -21,7 +21,7 @@ import { stateAt, stepsDurationMs } from "./driver";
 import { framingFor, viewFor } from "./camera";
 import { getScenario } from "../scenarios/index";
 import { copyFor } from "../copy/index";
-import { applyState, pageKeyOf, stubWindow, waitForStage } from "./stage";
+import { applyState, pageKeyOf, pageTitlesOf, stubWindow, waitForStage } from "./stage";
 import { beatsDurationMs, flattenBeats } from "./beats";
 import { captionsFrom } from "./captions";
 import { cuesFrom } from "./audio/cues";
@@ -32,7 +32,7 @@ import { HOOK_SETTLE_MS, hookProgressAt } from "./layout";
 import { safeZoneFor } from "./safeZones";
 import { BrowserChrome } from "./overlays/BrowserChrome";
 import { Popup } from "./overlays/Popup";
-import { ContextMenu } from "./overlays/ContextMenu";
+import { ContextMenu, pageMenuRows, selectionMenuRows } from "./overlays/ContextMenu";
 import { Cursor } from "./overlays/Cursor";
 import { Caption } from "./overlays/Caption";
 import { HookText } from "./overlays/HookText";
@@ -62,8 +62,8 @@ export type ScenarioProps = {
 interface StageAnchor {
   pageKey: string;
   origin: string;
-  /** The stage's own <title> — what a real tab would be labelled with. */
-  title: string;
+  /** Each page's title — what a real tab would be labelled with. `""` is the stage's own page. */
+  titles: Record<string, string>;
 }
 
 export const ScenarioComposition: React.FC<ScenarioProps> = ({ scenario: scenarioId, lang, format }) => {
@@ -96,7 +96,7 @@ export const ScenarioComposition: React.FC<ScenarioProps> = ({ scenario: scenari
     try {
       await waitForStage(el);
       const win = stubWindow(el);
-      setAnchor({ pageKey: pageKeyOf(win), origin: win.location.origin, title: win.document.title });
+      setAnchor({ pageKey: pageKeyOf(win), origin: win.location.origin, titles: pageTitlesOf(win) });
       continueRender(bootHandle);
     } catch (error) {
       cancelRender(error as Error);
@@ -237,8 +237,8 @@ export const ScenarioComposition: React.FC<ScenarioProps> = ({ scenario: scenari
             src/stage.ts does that element by element. */}
         <div style={{ position: "absolute", left: 0, top: -CHROME_HEIGHT }}>
           <BrowserChrome
-            url={siteFor(scenario.stage)}
-            title={anchor?.title ?? ""}
+            url={siteFor(scenario.stage, state.page)}
+            title={anchor?.titles[state.page ?? ""] ?? ""}
             iconSrc={staticFile("icons/icon-128.png")}
             iconActive={state.popupOpen}
           />
@@ -270,8 +270,8 @@ export const ScenarioComposition: React.FC<ScenarioProps> = ({ scenario: scenari
         <ContextMenu
           at={state.contextMenu}
           cursor={state.cursor}
-          lang={lang}
-          copy={copyFor(lang)}
+          // What was right-clicked decides the menu, as it does in the browser.
+          rows={state.selection === null ? pageMenuRows(lang, copyFor(lang)) : selectionMenuRows(lang, copyFor(lang))}
           iconSrc={staticFile("icons/icon-128.png")}
           dir={LANGS[lang].dir}
         />

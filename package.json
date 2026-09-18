@@ -9,13 +9,13 @@
     "locales": "node mklocales.mjs",
     "typecheck": "tsc --noEmit",
     "build": "node mkicons.mjs && node mklocales.mjs && node build.mjs",
-    "test": "node --import ./resolve-ts-hooks.mjs --test",
+    "test": "node --import ./resolve-ts-hooks.mjs --test \"src/**/*.test.ts\"",
     "package": "node package.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.268",
     "@types/node": "^25.9.3",
-    "esbuild": "^0.21.5",
+    "esbuild": "^0.25.12",
     "typescript": "^5.4.5"
   },
   "dependencies": {

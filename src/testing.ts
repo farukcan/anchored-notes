@@ -22,6 +22,7 @@ export const PB_URL = "https://pb.test";
 export const BACKEND_URL = "https://anchored-notes.puhulab.com";
 
 export const storageLocal: Record<string, unknown> = {};
+export const storageSession: Record<string, unknown> = {};
 export const fetchCalls: FetchCall[] = [];
 
 type ChangeListener = (
@@ -32,34 +33,47 @@ type ChangeListener = (
 const changeListeners: ChangeListener[] = [];
 let handler: FetchHandler = () => new Response("unexpected request", { status: 500 });
 
-function emitChanges(changes: Record<string, { oldValue?: unknown; newValue?: unknown }>): void {
-  for (const listener of [...changeListeners]) listener(changes, "local");
+function emitChanges(
+  changes: Record<string, { oldValue?: unknown; newValue?: unknown }>,
+  area: string,
+): void {
+  for (const listener of [...changeListeners]) listener(changes, area);
+}
+
+function areaApi(store: Record<string, unknown>, area: string) {
+  return {
+    get: (keys: string | string[]): Promise<Record<string, unknown>> => {
+      const result: Record<string, unknown> = {};
+      for (const key of typeof keys === "string" ? [keys] : keys) {
+        if (key in store) result[key] = store[key];
+      }
+      return Promise.resolve(result);
+    },
+    set: (items: Record<string, unknown>): Promise<void> => {
+      const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
+      for (const [key, value] of Object.entries(items)) {
+        changes[key] = { oldValue: store[key], newValue: value };
+        store[key] = value;
+      }
+      emitChanges(changes, area);
+      return Promise.resolve();
+    },
+    remove: (keys: string | string[]): Promise<void> => {
+      const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
+      for (const key of typeof keys === "string" ? [keys] : keys) {
+        changes[key] = { oldValue: store[key] };
+        delete store[key];
+      }
+      emitChanges(changes, area);
+      return Promise.resolve();
+    },
+  };
 }
 
 const fakeChrome = {
   storage: {
-    local: {
-      get: (key: string): Promise<Record<string, unknown>> =>
-        Promise.resolve(key in storageLocal ? { [key]: storageLocal[key] } : {}),
-      set: (items: Record<string, unknown>): Promise<void> => {
-        const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
-        for (const [key, value] of Object.entries(items)) {
-          changes[key] = { oldValue: storageLocal[key], newValue: value };
-          storageLocal[key] = value;
-        }
-        emitChanges(changes);
-        return Promise.resolve();
-      },
-      remove: (keys: string | string[]): Promise<void> => {
-        const changes: Record<string, { oldValue?: unknown; newValue?: unknown }> = {};
-        for (const key of typeof keys === "string" ? [keys] : keys) {
-          changes[key] = { oldValue: storageLocal[key] };
-          delete storageLocal[key];
-        }
-        emitChanges(changes);
-        return Promise.resolve();
-      },
-    },
+    local: areaApi(storageLocal, "local"),
+    session: areaApi(storageSession, "session"),
     onChanged: {
       addListener: (listener: ChangeListener): void => {
         changeListeners.push(listener);
@@ -90,6 +104,7 @@ export function setFetchHandler(next: FetchHandler): void {
 
 export function resetFakes(): void {
   for (const key of Object.keys(storageLocal)) delete storageLocal[key];
+  for (const key of Object.keys(storageSession)) delete storageSession[key];
   fetchCalls.length = 0;
   changeListeners.length = 0;
   handler = () => new Response("unexpected request", { status: 500 });

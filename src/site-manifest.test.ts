@@ -17,11 +17,11 @@ test("resolveManifestUrl uses link rel=manifest when present", () => {
   assert.equal(resolveManifestUrl(doc), "https://example.com/app.webmanifest");
 });
 
-test("resolveManifestUrl falls back to /manifest.json", () => {
+test("resolveManifestUrl does not guess /manifest.json when no link is present", () => {
   const doc = {
     querySelector: () => null,
     location: { href: "https://example.com/page" }
   } as unknown as Document;
 
-  assert.equal(resolveManifestUrl(doc), "https://example.com/manifest.json");
+  assert.equal(resolveManifestUrl(doc), null);
 });

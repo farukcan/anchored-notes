@@ -100,13 +100,46 @@ export const STAGE_SITES: Record<string, string> = {
   article: "slowroute.example/journal/kyoto-in-autumn",
   "video-watch": "video.example/watch/hand-cut-soba",
   profile: "network.example/in/mira-halvorsen",
-  "ai-chat": "assistant.example/c/freelance-rate"
+  "ai-chat": "assistant.example/c/freelance-rate",
+  inspiration: "inspire.example/collections/packaging-that-pops"
 };
 
-export function siteFor(stage: string): string {
-  const url = STAGE_SITES[stage];
-  if (!url) throw new Error(`no address configured for stage "${stage}" — add it to STAGE_SITES`);
+/**
+ * The fictional address of each page a multi-page stage can navigate to, keyed
+ * by the `data-page-view` name the stage gives that page.
+ */
+export const STAGE_PAGE_SITES: Record<string, Record<string, string>> = {
+  inspiration: {
+    bakery: "inspire.example/shots/bakery-box-candy-stripe",
+    coffee: "inspire.example/shots/single-origin-coffee-kraft"
+  }
+};
+
+/** The address bar for a stage, on its own page (`page` null) or on one of its others. */
+export function siteFor(stage: string, page: string | null): string {
+  const url = page === null ? STAGE_SITES[stage] : STAGE_PAGE_SITES[stage]?.[page];
+  if (!url) {
+    throw new Error(
+      `no address configured for stage "${stage}" page "${page}" — add it to ` +
+        (page === null ? "STAGE_SITES" : "STAGE_PAGE_SITES")
+    );
+  }
   return url;
+}
+
+/**
+ * The query string that identifies one of a stage's pages; empty on its own
+ * page. The page rides in the query on purpose, unlike the render config in the
+ * hash: a page-scoped note's anchorKey is origin + pathname + search
+ * (src/matching.ts), so this is exactly what makes two pages two anchors.
+ */
+export function pageSearch(page: string | null): string {
+  return page === null ? "" : `?p=${encodeURIComponent(page)}`;
+}
+
+/** The anchorKey of a page, from the anchorKey of the stage's own page. */
+export function pageKeyFor(stageKey: string, page: string | null): string {
+  return `${stageKey}${pageSearch(page)}`;
 }
 
 /**
@@ -114,14 +147,15 @@ export function siteFor(stage: string): string {
  * for this and prints it on a site-scoped note's header, so it has to follow the
  * stage rather than be one global value.
  *
- * The two nameless stages answer with what their domain says and nothing more —
+ * The nameless stages answer with what their domain says and nothing more —
  * a site with no wordmark would not claim one in its manifest either.
  */
 export const STAGE_SITE_NAMES: Record<string, string> = {
   article: "Slow Route",
   "video-watch": "video.example",
   profile: "network.example",
-  "ai-chat": "assistant.example"
+  "ai-chat": "assistant.example",
+  inspiration: "inspire.example"
 };
 
 export function siteNameFor(stage: string): string {

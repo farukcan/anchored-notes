@@ -10,6 +10,7 @@ export const en = {
   cantAddNote: "Chrome doesn't allow notes on this page (e.g. system pages or the Web Store).",
   notesUsage: "{count} / {limit} notes used",
   noteLimitReached: "Note limit reached ({limit}). Delete a note to add a new one.",
+  syncFailed: "Sync failed. Will retry automatically.",
   language: "Language",
   // account
   accountSignInBenefit: "Sign in to sync your notes across devices and keep them safe.",
@@ -24,6 +25,11 @@ export const en = {
   accountUpgrade: "Upgrade to Pro",
   accountManageBilling: "Manage subscription",
   accountBillingFailed: "Billing action failed.",
+  accountMergeBody: "This device has {count} local note(s). Upload them to {email}, keep them only on this device, or delete them?",
+  accountMergeUpload: "Upload to this account",
+  accountMergeKeep: "Keep on this device",
+  accountMergeDelete: "Delete local notes",
+  accountMergeFailed: "Couldn't apply that choice. Reload the extension and try again.",
   // encryption
   encStatusDefault: "Notes are encrypted before syncing. Set a password for end-to-end encryption.",
   encStatusCustom: "Notes are end-to-end encrypted with your password.",
@@ -37,6 +43,12 @@ export const en = {
   encConfirmMismatch: "Passwords don't match.",
   encLossWarning: "If you forget this password, your synced notes CANNOT be recovered. Continue?",
   encChangeFailed: "Could not update the encryption password.",
+  encPasswordMinLength: "Use at least 4 characters.",
+  encPasswordHint: "Use a strong password. If you forget it, synced notes cannot be recovered.",
+  encPasswordPlaceholder: "New password",
+  encConfirmPlaceholder: "Repeat password",
+  encSavePassword: "Save",
+  encCancel: "Cancel",
   // options
   optionsTitle: "Anchored Notes — Options",
   searchPlaceholder: "Search notes…",

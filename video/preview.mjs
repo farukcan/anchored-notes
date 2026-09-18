@@ -24,6 +24,7 @@ const TYPES = {
   ".js": "text/javascript",
   ".json": "application/json",
   ".png": "image/png",
+  ".jpg": "image/jpeg",
   ".map": "application/json"
 };
 
